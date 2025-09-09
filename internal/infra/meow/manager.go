@@ -255,7 +255,106 @@ func (cm *ClientManager) getOrCreateDeviceStore(ctx context.Context, sessionID s
 // OnClientStatusChange is called when a client's status changes
 func (cm *ClientManager) OnClientStatusChange(sessionID string, status types.Status) {
 	cm.logger.Infof("Client %s status changed to %s", sessionID, status)
-	// Here you could update the database, send notifications, etc.
+
+	// Update database when status changes
+	go cm.updateSessionInDatabase(sessionID, status)
+
+	// If status is connected, check and update device JID if missing
+	if status == types.StatusConnected {
+		go cm.CheckAndUpdateDeviceJID(sessionID)
+	}
+}
+
+// updateSessionInDatabase updates the session status in the database
+func (cm *ClientManager) updateSessionInDatabase(sessionID string, status types.Status) {
+	ctx := context.Background()
+
+	// Update only status (device_jid is updated separately on PairSuccess)
+	query := `UPDATE sessions SET status = $1, updated_at = NOW() WHERE id = $2`
+	args := []interface{}{string(status), sessionID}
+
+	_, err := cm.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		cm.logger.Errorf("Failed to update session %s status to %s: %v", sessionID, status, err)
+	} else {
+		cm.logger.Infof("Successfully updated session %s status to %s", sessionID, status)
+	}
+}
+
+// updateSessionDeviceJID updates the device_jid for a specific session after successful pairing
+func (cm *ClientManager) updateSessionDeviceJID(sessionID string, deviceJID string) {
+	ctx := context.Background()
+
+	cm.logger.Infof("Attempting to update device_jid for session %s with JID %s", sessionID, deviceJID)
+
+	query := `UPDATE sessions SET device_jid = $1, status = $2, updated_at = NOW() WHERE id = $3`
+	args := []interface{}{deviceJID, string(types.StatusConnected), sessionID}
+
+	result, err := cm.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		cm.logger.Errorf("Failed to update device_jid for session %s: %v", sessionID, err)
+	} else {
+		rowsAffected, _ := result.RowsAffected()
+		if rowsAffected == 0 {
+			cm.logger.Warnf("No rows affected when updating device_jid for session %s - session may not exist", sessionID)
+		} else {
+			cm.logger.Infof("Successfully registered device JID %s for session %s", deviceJID, sessionID)
+		}
+	}
+}
+
+// OnPairSuccess is called when a session successfully pairs with WhatsApp
+func (cm *ClientManager) OnPairSuccess(sessionID string, deviceJID string) {
+	cm.logger.Infof("OnPairSuccess called for session %s with device JID %s", sessionID, deviceJID)
+
+	if sessionID == "" {
+		cm.logger.Errorf("OnPairSuccess called with empty session ID")
+		return
+	}
+
+	if deviceJID == "" {
+		cm.logger.Errorf("OnPairSuccess called with empty device JID for session %s", sessionID)
+		return
+	}
+
+	// Update the database with the device JID
+	go cm.updateSessionDeviceJID(sessionID, deviceJID)
+}
+
+// CheckAndUpdateDeviceJID checks if a connected session has a missing device_jid and updates it
+func (cm *ClientManager) CheckAndUpdateDeviceJID(sessionID string) {
+	client, exists := cm.clients[sessionID]
+	if !exists {
+		cm.logger.Debugf("Session %s not found in client manager", sessionID)
+		return
+	}
+
+	if client.client == nil || client.client.Store.ID == nil {
+		cm.logger.Debugf("Session %s: Client or Store.ID is nil", sessionID)
+		return
+	}
+
+	if client.status != types.StatusConnected {
+		cm.logger.Debugf("Session %s: Not connected, skipping device JID check", sessionID)
+		return
+	}
+
+	// Check if device_jid is missing in database
+	ctx := context.Background()
+	var deviceJID string
+	query := `SELECT COALESCE(device_jid, '') FROM sessions WHERE id = $1`
+	err := cm.db.QueryRowContext(ctx, query, sessionID).Scan(&deviceJID)
+	if err != nil {
+		cm.logger.Errorf("Failed to check device_jid for session %s: %v", sessionID, err)
+		return
+	}
+
+	if deviceJID == "" {
+		// Device JID is missing, update it
+		newDeviceJID := client.client.Store.ID.String()
+		cm.logger.Infof("Session %s: Found missing device_jid, updating to %s", sessionID, newDeviceJID)
+		go cm.updateSessionDeviceJID(sessionID, newDeviceJID)
+	}
 }
 
 // GetStats returns statistics about the client manager

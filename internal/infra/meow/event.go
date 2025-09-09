@@ -132,9 +132,16 @@ func (eh *EventHandler) handleChatPresence(evt *events.ChatPresence) {
 // handleConnected handles successful connection
 func (eh *EventHandler) handleConnected(evt *events.Connected) {
 	eh.logger.Infof("Session %s: Connected to WhatsApp", eh.sessionID)
-	
+
 	if eh.client != nil {
 		eh.client.onConnected()
+
+		// Also update device JID on connection if available and not already set
+		if eh.client.manager != nil && eh.client.client != nil && eh.client.client.Store.ID != nil {
+			deviceJID := eh.client.client.Store.ID.String()
+			eh.logger.Infof("Session %s: Connected event - updating device JID to %s", eh.sessionID, deviceJID)
+			eh.client.manager.OnPairSuccess(eh.sessionID, deviceJID)
+		}
 	}
 }
 
@@ -171,9 +178,17 @@ func (eh *EventHandler) handleQR(evt *events.QR) {
 // handlePairSuccess handles successful pairing
 func (eh *EventHandler) handlePairSuccess(evt *events.PairSuccess) {
 	eh.logger.Infof("Session %s: Pairing successful with %s", eh.sessionID, evt.ID)
-	
+
 	if eh.client != nil {
 		eh.client.onConnected()
+
+		// Notify manager about successful pairing with device JID
+		if eh.client.manager != nil {
+			eh.logger.Infof("Session %s: Calling OnPairSuccess with device JID %s", eh.sessionID, evt.ID.String())
+			eh.client.manager.OnPairSuccess(eh.sessionID, evt.ID.String())
+		} else {
+			eh.logger.Warnf("Session %s: Manager is nil, cannot update device JID", eh.sessionID)
+		}
 	}
 }
 

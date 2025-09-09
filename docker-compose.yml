@@ -32,6 +32,24 @@ services:
     volumes:
       - minio_data:/data
 
+  dbgate:
+    image: dbgate/dbgate:latest
+    container_name: zpmeow-dbgate
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      CONNECTIONS: con1
+      LABEL_con1: zpmeow PostgreSQL
+      SERVER_con1: postgres
+      USER_con1: ${DB_USER}
+      PASSWORD_con1: ${DB_PASSWORD}
+      PORT_con1: 5432
+      ENGINE_con1: postgres@dbgate-plugin-postgres
+      DATABASE_con1: ${DB_NAME}
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:
   minio_data:

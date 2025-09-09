@@ -136,6 +136,12 @@ func (m *MeowServiceImpl) GetClientStatus(sessionID string) types.Status {
 	return status
 }
 
+// CheckAndUpdateDeviceJID checks and updates device JID for a session
+func (m *MeowServiceImpl) CheckAndUpdateDeviceJID(sessionID string) {
+	m.logger.Infof("Checking and updating device JID for session %s", sessionID)
+	m.clientManager.CheckAndUpdateDeviceJID(sessionID)
+}
+
 // GetClient returns the MeowClient for a session (for advanced operations)
 func (m *MeowServiceImpl) GetClient(sessionID string) (*MeowClient, bool) {
 	return m.clientManager.GetClient(sessionID)

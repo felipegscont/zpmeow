@@ -167,6 +167,11 @@ func (mc *MeowClient) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 			fmt.Printf("=== WhatsApp connected successfully! ===\n\n")
 			mc.clearQRCode()
 			mc.setStatus(types.StatusConnected)
+
+			// Register device JID after successful QR pairing
+			if mc.client.Store.ID != nil && mc.manager != nil {
+				mc.manager.OnPairSuccess(mc.sessionID, mc.client.Store.ID.String())
+			}
 		default:
 			mc.logger.Infof("QR event for session %s: %s", mc.sessionID, evt.Event)
 		}

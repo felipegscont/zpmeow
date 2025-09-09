@@ -76,3 +76,44 @@ db-reset: db-drop db-create ## Reset database (drop and create)
 db-test: ## Test database connection
 	@echo "Testing database connection..."
 	PGPASSWORD=$(DB_PASSWORD) psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -c "SELECT version();"
+
+# DBGate commands
+dbgate-up: ## Start DBGate database management tool
+	@echo "🚀 Starting DBGate database management tool..."
+	@if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
+		docker compose up -d dbgate; \
+		echo "✅ DBGate started successfully!"; \
+		echo "🌐 Access DBGate at: http://localhost:3000"; \
+		echo "📊 Database: zpmeow"; \
+		echo "👤 User: postgres"; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose up -d dbgate; \
+		echo "✅ DBGate started successfully!"; \
+		echo "🌐 Access DBGate at: http://localhost:3000"; \
+		echo "📊 Database: zpmeow"; \
+		echo "👤 User: postgres"; \
+	else \
+		echo "❌ docker compose not found. Install Docker first."; \
+		exit 1; \
+	fi
+
+dbgate-down: ## Stop DBGate
+	@echo "🛑 Stopping DBGate..."
+	@if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
+		docker compose stop dbgate; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose stop dbgate; \
+	else \
+		echo "❌ docker compose not found"; \
+		exit 1; \
+	fi
+
+dbgate-logs: ## Show DBGate logs
+	@if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
+		docker compose logs -f dbgate; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose logs -f dbgate; \
+	else \
+		echo "❌ docker compose not found"; \
+		exit 1; \
+	fi
