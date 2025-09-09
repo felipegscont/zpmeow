@@ -45,22 +45,31 @@ func NewSendHandler(sessionService session.SessionService, meowService *meow.Meo
 // @Router /session/{sessionId}/send/text [post]
 func (h *SendHandler) SendText(c *gin.Context) {
 	sessionID := c.Param("sessionId")
+	h.logger.Infof("DEBUG: SendText called with sessionID: %s", sessionID)
+
 	if sessionID == "" {
+		h.logger.Errorf("DEBUG: Session ID is empty")
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
 	}
 
 	var req types.SendTextRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Errorf("DEBUG: Failed to bind JSON: %v", err)
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
+	h.logger.Infof("DEBUG: Request parsed successfully - Phone: %s, Body: %s, ID: %s", req.Phone, req.Body, req.ID)
+
 	// Validate phone number format
 	if !utils.IsValidPhoneNumber(req.Phone) {
+		h.logger.Errorf("DEBUG: Invalid phone number format: %s", req.Phone)
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
+
+	h.logger.Infof("DEBUG: Phone number validation passed: %s", req.Phone)
 
 	// Send message through Meow service
 	h.logger.Infof("Sending text message to %s from session %s", req.Phone, sessionID)
@@ -604,13 +613,20 @@ func (h *SendHandler) SendButtons(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual buttons sending through Meow service
+	// Send buttons message through Meow service
 	h.logger.Infof("Sending buttons message to %s from session %s", req.Phone, sessionID)
+
+	err := h.meowService.SendButtonsMessage(c.Request.Context(), sessionID, req.Phone, req.Text, req.Buttons, req.Footer)
+	if err != nil {
+		h.logger.Errorf("Failed to send buttons message: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send buttons message", err.Error())
+		return
+	}
 
 	response := types.SendResponse{
 		Success:   true,
-		MessageID: "mock-buttons-id-" + sessionID,
-		Timestamp: 1640995200,
+		MessageID: req.ID,
+		Timestamp: time.Now().Unix(),
 	}
 
 	utils.RespondWithJSON(c, http.StatusOK, response)
@@ -658,13 +674,20 @@ func (h *SendHandler) SendList(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual list sending through Meow service
+	// Send list message through Meow service
 	h.logger.Infof("Sending list message to %s from session %s", req.Phone, sessionID)
+
+	err := h.meowService.SendListMessage(c.Request.Context(), sessionID, req.Phone, req.Text, req.ButtonText, req.Sections, req.Footer)
+	if err != nil {
+		h.logger.Errorf("Failed to send list message: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send list message", err.Error())
+		return
+	}
 
 	response := types.SendResponse{
 		Success:   true,
-		MessageID: "mock-list-id-" + sessionID,
-		Timestamp: 1640995200,
+		MessageID: req.ID,
+		Timestamp: time.Now().Unix(),
 	}
 
 	utils.RespondWithJSON(c, http.StatusOK, response)
@@ -721,13 +744,20 @@ func (h *SendHandler) SendPoll(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual poll sending through Meow service
+	// Send poll message through Meow service
 	h.logger.Infof("Sending poll message to %s from session %s", req.Phone, sessionID)
+
+	err := h.meowService.SendPollMessage(c.Request.Context(), sessionID, req.Phone, req.Name, req.Options, req.SelectableCount)
+	if err != nil {
+		h.logger.Errorf("Failed to send poll message: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send poll message", err.Error())
+		return
+	}
 
 	response := types.SendResponse{
 		Success:   true,
-		MessageID: "mock-poll-id-" + sessionID,
-		Timestamp: 1640995200,
+		MessageID: req.ID,
+		Timestamp: time.Now().Unix(),
 	}
 
 	utils.RespondWithJSON(c, http.StatusOK, response)

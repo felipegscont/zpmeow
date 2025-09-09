@@ -3,6 +3,7 @@ package meow
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infra/logger"
@@ -14,6 +15,24 @@ import (
 	waTypes "go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
+
+// parseJID parses a JID string and adds @s.whatsapp.net if needed (like wuzapi)
+func parseJID(arg string) (waTypes.JID, bool) {
+	if arg[0] == '+' {
+		arg = arg[1:]
+	}
+	if !strings.ContainsRune(arg, '@') {
+		return waTypes.NewJID(arg, waTypes.DefaultUserServer), true
+	} else {
+		recipient, err := waTypes.ParseJID(arg)
+		if err != nil {
+			return recipient, false
+		} else if recipient.User == "" {
+			return recipient, false
+		}
+		return recipient, true
+	}
+}
 
 // MeowServiceImpl implements the WhatsAppService interface using the new architecture
 type MeowServiceImpl struct {
@@ -200,14 +219,12 @@ func (m *MeowServiceImpl) SendMessage(ctx context.Context, sessionID, to, messag
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendMessage(ctx, jid, message)
@@ -215,22 +232,38 @@ func (m *MeowServiceImpl) SendMessage(ctx context.Context, sessionID, to, messag
 
 // SendTextMessage sends a text message with optional context info
 func (m *MeowServiceImpl) SendTextMessage(ctx context.Context, sessionID, to, text string, contextInfo *waE2E.ContextInfo) error {
+	m.logger.Infof("DEBUG: SendTextMessage called - sessionID: %s, to: %s, text: %s", sessionID, to, text)
+
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
+		m.logger.Errorf("DEBUG: Client not found for session %s", sessionID)
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
+	m.logger.Infof("DEBUG: Client found for session %s", sessionID)
+
+	// CORREÇÃO: Remover verificação IsConnected() que pode causar deadlock
+	// O wuzapi não faz essa verificação e funciona corretamente
+	m.logger.Infof("DEBUG: Skipping IsConnected() check to avoid deadlock")
+
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		m.logger.Errorf("DEBUG: Failed to parse JID %s", to)
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
+	m.logger.Infof("DEBUG: JID parsed successfully: %s -> %s", to, jid.String())
+
+	m.logger.Infof("DEBUG: Calling client.SendTextMessage...")
+	err := client.SendTextMessage(ctx, jid, text, contextInfo)
 	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+		m.logger.Errorf("DEBUG: client.SendTextMessage failed: %v", err)
+		return err
 	}
 
-	return client.SendTextMessage(ctx, jid, text, contextInfo)
+	m.logger.Infof("DEBUG: client.SendTextMessage completed successfully")
+	return nil
 }
 
 // SendLocationMessage sends a location message
@@ -240,14 +273,12 @@ func (m *MeowServiceImpl) SendLocationMessage(ctx context.Context, sessionID, to
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendLocationMessage(ctx, jid, latitude, longitude, name, address)
@@ -260,14 +291,12 @@ func (m *MeowServiceImpl) SendContactMessage(ctx context.Context, sessionID, to,
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendContactMessage(ctx, jid, displayName, vcard)
@@ -280,14 +309,12 @@ func (m *MeowServiceImpl) ReactToMessage(ctx context.Context, sessionID, chatJID
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(chatJID)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", chatJID, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(chatJID)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", chatJID)
 	}
 
 	return client.ReactToMessage(ctx, jid, messageID, emoji)
@@ -298,10 +325,6 @@ func (m *MeowServiceImpl) SetChatPresence(ctx context.Context, sessionID, chatJI
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return fmt.Errorf("client not found for session %s", sessionID)
-	}
-
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
 	}
 
 	// Parse JID
@@ -333,10 +356,6 @@ func (m *MeowServiceImpl) MarkMessageRead(ctx context.Context, sessionID, chatJI
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
-
 	// Parse JID
 	jid, err := waTypes.ParseJID(chatJID)
 	if err != nil {
@@ -351,10 +370,6 @@ func (m *MeowServiceImpl) CreateGroup(ctx context.Context, sessionID, name strin
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return nil, fmt.Errorf("client not found for session %s", sessionID)
-	}
-
-	if !client.IsConnected() {
-		return nil, fmt.Errorf("client is not connected for session %s", sessionID)
 	}
 
 	// Parse participant JIDs
@@ -377,10 +392,6 @@ func (m *MeowServiceImpl) GetGroupInfo(ctx context.Context, sessionID, groupJID 
 		return nil, fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return nil, fmt.Errorf("client is not connected for session %s", sessionID)
-	}
-
 	// Parse JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
@@ -397,10 +408,6 @@ func (m *MeowServiceImpl) JoinGroupWithLink(ctx context.Context, sessionID, invi
 		return nil, fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return nil, fmt.Errorf("client is not connected for session %s", sessionID)
-	}
-
 	return client.JoinGroupWithLink(ctx, inviteCode)
 }
 
@@ -409,10 +416,6 @@ func (m *MeowServiceImpl) LeaveGroup(ctx context.Context, sessionID, groupJID st
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return fmt.Errorf("client not found for session %s", sessionID)
-	}
-
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
 	}
 
 	// Parse JID
@@ -431,10 +434,6 @@ func (m *MeowServiceImpl) GetGroupInviteLink(ctx context.Context, sessionID, gro
 		return "", fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return "", fmt.Errorf("client is not connected for session %s", sessionID)
-	}
-
 	// Parse JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
@@ -446,13 +445,9 @@ func (m *MeowServiceImpl) GetGroupInviteLink(ctx context.Context, sessionID, gro
 
 // UpdateGroupParticipants updates group participants (add, remove, promote, demote)
 func (m *MeowServiceImpl) UpdateGroupParticipants(ctx context.Context, sessionID, groupJID string, participants []string, action string) error {
-	client, exists := m.clientManager.GetClient(sessionID)
+	_, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return fmt.Errorf("client not found for session %s", sessionID)
-	}
-
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
 	}
 
 	// Parse group JID (not used in current implementation)
@@ -483,10 +478,6 @@ func (m *MeowServiceImpl) SetGroupName(ctx context.Context, sessionID, groupJID,
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
-
 	// Parse JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
@@ -501,10 +492,6 @@ func (m *MeowServiceImpl) SetGroupTopic(ctx context.Context, sessionID, groupJID
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return fmt.Errorf("client not found for session %s", sessionID)
-	}
-
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
 	}
 
 	// Parse JID
@@ -523,14 +510,12 @@ func (m *MeowServiceImpl) SendImageMessage(ctx context.Context, sessionID, to st
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendImageMessage(ctx, jid, imageData, caption, mimeType)
@@ -543,14 +528,12 @@ func (m *MeowServiceImpl) SendAudioMessage(ctx context.Context, sessionID, to st
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendAudioMessage(ctx, jid, audioData, mimeType)
@@ -563,14 +546,12 @@ func (m *MeowServiceImpl) SendDocumentMessage(ctx context.Context, sessionID, to
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendDocumentMessage(ctx, jid, documentData, filename, caption, mimeType)
@@ -583,14 +564,12 @@ func (m *MeowServiceImpl) SendVideoMessage(ctx context.Context, sessionID, to st
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendVideoMessage(ctx, jid, videoData, caption, mimeType)
@@ -603,17 +582,85 @@ func (m *MeowServiceImpl) SendStickerMessage(ctx context.Context, sessionID, to 
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	if !client.IsConnected() {
-		return fmt.Errorf("client is not connected for session %s", sessionID)
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
-	// Parse JID
-	jid, err := waTypes.ParseJID(to)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", to, err)
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
 	}
 
 	return client.SendStickerMessage(ctx, jid, stickerData, mimeType)
+}
+
+// SendButtonsMessage sends a buttons message
+func (m *MeowServiceImpl) SendButtonsMessage(ctx context.Context, sessionID, to, text string, buttons []types.Button, footer string) error {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
+
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
+	}
+
+	return client.SendButtonsMessage(ctx, jid, text, buttons, footer)
+}
+
+// SendListMessage sends a list message
+func (m *MeowServiceImpl) SendListMessage(ctx context.Context, sessionID, to, text, buttonText string, sections []types.Section, footer string) error {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
+
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		return fmt.Errorf("invalid JID %s", to)
+	}
+
+	return client.SendListMessage(ctx, jid, text, buttonText, sections, footer)
+}
+
+// SendPollMessage sends a poll message
+func (m *MeowServiceImpl) SendPollMessage(ctx context.Context, sessionID, to, name string, options []string, selectableCount int) error {
+	m.logger.Infof("DEBUG: SendPollMessage called - sessionID: %s, to: %s, name: %s", sessionID, to, name)
+
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		m.logger.Errorf("DEBUG: Client not found for session %s", sessionID)
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	m.logger.Infof("DEBUG: Client found for session %s", sessionID)
+
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
+
+	// Parse JID using wuzapi-style parsing
+	jid, ok := parseJID(to)
+	if !ok {
+		m.logger.Errorf("DEBUG: Failed to parse JID %s", to)
+		return fmt.Errorf("invalid JID %s", to)
+	}
+
+	m.logger.Infof("DEBUG: JID parsed successfully: %s", jid.String())
+	m.logger.Infof("DEBUG: Calling client.SendPollMessage...")
+
+	err := client.SendPollMessage(ctx, jid, name, options, selectableCount)
+	if err != nil {
+		m.logger.Errorf("DEBUG: client.SendPollMessage failed: %v", err)
+		return err
+	}
+
+	m.logger.Infof("DEBUG: SendPollMessage completed successfully")
+	return nil
 }
 
 // ListGroups lists all groups for a session
@@ -621,10 +668,6 @@ func (m *MeowServiceImpl) ListGroups(ctx context.Context, sessionID string) ([]*
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return nil, fmt.Errorf("client not found for session %s", sessionID)
-	}
-
-	if !client.IsConnected() {
-		return nil, fmt.Errorf("client is not connected for session %s", sessionID)
 	}
 
 	// Get all groups from the client

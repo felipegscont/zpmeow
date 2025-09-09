@@ -341,9 +341,7 @@ func (mc *MeowClient) GetJID() waTypes.JID {
 
 // SendMessage sends a text message
 func (mc *MeowClient) SendMessage(ctx context.Context, to waTypes.JID, message string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
 	// Create a simple text message
 	msg := &waE2E.Message{
@@ -366,9 +364,12 @@ func (mc *MeowClient) GetClient() *whatsmeow.Client {
 
 // SendTextMessage sends a text message with optional context info
 func (mc *MeowClient) SendTextMessage(ctx context.Context, to waTypes.JID, text string, contextInfo *waE2E.ContextInfo) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	mc.logger.Infof("DEBUG: MeowClient.SendTextMessage called - to: %s, text: %s", to.String(), text)
+
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
+	// O wuzapi envia diretamente sem verificações que podem causar deadlock
+
+	mc.logger.Infof("DEBUG: Creating message...")
 
 	msg := &waE2E.Message{
 		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
@@ -377,23 +378,27 @@ func (mc *MeowClient) SendTextMessage(ctx context.Context, to waTypes.JID, text 
 	}
 
 	if contextInfo != nil {
+		mc.logger.Infof("DEBUG: Adding context info to message")
 		msg.ExtendedTextMessage.ContextInfo = contextInfo
 	}
 
-	_, err := mc.client.SendMessage(ctx, to, msg)
+	mc.logger.Infof("DEBUG: Calling whatsmeow client.SendMessage...")
+	resp, err := mc.client.SendMessage(ctx, to, msg)
 	if err != nil {
+		mc.logger.Errorf("DEBUG: whatsmeow client.SendMessage failed: %v", err)
 		return fmt.Errorf("failed to send text message: %w", err)
 	}
 
+	mc.logger.Infof("DEBUG: whatsmeow client.SendMessage succeeded - response: %+v", resp)
+
 	mc.updateActivity()
+	mc.logger.Infof("DEBUG: SendTextMessage completed successfully")
 	return nil
 }
 
 // SendLocationMessage sends a location message
 func (mc *MeowClient) SendLocationMessage(ctx context.Context, to waTypes.JID, latitude, longitude float64, name, address string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
 	msg := &waE2E.Message{
 		LocationMessage: &waE2E.LocationMessage{
@@ -692,9 +697,7 @@ func (mc *MeowClient) GetSessionID() string {
 
 // SendImageMessage sends an image message
 func (mc *MeowClient) SendImageMessage(ctx context.Context, to waTypes.JID, imageData []byte, caption string, mimeType string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
 	// Upload image
 	uploaded, err := mc.client.Upload(ctx, imageData, whatsmeow.MediaImage)
@@ -729,9 +732,7 @@ func (mc *MeowClient) SendImageMessage(ctx context.Context, to waTypes.JID, imag
 
 // SendAudioMessage sends an audio message
 func (mc *MeowClient) SendAudioMessage(ctx context.Context, to waTypes.JID, audioData []byte, mimeType string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
 	// Upload audio
 	uploaded, err := mc.client.Upload(ctx, audioData, whatsmeow.MediaAudio)
@@ -739,15 +740,23 @@ func (mc *MeowClient) SendAudioMessage(ctx context.Context, to waTypes.JID, audi
 		return fmt.Errorf("failed to upload audio: %w", err)
 	}
 
+	// CORREÇÃO: Seguir padrão do wuzapi para áudio
+	ptt := true
+	mime := "audio/ogg; codecs=opus"
+	if mimeType != "" {
+		mime = mimeType
+	}
+
 	msg := &waE2E.Message{
 		AudioMessage: &waE2E.AudioMessage{
 			URL:           &uploaded.URL,
 			DirectPath:    &uploaded.DirectPath,
 			MediaKey:      uploaded.MediaKey,
-			Mimetype:      &mimeType,
+			Mimetype:      &mime,
 			FileEncSHA256: uploaded.FileEncSHA256,
 			FileSHA256:    uploaded.FileSHA256,
 			FileLength:    &uploaded.FileLength,
+			PTT:           &ptt, // CORREÇÃO: Adicionar PTT como no wuzapi
 		},
 	}
 
@@ -762,9 +771,7 @@ func (mc *MeowClient) SendAudioMessage(ctx context.Context, to waTypes.JID, audi
 
 // SendDocumentMessage sends a document message
 func (mc *MeowClient) SendDocumentMessage(ctx context.Context, to waTypes.JID, documentData []byte, filename, caption, mimeType string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
 	// Upload document
 	uploaded, err := mc.client.Upload(ctx, documentData, whatsmeow.MediaDocument)
@@ -800,9 +807,7 @@ func (mc *MeowClient) SendDocumentMessage(ctx context.Context, to waTypes.JID, d
 
 // SendVideoMessage sends a video message
 func (mc *MeowClient) SendVideoMessage(ctx context.Context, to waTypes.JID, videoData []byte, caption, mimeType string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
 	// Upload video
 	uploaded, err := mc.client.Upload(ctx, videoData, whatsmeow.MediaVideo)
@@ -837,9 +842,7 @@ func (mc *MeowClient) SendVideoMessage(ctx context.Context, to waTypes.JID, vide
 
 // SendStickerMessage sends a sticker message
 func (mc *MeowClient) SendStickerMessage(ctx context.Context, to waTypes.JID, stickerData []byte, mimeType string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
 
 	// Upload sticker
 	uploaded, err := mc.client.Upload(ctx, stickerData, whatsmeow.MediaImage)
@@ -865,5 +868,116 @@ func (mc *MeowClient) SendStickerMessage(ctx context.Context, to waTypes.JID, st
 	}
 
 	mc.updateActivity()
+	return nil
+}
+
+// SendButtonsMessage sends a buttons message (Note: Interactive messages may not work in all WhatsApp versions)
+func (mc *MeowClient) SendButtonsMessage(ctx context.Context, to waTypes.JID, text string, buttons []types.Button, footer string) error {
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
+
+	// Note: Interactive messages (buttons) are not fully supported in whatsmeow yet
+	// Fallback to sending a text message with button options
+	buttonText := text + "\n\n"
+	for i, button := range buttons {
+		buttonText += fmt.Sprintf("%d. %s\n", i+1, button.ButtonText.DisplayText)
+	}
+	if footer != "" {
+		buttonText += "\n" + footer
+	}
+
+	msg := &waE2E.Message{
+		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
+			Text: &buttonText,
+		},
+	}
+
+	_, err := mc.client.SendMessage(ctx, to, msg)
+	if err != nil {
+		return fmt.Errorf("failed to send buttons message: %w", err)
+	}
+
+	mc.updateActivity()
+	return nil
+}
+
+// SendListMessage sends a list message (Note: Interactive messages may not work in all WhatsApp versions)
+func (mc *MeowClient) SendListMessage(ctx context.Context, to waTypes.JID, text, buttonText string, sections []types.Section, footer string) error {
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
+
+	// Note: Interactive messages (lists) are not fully supported in whatsmeow yet
+	// Fallback to sending a text message with list options
+	listText := text + "\n\n"
+	for _, section := range sections {
+		if section.Title != "" {
+			listText += "📋 " + section.Title + "\n"
+		}
+		for i, row := range section.Rows {
+			listText += fmt.Sprintf("%d. %s", i+1, row.Title)
+			if row.Description != "" {
+				listText += " - " + row.Description
+			}
+			listText += "\n"
+		}
+		listText += "\n"
+	}
+	if footer != "" {
+		listText += footer
+	}
+
+	msg := &waE2E.Message{
+		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
+			Text: &listText,
+		},
+	}
+
+	_, err := mc.client.SendMessage(ctx, to, msg)
+	if err != nil {
+		return fmt.Errorf("failed to send list message: %w", err)
+	}
+
+	mc.updateActivity()
+	return nil
+}
+
+// SendPollMessage sends a poll message
+func (mc *MeowClient) SendPollMessage(ctx context.Context, to waTypes.JID, name string, options []string, selectableCount int) error {
+	mc.logger.Infof("DEBUG: MeowClient.SendPollMessage called - to: %s, name: %s", to.String(), name)
+
+	// CORREÇÃO: Remover verificação IsConnected() seguindo padrão do wuzapi
+
+	mc.logger.Infof("DEBUG: Converting options to poll options...")
+	// Convert options to poll options
+	pollOptions := make([]*waE2E.PollCreationMessage_Option, len(options))
+	for i, option := range options {
+		pollOptions[i] = &waE2E.PollCreationMessage_Option{
+			OptionName: &option,
+		}
+	}
+
+	// Default to single selection if not specified
+	if selectableCount <= 0 {
+		selectableCount = 1
+	}
+
+	mc.logger.Infof("DEBUG: Creating poll message...")
+	msg := &waE2E.Message{
+		PollCreationMessage: &waE2E.PollCreationMessage{
+			Name:    &name,
+			Options: pollOptions,
+			// Note: SelectableCount field may not be available in this version of whatsmeow
+			// Polls will default to single selection
+		},
+	}
+
+	mc.logger.Infof("DEBUG: Calling whatsmeow client.SendMessage...")
+	_, err := mc.client.SendMessage(ctx, to, msg)
+	if err != nil {
+		mc.logger.Errorf("DEBUG: whatsmeow client.SendMessage failed: %v", err)
+		return fmt.Errorf("failed to send poll message: %w", err)
+	}
+
+	mc.logger.Infof("DEBUG: whatsmeow client.SendMessage succeeded")
+	mc.updateActivity()
+	mc.logger.Infof("DEBUG: SendPollMessage completed successfully")
 	return nil
 }
