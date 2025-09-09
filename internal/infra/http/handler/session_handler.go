@@ -1,24 +1,26 @@
-package session
+package handler
 
 import (
 	"net/http"
 
+	"zpmeow/internal/domain/session"
+	"zpmeow/internal/infra/logger"
+	"zpmeow/internal/utils"
+
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"github.com/jmoiron/sqlx"
 )
 
-// SessionHandler holds the whatsapp service and database connection
+// SessionHandler handles HTTP requests for session operations
 type SessionHandler struct {
-	WhatsAppService *WhatsAppService
-	DB              *sqlx.DB
+	sessionService session.SessionService
+	logger         logger.Logger
 }
 
-// NewSessionHandler creates a new SessionHandler
-func NewSessionHandler(waService *WhatsAppService, db *sqlx.DB) *SessionHandler {
+// NewSessionHandler creates a new session handler
+func NewSessionHandler(sessionService session.SessionService) *SessionHandler {
 	return &SessionHandler{
-		WhatsAppService: waService,
-		DB:              db,
+		sessionService: sessionService,
+		logger:         logger.GetLogger().Sub("session-handler"),
 	}
 }
 
@@ -28,40 +30,44 @@ func NewSessionHandler(waService *WhatsAppService, db *sqlx.DB) *SessionHandler 
 // @Tags sessions
 // @Accept json
 // @Produce json
-// @Param request body CreateSessionRequest true "Session creation request"
-// @Success 201 {object} CreateSessionResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Param request body session.CreateSessionRequest true "Session creation request"
+// @Success 201 {object} session.CreateSessionResponse
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/create [post]
 func (h *SessionHandler) CreateSession(c *gin.Context) {
-	var req CreateSessionRequest
+	var req session.CreateSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	session := &Session{
-		ID:     uuid.New().String(),
-		Name:   req.Name,
-		Status: "disconnected",
+	// Validate request
+	if !utils.IsValidSessionName(req.Name) {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid session name")
+		return
 	}
 
-	query := `INSERT INTO sessions (id, name, status) VALUES ($1, $2, $3) RETURNING created_at, updated_at`
-	err := h.DB.QueryRowx(query, session.ID, session.Name, session.Status).StructScan(session)
+	// Create session through service
+	h.logger.Infof("Creating new session: %s", req.Name)
+	sess, err := h.sessionService.CreateSession(c.Request.Context(), req.Name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to create session"})
+		h.logger.Errorf("Failed to create session %s: %v", req.Name, err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to create session", err.Error())
 		return
 	}
+	h.logger.Infof("Session created successfully: %s (ID: %s)", sess.Name, sess.ID)
 
-	response := CreateSessionResponse{
-		ID:        session.ID,
-		Name:      session.Name,
-		Status:    session.Status,
-		CreatedAt: session.CreatedAt,
-		UpdatedAt: session.UpdatedAt,
+	// Convert to response DTO
+	response := session.CreateSessionResponse{
+		ID:        sess.ID,
+		Name:      sess.Name,
+		Status:    string(sess.Status),
+		CreatedAt: sess.CreatedAt,
+		UpdatedAt: sess.UpdatedAt,
 	}
 
-	c.JSON(http.StatusCreated, response)
+	utils.RespondCreated(c, response)
 }
 
 // ListSessions godoc
@@ -70,38 +76,37 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 // @Tags sessions
 // @Accept json
 // @Produce json
-// @Success 200 {object} SessionListResponse
-// @Failure 500 {object} ErrorResponse
+// @Success 200 {object} session.SessionListResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/list [get]
 func (h *SessionHandler) ListSessions(c *gin.Context) {
-	var sessions []Session
-	query := `SELECT id, name, COALESCE(whatsapp_jid, '') as whatsapp_jid, status, COALESCE(qr_code, '') as qr_code, COALESCE(proxy_url, '') as proxy_url, created_at, updated_at FROM sessions ORDER BY created_at DESC`
-	if err := h.DB.Select(&sessions, query); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to list sessions"})
+	sessions, err := h.sessionService.GetAllSessions(c.Request.Context())
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to list sessions", err.Error())
 		return
 	}
 
-	// Convert to response format
-	sessionResponses := make([]SessionInfoResponse, len(sessions))
-	for i, session := range sessions {
-		sessionResponses[i] = SessionInfoResponse{
-			ID:          session.ID,
-			Name:        session.Name,
-			WhatsAppJID: session.WhatsAppJID,
-			Status:      session.Status,
-			QRCode:      session.QRCode,
-			ProxyURL:    session.ProxyURL,
-			CreatedAt:   session.CreatedAt,
-			UpdatedAt:   session.UpdatedAt,
+	// Convert to response DTOs
+	sessionResponses := make([]session.SessionInfoResponse, len(sessions))
+	for i, sess := range sessions {
+		sessionResponses[i] = session.SessionInfoResponse{
+			ID:          sess.ID,
+			Name:        sess.Name,
+			WhatsAppJID: sess.WhatsAppJID,
+			Status:      string(sess.Status),
+			QRCode:      sess.QRCode,
+			ProxyURL:    sess.ProxyURL,
+			CreatedAt:   sess.CreatedAt,
+			UpdatedAt:   sess.UpdatedAt,
 		}
 	}
 
-	response := SessionListResponse{
+	response := session.SessionListResponse{
 		Sessions: sessionResponses,
 		Total:    len(sessionResponses),
 	}
 
-	c.JSON(http.StatusOK, response)
+	utils.RespondWithData(c, response)
 }
 
 // GetSessionInfo godoc
@@ -111,31 +116,39 @@ func (h *SessionHandler) ListSessions(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Session ID"
-// @Success 200 {object} SessionInfoResponse
-// @Failure 404 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Success 200 {object} session.SessionInfoResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/{id}/info [get]
 func (h *SessionHandler) GetSessionInfo(c *gin.Context) {
 	id := c.Param("id")
-	var session Session
-	query := `SELECT id, name, COALESCE(whatsapp_jid, '') as whatsapp_jid, status, COALESCE(qr_code, '') as qr_code, COALESCE(proxy_url, '') as proxy_url, created_at, updated_at FROM sessions WHERE id = $1`
-	if err := h.DB.Get(&session, query, id); err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Session not found"})
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
 	}
 
-	response := SessionInfoResponse{
-		ID:          session.ID,
-		Name:        session.Name,
-		WhatsAppJID: session.WhatsAppJID,
-		Status:      session.Status,
-		QRCode:      session.QRCode,
-		ProxyURL:    session.ProxyURL,
-		CreatedAt:   session.CreatedAt,
-		UpdatedAt:   session.UpdatedAt,
+	sess, err := h.sessionService.GetSession(c.Request.Context(), id)
+	if err != nil {
+		if err == session.ErrSessionNotFound {
+			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
+			return
+		}
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to get session", err.Error())
+		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	response := session.SessionInfoResponse{
+		ID:          sess.ID,
+		Name:        sess.Name,
+		WhatsAppJID: sess.WhatsAppJID,
+		Status:      string(sess.Status),
+		QRCode:      sess.QRCode,
+		ProxyURL:    sess.ProxyURL,
+		CreatedAt:   sess.CreatedAt,
+		UpdatedAt:   sess.UpdatedAt,
+	}
+
+	utils.RespondWithData(c, response)
 }
 
 // DeleteSession godoc
@@ -146,29 +159,27 @@ func (h *SessionHandler) GetSessionInfo(c *gin.Context) {
 // @Produce json
 // @Param id path string true "Session ID"
 // @Success 204 "Session deleted successfully"
-// @Failure 404 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/{id}/delete [delete]
 func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	id := c.Param("id")
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return
+	}
 
-	// First, logout the client if it's active
-	_ = h.WhatsAppService.LogoutClient(id)
-
-	query := `DELETE FROM sessions WHERE id = $1`
-	result, err := h.DB.Exec(query, id)
+	err := h.sessionService.DeleteSession(c.Request.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to delete session"})
+		if err == session.ErrSessionNotFound {
+			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
+			return
+		}
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to delete session", err.Error())
 		return
 	}
 
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Session not found"})
-		return
-	}
-
-	c.Status(http.StatusNoContent)
+	utils.RespondNoContent(c)
 }
 
 // ConnectSession godoc
@@ -178,20 +189,27 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Session ID"
-// @Success 202 {object} MessageResponse
-// @Failure 500 {object} ErrorResponse
+// @Success 202 {object} session.MessageResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/{id}/connect [post]
 func (h *SessionHandler) ConnectSession(c *gin.Context) {
 	id := c.Param("id")
-
-	if err := h.WhatsAppService.StartClient(id); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
 	}
 
-	c.JSON(http.StatusAccepted, MessageResponse{
+	err := h.sessionService.ConnectSession(c.Request.Context(), id)
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to connect session", err.Error())
+		return
+	}
+
+	response := session.MessageResponse{
 		Message: "Connection process started. Check status and QR code endpoints.",
-	})
+	}
+
+	c.JSON(http.StatusAccepted, response)
 }
 
 // LogoutSession godoc
@@ -201,20 +219,27 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Session ID"
-// @Success 200 {object} MessageResponse
-// @Failure 500 {object} ErrorResponse
+// @Success 200 {object} session.MessageResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/{id}/logout [post]
 func (h *SessionHandler) LogoutSession(c *gin.Context) {
 	id := c.Param("id")
-
-	if err := h.WhatsAppService.LogoutClient(id); err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
 	}
 
-	c.JSON(http.StatusOK, MessageResponse{
+	err := h.sessionService.DisconnectSession(c.Request.Context(), id)
+	if err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to logout session", err.Error())
+		return
+	}
+
+	response := session.MessageResponse{
 		Message: "Session logged out successfully.",
-	})
+	}
+
+	utils.RespondWithData(c, response)
 }
 
 // GetSessionQR godoc
@@ -224,24 +249,33 @@ func (h *SessionHandler) LogoutSession(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Session ID"
-// @Success 200 {object} QRCodeResponse
-// @Failure 404 {object} ErrorResponse
+// @Success 200 {object} session.QRCodeResponse
+// @Failure 404 {object} utils.ErrorResponse
 // @Router /sessions/{id}/qr [get]
 func (h *SessionHandler) GetSessionQR(c *gin.Context) {
 	id := c.Param("id")
-	var session Session
-	query := `SELECT COALESCE(qr_code, '') as qr_code, status FROM sessions WHERE id = $1`
-	if err := h.DB.Get(&session, query, id); err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Session not found"})
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
 	}
 
-	response := QRCodeResponse{
-		QRCode: session.QRCode,
-		Status: session.Status,
+	qrCode, err := h.sessionService.GetQRCode(c.Request.Context(), id)
+	if err != nil {
+		if err == session.ErrSessionNotFound {
+			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
+			return
+		}
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to get QR code", err.Error())
+		return
 	}
 
-	c.JSON(http.StatusOK, response)
+	sess, _ := h.sessionService.GetSession(c.Request.Context(), id)
+	response := session.QRCodeResponse{
+		QRCode: qrCode,
+		Status: string(sess.Status),
+	}
+
+	utils.RespondWithData(c, response)
 }
 
 // PairSession godoc
@@ -251,30 +285,40 @@ func (h *SessionHandler) GetSessionQR(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Session ID"
-// @Param request body PairSessionRequest true "Phone number to pair"
-// @Success 200 {object} PairSessionResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Param request body session.PairSessionRequest true "Phone number to pair"
+// @Success 200 {object} session.PairSessionResponse
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/{id}/pair [post]
 func (h *SessionHandler) PairSession(c *gin.Context) {
 	id := c.Param("id")
-	var req PairSessionRequest
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return
+	}
+
+	var req session.PairSessionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	code, err := h.WhatsAppService.PairPhone(id, req.PhoneNumber)
+	if !utils.IsValidPhoneNumber(req.PhoneNumber) {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number")
+		return
+	}
+
+	code, err := h.sessionService.PairWithPhone(c.Request.Context(), id, req.PhoneNumber)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: err.Error()})
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to pair session", err.Error())
 		return
 	}
 
-	response := PairSessionResponse{
+	response := session.PairSessionResponse{
 		PairingCode: code,
 	}
 
-	c.JSON(http.StatusOK, response)
+	utils.RespondWithData(c, response)
 }
 
 // SetProxy godoc
@@ -284,32 +328,41 @@ func (h *SessionHandler) PairSession(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Session ID"
-// @Param request body ProxyRequest true "Proxy configuration"
-// @Success 200 {object} ProxyResponse
-// @Failure 400 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Param request body session.ProxyRequest true "Proxy configuration"
+// @Success 200 {object} session.ProxyResponse
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
 // @Router /sessions/{id}/proxy/set [post]
 func (h *SessionHandler) SetProxy(c *gin.Context) {
 	id := c.Param("id")
-	var req ProxyRequest
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return
+	}
+
+	var req session.ProxyRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{Error: err.Error()})
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	query := `UPDATE sessions SET proxy_url = $1, updated_at = NOW() WHERE id = $2`
-	_, err := h.DB.Exec(query, req.ProxyURL, id)
+	if !utils.IsValidProxyURL(req.ProxyURL) {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid proxy URL")
+		return
+	}
+
+	err := h.sessionService.SetProxy(c.Request.Context(), id, req.ProxyURL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Error: "Failed to set proxy"})
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to set proxy", err.Error())
 		return
 	}
 
-	response := ProxyResponse{
+	response := session.ProxyResponse{
 		ProxyURL: req.ProxyURL,
 		Message:  "Proxy updated successfully.",
 	}
 
-	c.JSON(http.StatusOK, response)
+	utils.RespondWithData(c, response)
 }
 
 // GetProxy godoc
@@ -319,22 +372,30 @@ func (h *SessionHandler) SetProxy(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "Session ID"
-// @Success 200 {object} ProxyResponse
-// @Failure 404 {object} ErrorResponse
+// @Success 200 {object} session.ProxyResponse
+// @Failure 404 {object} utils.ErrorResponse
 // @Router /sessions/{id}/proxy/find [get]
 func (h *SessionHandler) GetProxy(c *gin.Context) {
 	id := c.Param("id")
-	var session Session
-	query := `SELECT COALESCE(proxy_url, '') as proxy_url FROM sessions WHERE id = $1`
-	if err := h.DB.Get(&session, query, id); err != nil {
-		c.JSON(http.StatusNotFound, ErrorResponse{Error: "Session not found"})
+	if id == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
 	}
 
-	response := ProxyResponse{
-		ProxyURL: session.ProxyURL,
+	proxyURL, err := h.sessionService.GetProxy(c.Request.Context(), id)
+	if err != nil {
+		if err == session.ErrSessionNotFound {
+			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
+			return
+		}
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to get proxy", err.Error())
+		return
+	}
+
+	response := session.ProxyResponse{
+		ProxyURL: proxyURL,
 		Message:  "Proxy configuration retrieved successfully.",
 	}
 
-	c.JSON(http.StatusOK, response)
+	utils.RespondWithData(c, response)
 }

@@ -2,172 +2,217 @@ package session
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
-	"sync"
+	"zpmeow/internal/types"
 
-	"github.com/jmoiron/sqlx"
-	"github.com/skip2/go-qrcode"
-	"go.mau.fi/whatsmeow"
-	"go.mau.fi/whatsmeow/store/sqlstore"
-	waLog "go.mau.fi/whatsmeow/util/log"
+	"github.com/google/uuid"
 )
 
-// WhatsAppService manages the lifecycle of whatsmeow clients
-type WhatsAppService struct {
-	clients   map[string]*whatsmeow.Client
-	mu        sync.RWMutex
-	db        *sqlx.DB
-	container *sqlstore.Container
+// SessionService defines the business logic interface for session management
+type SessionService interface {
+	// Session CRUD operations
+	CreateSession(ctx context.Context, name string) (*Session, error)
+	GetSession(ctx context.Context, id string) (*Session, error)
+	GetAllSessions(ctx context.Context) ([]*Session, error)
+	UpdateSession(ctx context.Context, session *Session) error
+	DeleteSession(ctx context.Context, id string) error
+
+	// WhatsApp operations
+	ConnectSession(ctx context.Context, id string) error
+	DisconnectSession(ctx context.Context, id string) error
+	GetQRCode(ctx context.Context, id string) (string, error)
+	PairWithPhone(ctx context.Context, id, phoneNumber string) (string, error)
+
+	// Proxy operations
+	SetProxy(ctx context.Context, id, proxyURL string) error
+	GetProxy(ctx context.Context, id string) (string, error)
+
+	// Startup operations
+	ConnectOnStartup(ctx context.Context) error
 }
 
-// NewWhatsAppService creates a new WhatsAppService
-func NewWhatsAppService(db *sqlx.DB, container *sqlstore.Container) *WhatsAppService {
-	return &WhatsAppService{
-		clients:   make(map[string]*whatsmeow.Client),
-		db:        db,
-		container: container,
+// WhatsAppService defines the interface for WhatsApp operations
+type WhatsAppService interface {
+	StartClient(sessionID string) error
+	StopClient(sessionID string) error
+	LogoutClient(sessionID string) error
+	GetQRCode(sessionID string) (string, error)
+	PairPhone(sessionID, phoneNumber string) (string, error)
+	IsClientConnected(sessionID string) bool
+	GetClientStatus(sessionID string) types.Status
+	ConnectOnStartup(ctx context.Context) error
+}
+
+// SessionServiceImpl implements the SessionService interface
+type SessionServiceImpl struct {
+	repo            SessionRepository
+	whatsappService WhatsAppService
+}
+
+// NewSessionService creates a new session service
+func NewSessionService(repo SessionRepository, whatsappService WhatsAppService) SessionService {
+	return &SessionServiceImpl{
+		repo:            repo,
+		whatsappService: whatsappService,
 	}
 }
 
-// AddClient adds a new client to the service
-func (s *WhatsAppService) AddClient(sessionID string, client *whatsmeow.Client) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.clients[sessionID] = client
-}
-
-// GetClient retrieves a client from the service
-func (s *WhatsAppService) GetClient(sessionID string) (*whatsmeow.Client, bool) {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	client, ok := s.clients[sessionID]
-	return client, ok
-}
-
-// RemoveClient removes a client from the service
-func (s *WhatsAppService) RemoveClient(sessionID string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.clients, sessionID)
-}
-
-// StartClient creates a new whatsmeow client and starts the connection process
-func (s *WhatsAppService) StartClient(sessionID string) error {
-	// Check if client already exists
-	if _, ok := s.GetClient(sessionID); ok {
-		return fmt.Errorf("client for session %s already exists", sessionID)
+// CreateSession creates a new session
+func (s *SessionServiceImpl) CreateSession(ctx context.Context, name string) (*Session, error) {
+	// Validate input
+	if name == "" {
+		return nil, ErrInvalidSessionName
 	}
 
-	deviceStore, err := s.container.GetFirstDevice(context.Background())
+	// Create new session entity
+	session := NewSession(generateSessionID(), name)
+
+	// Validate entity
+	if err := session.Validate(); err != nil {
+		return nil, err
+	}
+
+	// Save to repository
+	if err := s.repo.Save(ctx, session); err != nil {
+		return nil, err
+	}
+
+	return session, nil
+}
+
+// GetSession retrieves a session by ID
+func (s *SessionServiceImpl) GetSession(ctx context.Context, id string) (*Session, error) {
+	if id == "" {
+		return nil, ErrInvalidSessionID
+	}
+
+	session, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("failed to get device: %w", err)
+		return nil, err
 	}
 
-	clientLog := waLog.Stdout("Client", "DEBUG", true)
-	client := whatsmeow.NewClient(deviceStore, clientLog)
-	s.AddClient(sessionID, client)
-
-	qrChan, _ := client.GetQRChannel(context.Background())
-
-	go func() {
-		err := client.Connect()
-		if err != nil {
-			fmt.Printf("Failed to connect: %v\n", err)
-			s.updateSessionStatus(sessionID, "error")
-			return
-		}
-	}()
-
-	go func() {
-		for evt := range qrChan {
-			if evt.Event == "code" {
-				qrCodeImage, err := qrcode.Encode(evt.Code, qrcode.Medium, 256)
-				if err != nil {
-					fmt.Printf("Failed to encode QR code: %v\n", err)
-					continue
-				}
-				qrCodeBase64 := "data:image/png;base64," + base64.StdEncoding.EncodeToString(qrCodeImage)
-				s.updateSessionQRCode(sessionID, qrCodeBase64)
-				s.updateSessionStatus(sessionID, "connecting")
-			} else if evt.Event == "success" {
-				s.updateSessionStatus(sessionID, "connected")
-				jid := client.Store.ID.String()
-				s.updateSessionJID(sessionID, jid)
-			}
-		}
-	}()
-
-	return nil
+	return session, nil
 }
 
-// PairPhone pairs a phone with the session
-func (s *WhatsAppService) PairPhone(sessionID, phoneNumber string) (string, error) {
-	client, ok := s.GetClient(sessionID)
-	if !ok {
-		return "", fmt.Errorf("client for session %s not found", sessionID)
+// GetAllSessions retrieves all sessions
+func (s *SessionServiceImpl) GetAllSessions(ctx context.Context) ([]*Session, error) {
+	return s.repo.FindAll(ctx)
+}
+
+// UpdateSession updates an existing session
+func (s *SessionServiceImpl) UpdateSession(ctx context.Context, session *Session) error {
+	if err := session.Validate(); err != nil {
+		return err
 	}
 
-	code, err := client.PairPhone(context.Background(), phoneNumber, true, whatsmeow.PairClientChrome, "ZPMeow")
+	return s.repo.Update(ctx, session)
+}
+
+// DeleteSession deletes a session
+func (s *SessionServiceImpl) DeleteSession(ctx context.Context, id string) error {
+	if id == "" {
+		return ErrInvalidSessionID
+	}
+
+	// Disconnect WhatsApp client first
+	_ = s.whatsappService.StopClient(id)
+
+	return s.repo.Delete(ctx, id)
+}
+
+// ConnectSession connects a session to WhatsApp
+func (s *SessionServiceImpl) ConnectSession(ctx context.Context, id string) error {
+	session, err := s.GetSession(ctx, id)
 	if err != nil {
-		return "", fmt.Errorf("failed to pair phone: %w", err)
+		return err
 	}
 
-	return code, nil
-}
-
-// DisconnectClient disconnects a client
-func (s *WhatsAppService) DisconnectClient(sessionID string) error {
-	client, ok := s.GetClient(sessionID)
-	if !ok {
-		return fmt.Errorf("client for session %s not found", sessionID)
+	// Check if client is already connected (like wuzapi does)
+	if s.whatsappService.IsClientConnected(id) {
+		return NewDomainError("already connected")
 	}
-	client.Disconnect()
-	s.updateSessionStatus(sessionID, "disconnected")
-	return nil
-}
 
-// LogoutClient logs out a client
-func (s *WhatsAppService) LogoutClient(sessionID string) error {
-	client, ok := s.GetClient(sessionID)
-	if !ok {
-		return fmt.Errorf("client for session %s not found", sessionID)
+	if !session.CanConnect() {
+		return NewDomainError("session cannot be connected in current state")
 	}
-	_ = client.Logout(context.Background())
-	s.RemoveClient(sessionID)
-	s.updateSessionStatus(sessionID, "disconnected")
-	return nil
-}
 
-// GetClientStatus returns the connection status of a client
-func (s *WhatsAppService) GetClientStatus(sessionID string) (bool, bool) {
-	client, ok := s.GetClient(sessionID)
-	if !ok {
-		return false, false
+	// Update status to connecting
+	session.SetStatus(types.StatusConnecting)
+	if err := s.repo.Update(ctx, session); err != nil {
+		return err
 	}
-	return client.IsConnected(), client.IsLoggedIn()
+
+	// Start WhatsApp client
+	return s.whatsappService.StartClient(id)
 }
 
-func (s *WhatsAppService) updateSessionStatus(sessionID, status string) {
-	query := `UPDATE sessions SET status = $1, updated_at = NOW() WHERE id = $2`
-	_, err := s.db.Exec(query, status, sessionID)
+// DisconnectSession disconnects a session from WhatsApp
+func (s *SessionServiceImpl) DisconnectSession(ctx context.Context, id string) error {
+	session, err := s.GetSession(ctx, id)
 	if err != nil {
-		fmt.Printf("Failed to update session status: %v\n", err)
+		return err
 	}
+
+	// Stop WhatsApp client
+	if err := s.whatsappService.StopClient(id); err != nil {
+		return err
+	}
+
+	// Update status
+	session.SetStatus(types.StatusDisconnected)
+	return s.repo.Update(ctx, session)
 }
 
-func (s *WhatsAppService) updateSessionQRCode(sessionID, qrCode string) {
-	query := `UPDATE sessions SET qr_code = $1, updated_at = NOW() WHERE id = $2`
-	_, err := s.db.Exec(query, qrCode, sessionID)
+// GetQRCode retrieves the QR code for a session
+func (s *SessionServiceImpl) GetQRCode(ctx context.Context, id string) (string, error) {
+	session, err := s.GetSession(ctx, id)
 	if err != nil {
-		fmt.Printf("Failed to update session QR code: %v\n", err)
+		return "", err
 	}
+
+	return session.QRCode, nil
 }
 
-func (s *WhatsAppService) updateSessionJID(sessionID, jid string) {
-	query := `UPDATE sessions SET whatsapp_jid = $1, updated_at = NOW() WHERE id = $2`
-	_, err := s.db.Exec(query, jid, sessionID)
+// PairWithPhone pairs a session with a phone number
+func (s *SessionServiceImpl) PairWithPhone(ctx context.Context, id, phoneNumber string) (string, error) {
+	session, err := s.GetSession(ctx, id)
 	if err != nil {
-		fmt.Printf("Failed to update session JID: %v\n", err)
+		return "", err
 	}
+
+	if !session.CanConnect() {
+		return "", NewDomainError("session cannot be paired in current state")
+	}
+
+	return s.whatsappService.PairPhone(id, phoneNumber)
+}
+
+// SetProxy sets the proxy for a session
+func (s *SessionServiceImpl) SetProxy(ctx context.Context, id, proxyURL string) error {
+	session, err := s.GetSession(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	session.SetProxyURL(proxyURL)
+	return s.repo.Update(ctx, session)
+}
+
+// GetProxy gets the proxy for a session
+func (s *SessionServiceImpl) GetProxy(ctx context.Context, id string) (string, error) {
+	session, err := s.GetSession(ctx, id)
+	if err != nil {
+		return "", err
+	}
+
+	return session.ProxyURL, nil
+}
+
+// ConnectOnStartup connects all previously connected sessions on startup
+func (s *SessionServiceImpl) ConnectOnStartup(ctx context.Context) error {
+	return s.whatsappService.ConnectOnStartup(ctx)
+}
+
+// generateSessionID generates a unique session ID
+func generateSessionID() string {
+	return uuid.New().String()
 }

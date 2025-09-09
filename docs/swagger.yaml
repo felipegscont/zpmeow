@@ -1,0 +1,418 @@
+definitions:
+  health.PingResponse:
+    properties:
+      message:
+        example: pong
+        type: string
+    type: object
+  session.CreateSessionRequest:
+    properties:
+      name:
+        example: My WhatsApp Session
+        type: string
+    required:
+    - name
+    type: object
+  session.CreateSessionResponse:
+    properties:
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: My WhatsApp Session
+        type: string
+      status:
+        example: disconnected
+        type: string
+      updated_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  session.ErrorResponse:
+    properties:
+      error:
+        example: Invalid request parameters
+        type: string
+    type: object
+  session.MessageResponse:
+    properties:
+      message:
+        example: Operation completed successfully
+        type: string
+    type: object
+  session.PairSessionRequest:
+    properties:
+      phone_number:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone_number
+    type: object
+  session.PairSessionResponse:
+    properties:
+      pairing_code:
+        example: ABCD-EFGH
+        type: string
+    type: object
+  session.ProxyRequest:
+    properties:
+      proxy_url:
+        example: http://proxy.example.com:8080
+        type: string
+    required:
+    - proxy_url
+    type: object
+  session.ProxyResponse:
+    properties:
+      message:
+        example: Proxy set successfully
+        type: string
+      proxy_url:
+        example: http://proxy.example.com:8080
+        type: string
+    type: object
+  session.QRCodeResponse:
+    properties:
+      qr_code:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+      status:
+        example: waiting_for_scan
+        type: string
+    type: object
+  session.SessionInfoResponse:
+    properties:
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      name:
+        example: My WhatsApp Session
+        type: string
+      proxy_url:
+        example: http://proxy.example.com:8080
+        type: string
+      qr_code:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+      status:
+        example: connected
+        type: string
+      updated_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      whatsapp_jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+    type: object
+  session.SessionListResponse:
+    properties:
+      sessions:
+        items:
+          $ref: '#/definitions/session.SessionInfoResponse'
+        type: array
+      total:
+        example: 5
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: Returns a simple pong message to verify the API is running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.PingResponse'
+      summary: Health check endpoint
+      tags:
+      - health
+  /sessions/{id}/connect:
+    post:
+      consumes:
+      - application/json
+      description: Starts the connection process for a WhatsApp session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/session.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Connect a session to WhatsApp
+      tags:
+      - sessions
+  /sessions/{id}/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a WhatsApp session and logs out the client if active
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Session deleted successfully
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Delete a session
+      tags:
+      - sessions
+  /sessions/{id}/info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed information about a specific WhatsApp session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/session.SessionInfoResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Get session information
+      tags:
+      - sessions
+  /sessions/{id}/logout:
+    post:
+      consumes:
+      - application/json
+      description: Logs out a WhatsApp session and disconnects the client
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/session.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Logout a session from WhatsApp
+      tags:
+      - sessions
+  /sessions/{id}/pair:
+    post:
+      consumes:
+      - application/json
+      description: Pairs a WhatsApp session with a phone number using pairing code
+        method
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Phone number to pair
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/session.PairSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/session.PairSessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Pair session with phone number
+      tags:
+      - sessions
+  /sessions/{id}/proxy/find:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the current proxy configuration for a WhatsApp session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/session.ProxyResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Get proxy configuration for session
+      tags:
+      - sessions
+  /sessions/{id}/proxy/set:
+    post:
+      consumes:
+      - application/json
+      description: Sets or updates the proxy configuration for a WhatsApp session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Proxy configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/session.ProxyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/session.ProxyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Set proxy for session
+      tags:
+      - sessions
+  /sessions/{id}/qr:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the QR code for a WhatsApp session to scan with mobile
+        device
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/session.QRCodeResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Get QR code for session
+      tags:
+      - sessions
+  /sessions/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new WhatsApp session with the provided name
+      parameters:
+      - description: Session creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/session.CreateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/session.CreateSessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: Create a new WhatsApp session
+      tags:
+      - sessions
+  /sessions/list:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all WhatsApp sessions in the system
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/session.SessionListResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/session.ErrorResponse'
+      summary: List all WhatsApp sessions
+      tags:
+      - sessions
+swagger: "2.0"

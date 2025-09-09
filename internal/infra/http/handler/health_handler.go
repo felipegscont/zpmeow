@@ -1,10 +1,18 @@
-package health
+package handler
 
 import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+// HealthHandler handles health check requests
+type HealthHandler struct{}
+
+// NewHealthHandler creates a new health handler
+func NewHealthHandler() *HealthHandler {
+	return &HealthHandler{}
+}
 
 // PingResponse represents the response for ping endpoint
 type PingResponse struct {
@@ -19,7 +27,7 @@ type PingResponse struct {
 // @Produce json
 // @Success 200 {object} PingResponse
 // @Router /ping [get]
-func Ping(c *gin.Context) {
+func (h *HealthHandler) Ping(c *gin.Context) {
 	c.JSON(http.StatusOK, PingResponse{
 		Message: "pong",
 	})
