@@ -130,7 +130,7 @@ func (eh *EventHandler) handleChatPresence(evt *events.ChatPresence) {
 }
 
 // handleConnected handles successful connection
-func (eh *EventHandler) handleConnected(evt *events.Connected) {
+func (eh *EventHandler) handleConnected(_ *events.Connected) {
 	eh.logger.Infof("Session %s: Connected to WhatsApp", eh.sessionID)
 
 	if eh.client != nil {
@@ -146,7 +146,7 @@ func (eh *EventHandler) handleConnected(evt *events.Connected) {
 }
 
 // handleDisconnected handles disconnection
-func (eh *EventHandler) handleDisconnected(evt *events.Disconnected) {
+func (eh *EventHandler) handleDisconnected(_ *events.Disconnected) {
 	eh.logger.Infof("Session %s: Disconnected from WhatsApp", eh.sessionID)
 	
 	if eh.client != nil {
@@ -211,7 +211,7 @@ func (eh *EventHandler) handleStreamError(evt *events.StreamError) {
 }
 
 // handleStreamReplaced handles stream replacement
-func (eh *EventHandler) handleStreamReplaced(evt *events.StreamReplaced) {
+func (eh *EventHandler) handleStreamReplaced(_ *events.StreamReplaced) {
 	eh.logger.Warnf("Session %s: Stream replaced", eh.sessionID)
 	
 	if eh.client != nil {
@@ -262,7 +262,7 @@ func (eh *EventHandler) handleIdentityChange(evt *events.IdentityChange) {
 }
 
 // handlePrivacySettings handles privacy settings updates
-func (eh *EventHandler) handlePrivacySettings(evt *events.PrivacySettings) {
+func (eh *EventHandler) handlePrivacySettings(_ *events.PrivacySettings) {
 	eh.logger.Debugf("Session %s: Privacy settings updated", eh.sessionID)
 }
 
@@ -273,7 +273,7 @@ func (eh *EventHandler) handleOfflineSyncPreview(evt *events.OfflineSyncPreview)
 }
 
 // handleOfflineSyncCompleted handles offline sync completion
-func (eh *EventHandler) handleOfflineSyncCompleted(evt *events.OfflineSyncCompleted) {
+func (eh *EventHandler) handleOfflineSyncCompleted(_ *events.OfflineSyncCompleted) {
 	eh.logger.Infof("Session %s: Offline sync completed", eh.sessionID)
 }
 
@@ -294,12 +294,12 @@ func (eh *EventHandler) handleAppState(evt *events.AppState) {
 }
 
 // handleKeepAliveTimeout handles keep alive timeouts
-func (eh *EventHandler) handleKeepAliveTimeout(evt *events.KeepAliveTimeout) {
+func (eh *EventHandler) handleKeepAliveTimeout(_ *events.KeepAliveTimeout) {
 	eh.logger.Warnf("Session %s: Keep alive timeout", eh.sessionID)
 }
 
 // handleKeepAliveRestored handles keep alive restoration
-func (eh *EventHandler) handleKeepAliveRestored(evt *events.KeepAliveRestored) {
+func (eh *EventHandler) handleKeepAliveRestored(_ *events.KeepAliveRestored) {
 	eh.logger.Infof("Session %s: Keep alive restored", eh.sessionID)
 }
 
