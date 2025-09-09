@@ -1,5 +1,6 @@
+basePath: /
 definitions:
-  health.PingResponse:
+  handler.PingResponse:
     properties:
       message:
         example: pong
@@ -29,12 +30,6 @@ definitions:
         type: string
       updated_at:
         example: "2023-01-01T00:00:00Z"
-        type: string
-    type: object
-  session.ErrorResponse:
-    properties:
-      error:
-        example: Invalid request parameters
         type: string
     type: object
   session.MessageResponse:
@@ -120,8 +115,592 @@ definitions:
         example: 5
         type: integer
     type: object
+  types.Button:
+    properties:
+      buttonId:
+        example: btn_1
+        type: string
+      buttonText:
+        $ref: '#/definitions/types.ButtonText'
+      type:
+        example: 1
+        type: integer
+    required:
+    - buttonId
+    - buttonText
+    type: object
+  types.ButtonText:
+    properties:
+      displayText:
+        example: Option 1
+        type: string
+    required:
+    - displayText
+    type: object
+  types.ChatDeleteRequest:
+    properties:
+      forEveryone:
+        example: false
+        type: boolean
+      messageId:
+        example: 3EB0C431C26A1916E07A
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - messageId
+    - phone
+    type: object
+  types.ChatDownloadRequest:
+    properties:
+      messageId:
+        example: 3EB0C431C26A1916E07A
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - messageId
+    type: object
+  types.ChatEditRequest:
+    properties:
+      messageId:
+        example: 3EB0C431C26A1916E07A
+        type: string
+      newText:
+        example: Edited message
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - messageId
+    - newText
+    - phone
+    type: object
+  types.ChatMarkReadRequest:
+    properties:
+      messageIds:
+        example:
+        - 3EB0C431C26A1916E07A
+        - 3EB0C431C26A1916E07B
+        items:
+          type: string
+        type: array
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - messageIds
+    - phone
+    type: object
+  types.ChatPresenceRequest:
+    properties:
+      phone:
+        example: "+5511999999999"
+        type: string
+      state:
+        description: typing, recording, paused
+        example: typing
+        type: string
+    required:
+    - phone
+    - state
+    type: object
+  types.ChatReactRequest:
+    properties:
+      emoji:
+        example: "\U0001F44D"
+        type: string
+      messageId:
+        example: 3EB0C431C26A1916E07A
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - emoji
+    - messageId
+    - phone
+    type: object
+  types.Contact:
+    properties:
+      displayName:
+        example: John Doe
+        type: string
+      vcard:
+        example: |-
+          BEGIN:VCARD
+          VERSION:3.0
+          FN:John Doe
+          TEL:+5511999999999
+          END:VCARD
+        type: string
+    required:
+    - displayName
+    - vcard
+    type: object
+  types.ContextInfo:
+    properties:
+      participant:
+        example: +5511888888888@s.whatsapp.net
+        type: string
+      quotedMessage: {}
+      stanzaId:
+        example: 3EB0C431C26A1916E07A
+        type: string
+    type: object
+  types.GroupCreateRequest:
+    properties:
+      name:
+        example: My Group
+        type: string
+      participants:
+        example:
+        - "+5511999999999"
+        - "+5511888888888"
+        items:
+          type: string
+        type: array
+    required:
+    - name
+    - participants
+    type: object
+  types.GroupInviteInfoRequest:
+    properties:
+      inviteCode:
+        example: CjQKOAokMjU5NzE4NzAtNzBiYy00
+        type: string
+    required:
+    - inviteCode
+    type: object
+  types.GroupJoinRequest:
+    properties:
+      inviteCode:
+        example: CjQKOAokMjU5NzE4NzAtNzBiYy00
+        type: string
+    required:
+    - inviteCode
+    type: object
+  types.GroupLeaveRequest:
+    properties:
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+    required:
+    - groupJid
+    type: object
+  types.GroupRemovePhotoRequest:
+    properties:
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+    required:
+    - groupJid
+    type: object
+  types.GroupSetAnnounceRequest:
+    properties:
+      announce:
+        example: true
+        type: boolean
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+    required:
+    - announce
+    - groupJid
+    type: object
+  types.GroupSetEphemeralRequest:
+    properties:
+      duration:
+        description: seconds
+        example: 86400
+        type: integer
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+    required:
+    - duration
+    - groupJid
+    type: object
+  types.GroupSetLockedRequest:
+    properties:
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+      locked:
+        example: true
+        type: boolean
+    required:
+    - groupJid
+    - locked
+    type: object
+  types.GroupSetNameRequest:
+    properties:
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+      name:
+        example: New Group Name
+        type: string
+    required:
+    - groupJid
+    - name
+    type: object
+  types.GroupSetPhotoRequest:
+    properties:
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+      image:
+        example: data:image/jpeg;base64,/9j/4AAQ...
+        type: string
+    required:
+    - groupJid
+    - image
+    type: object
+  types.GroupSetTopicRequest:
+    properties:
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+      topic:
+        example: New group description
+        type: string
+    required:
+    - groupJid
+    - topic
+    type: object
+  types.GroupUpdateParticipantsRequest:
+    properties:
+      action:
+        description: add, remove, promote, demote
+        example: add
+        type: string
+      groupJid:
+        example: 120363025246125486@g.us
+        type: string
+      participants:
+        example:
+        - "+5511999999999"
+        - "+5511888888888"
+        items:
+          type: string
+        type: array
+    required:
+    - action
+    - groupJid
+    - participants
+    type: object
+  types.Row:
+    properties:
+      description:
+        example: Row description
+        type: string
+      rowId:
+        example: row_1
+        type: string
+      title:
+        example: Row 1
+        type: string
+    required:
+    - rowId
+    - title
+    type: object
+  types.Section:
+    properties:
+      rows:
+        items:
+          $ref: '#/definitions/types.Row'
+        type: array
+      title:
+        example: Section 1
+        type: string
+    required:
+    - rows
+    - title
+    type: object
+  types.SendAudioRequest:
+    properties:
+      audio:
+        example: data:audio/ogg;base64,T2dnU...
+        type: string
+      caption:
+        example: Audio caption
+        type: string
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - audio
+    - phone
+    type: object
+  types.SendButtonsRequest:
+    properties:
+      buttons:
+        items:
+          $ref: '#/definitions/types.Button'
+        type: array
+      footer:
+        example: Footer text
+        type: string
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+      text:
+        example: 'Choose an option:'
+        type: string
+    required:
+    - buttons
+    - phone
+    - text
+    type: object
+  types.SendContactRequest:
+    properties:
+      contact:
+        $ref: '#/definitions/types.Contact'
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - contact
+    - phone
+    type: object
+  types.SendDocumentRequest:
+    properties:
+      caption:
+        example: Document caption
+        type: string
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      document:
+        example: data:application/pdf;base64,JVBERi0x...
+        type: string
+      filename:
+        example: document.pdf
+        type: string
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - document
+    - phone
+    type: object
+  types.SendImageRequest:
+    properties:
+      caption:
+        example: Image caption
+        type: string
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      id:
+        example: custom-message-id
+        type: string
+      image:
+        example: data:image/jpeg;base64,/9j/4AAQ...
+        type: string
+      mimeType:
+        example: image/jpeg
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - image
+    - phone
+    type: object
+  types.SendListRequest:
+    properties:
+      buttonText:
+        example: Select Option
+        type: string
+      footer:
+        example: Footer text
+        type: string
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+      sections:
+        items:
+          $ref: '#/definitions/types.Section'
+        type: array
+      text:
+        example: 'Choose from the list:'
+        type: string
+    required:
+    - buttonText
+    - phone
+    - sections
+    - text
+    type: object
+  types.SendLocationRequest:
+    properties:
+      address:
+        example: São Paulo, SP, Brazil
+        type: string
+      id:
+        example: custom-message-id
+        type: string
+      latitude:
+        example: -23.5505
+        type: number
+      longitude:
+        example: -46.6333
+        type: number
+      name:
+        example: São Paulo
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - latitude
+    - longitude
+    - phone
+    type: object
+  types.SendPollRequest:
+    properties:
+      id:
+        example: custom-message-id
+        type: string
+      name:
+        example: What's your favorite color?
+        type: string
+      options:
+        example:
+        - Red
+        - Blue
+        - Green
+        items:
+          type: string
+        type: array
+      phone:
+        example: "+5511999999999"
+        type: string
+      selectableCount:
+        example: 1
+        type: integer
+    required:
+    - name
+    - options
+    - phone
+    type: object
+  types.SendResponse:
+    properties:
+      messageId:
+        example: 3EB0C431C26A1916E07A
+        type: string
+      success:
+        example: true
+        type: boolean
+      timestamp:
+        example: 1640995200
+        type: integer
+    type: object
+  types.SendStickerRequest:
+    properties:
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+      sticker:
+        example: data:image/webp;base64,UklGRv4...
+        type: string
+    required:
+    - phone
+    - sticker
+    type: object
+  types.SendTextRequest:
+    properties:
+      body:
+        example: Hello, World!
+        type: string
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - body
+    - phone
+    type: object
+  types.SendVideoRequest:
+    properties:
+      caption:
+        example: Video caption
+        type: string
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      id:
+        example: custom-message-id
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+      video:
+        example: data:video/mp4;base64,AAAAIGZ0eXA...
+        type: string
+    required:
+    - phone
+    - video
+    type: object
+  utils.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        type: string
+      error:
+        type: string
+    type: object
+  utils.SuccessResponse:
+    properties:
+      data: {}
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@zpmeow.com
+    name: zpmeow API Support
+    url: https://github.com/your-username/zpmeow
+  description: A WhatsApp API server built with Go, inspired by wuzapi
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: zpmeow WhatsApp API
+  version: "1.0"
 paths:
   /ping:
     get:
@@ -134,10 +713,1361 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/health.PingResponse'
+            $ref: '#/definitions/handler.PingResponse'
       summary: Health check endpoint
       tags:
       - health
+  /session/{sessionId}/chat/delete:
+    post:
+      consumes:
+      - application/json
+      description: Delete a message from a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Delete request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatDeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Delete a message
+      tags:
+      - chat
+  /session/{sessionId}/chat/download/audio:
+    post:
+      consumes:
+      - application/json
+      description: Download an audio attachment from a WhatsApp message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatDownloadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Download an audio from a message
+      tags:
+      - chat
+  /session/{sessionId}/chat/download/document:
+    post:
+      consumes:
+      - application/json
+      description: Download a document attachment from a WhatsApp message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatDownloadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Download a document from a message
+      tags:
+      - chat
+  /session/{sessionId}/chat/download/image:
+    post:
+      consumes:
+      - application/json
+      description: Download an image attachment from a WhatsApp message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatDownloadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Download an image from a message
+      tags:
+      - chat
+  /session/{sessionId}/chat/download/video:
+    post:
+      consumes:
+      - application/json
+      description: Download a video attachment from a WhatsApp message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatDownloadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Download a video from a message
+      tags:
+      - chat
+  /session/{sessionId}/chat/edit:
+    post:
+      consumes:
+      - application/json
+      description: Edit a text message in a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Edit request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatEditRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Edit a message
+      tags:
+      - chat
+  /session/{sessionId}/chat/markread:
+    post:
+      consumes:
+      - application/json
+      description: Mark one or more messages as read in a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Mark read request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatMarkReadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Mark messages as read
+      tags:
+      - chat
+  /session/{sessionId}/chat/presence:
+    post:
+      consumes:
+      - application/json
+      description: Set presence status in a chat (typing, recording, paused)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Chat presence request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Set chat presence
+      tags:
+      - chat
+  /session/{sessionId}/chat/react:
+    post:
+      consumes:
+      - application/json
+      description: Add an emoji reaction to a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: React request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.ChatReactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: React to a message
+      tags:
+      - chat
+  /session/{sessionId}/group/announce/set:
+    post:
+      consumes:
+      - application/json
+      description: Set whether only admins can send messages
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set announce request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupSetAnnounceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Set group announce mode
+      tags:
+      - group
+  /session/{sessionId}/group/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new WhatsApp group with specified participants
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Group creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupCreateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Create a new WhatsApp group
+      tags:
+      - group
+  /session/{sessionId}/group/ephemeral/set:
+    post:
+      consumes:
+      - application/json
+      description: Set the duration for disappearing messages in a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set ephemeral request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupSetEphemeralRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Set group ephemeral messages
+      tags:
+      - group
+  /session/{sessionId}/group/info:
+    get:
+      description: Get detailed information about a specific group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Group JID
+        in: query
+        name: groupJid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get group information
+      tags:
+      - group
+  /session/{sessionId}/group/inviteinfo:
+    post:
+      consumes:
+      - application/json
+      description: Get information about a group invite without joining
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Invite info request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupInviteInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get invite information
+      tags:
+      - group
+  /session/{sessionId}/group/invitelink:
+    get:
+      description: Get the invite link for a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Group JID
+        in: query
+        name: groupJid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Get group invite link
+      tags:
+      - group
+  /session/{sessionId}/group/join:
+    post:
+      consumes:
+      - application/json
+      description: Join a WhatsApp group using an invite code
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Group join request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupJoinRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Join a group via invite link
+      tags:
+      - group
+  /session/{sessionId}/group/leave:
+    post:
+      consumes:
+      - application/json
+      description: Leave a WhatsApp group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Group leave request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupLeaveRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Leave a group
+      tags:
+      - group
+  /session/{sessionId}/group/list:
+    get:
+      description: Get a list of all groups the session is part of
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: List all groups
+      tags:
+      - group
+  /session/{sessionId}/group/locked/set:
+    post:
+      consumes:
+      - application/json
+      description: Set whether only admins can edit group info
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set locked request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupSetLockedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Set group locked mode
+      tags:
+      - group
+  /session/{sessionId}/group/name/set:
+    post:
+      consumes:
+      - application/json
+      description: Update the name of a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set name request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupSetNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Set group name
+      tags:
+      - group
+  /session/{sessionId}/group/participants/update:
+    post:
+      consumes:
+      - application/json
+      description: Add, remove, promote, or demote group participants
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Update participants request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupUpdateParticipantsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Update group participants
+      tags:
+      - group
+  /session/{sessionId}/group/photo/remove:
+    post:
+      consumes:
+      - application/json
+      description: Remove the photo of a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Remove photo request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupRemovePhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Remove group photo
+      tags:
+      - group
+  /session/{sessionId}/group/photo/set:
+    post:
+      consumes:
+      - application/json
+      description: Update the photo of a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set photo request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupSetPhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Set group photo
+      tags:
+      - group
+  /session/{sessionId}/group/topic/set:
+    post:
+      consumes:
+      - application/json
+      description: Update the topic/description of a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set topic request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.GroupSetTopicRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/utils.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Set group topic/description
+      tags:
+      - group
+  /session/{sessionId}/send/audio:
+    post:
+      consumes:
+      - application/json
+      description: Send an audio message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Audio message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendAudioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send an audio message
+      tags:
+      - send
+  /session/{sessionId}/send/buttons:
+    post:
+      consumes:
+      - application/json
+      description: Send an interactive buttons message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Buttons message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendButtonsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send an interactive buttons message
+      tags:
+      - send
+  /session/{sessionId}/send/contact:
+    post:
+      consumes:
+      - application/json
+      description: Send a contact message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Contact message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a contact message
+      tags:
+      - send
+  /session/{sessionId}/send/document:
+    post:
+      consumes:
+      - application/json
+      description: Send a document message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Document message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendDocumentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a document message
+      tags:
+      - send
+  /session/{sessionId}/send/image:
+    post:
+      consumes:
+      - application/json
+      description: Send an image message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Image message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send an image message
+      tags:
+      - send
+  /session/{sessionId}/send/list:
+    post:
+      consumes:
+      - application/json
+      description: Send an interactive list message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: List message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send an interactive list message
+      tags:
+      - send
+  /session/{sessionId}/send/location:
+    post:
+      consumes:
+      - application/json
+      description: Send a location message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Location message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendLocationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a location message
+      tags:
+      - send
+  /session/{sessionId}/send/poll:
+    post:
+      consumes:
+      - application/json
+      description: Send a poll message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Poll message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendPollRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a poll message
+      tags:
+      - send
+  /session/{sessionId}/send/sticker:
+    post:
+      consumes:
+      - application/json
+      description: Send a sticker message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Sticker message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendStickerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a sticker message
+      tags:
+      - send
+  /session/{sessionId}/send/text:
+    post:
+      consumes:
+      - application/json
+      description: Send a text message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Text message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendTextRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a text message
+      tags:
+      - send
+  /session/{sessionId}/send/video:
+    post:
+      consumes:
+      - application/json
+      description: Send a video message to a WhatsApp contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Video message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendVideoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a video message
+      tags:
+      - send
   /sessions/{id}/connect:
     post:
       consumes:
@@ -159,7 +2089,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Connect a session to WhatsApp
       tags:
       - sessions
@@ -182,11 +2112,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Delete a session
       tags:
       - sessions
@@ -211,11 +2141,11 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Get session information
       tags:
       - sessions
@@ -240,7 +2170,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Logout a session from WhatsApp
       tags:
       - sessions
@@ -272,11 +2202,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Pair session with phone number
       tags:
       - sessions
@@ -301,7 +2231,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Get proxy configuration for session
       tags:
       - sessions
@@ -332,11 +2262,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Set proxy for session
       tags:
       - sessions
@@ -362,7 +2292,7 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Get QR code for session
       tags:
       - sessions
@@ -388,11 +2318,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: Create a new WhatsApp session
       tags:
       - sessions
@@ -411,8 +2341,11 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/session.ErrorResponse'
+            $ref: '#/definitions/utils.ErrorResponse'
       summary: List all WhatsApp sessions
       tags:
       - sessions
+schemes:
+- http
+- https
 swagger: "2.0"

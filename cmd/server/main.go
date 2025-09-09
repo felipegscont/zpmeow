@@ -1,3 +1,21 @@
+// Package main provides the entry point for the zpmeow WhatsApp API server
+//
+//	@title			zpmeow WhatsApp API
+//	@version		1.0
+//	@description	A WhatsApp API server built with Go, inspired by wuzapi
+//	@termsOfService	http://swagger.io/terms/
+//
+//	@contact.name	zpmeow API Support
+//	@contact.url	https://github.com/your-username/zpmeow
+//	@contact.email	support@zpmeow.com
+//
+//	@license.name	MIT
+//	@license.url	https://opensource.org/licenses/MIT
+//
+//	@host		localhost:8080
+//	@BasePath	/
+//
+//	@schemes	http https
 package main
 
 import (
