@@ -8,29 +8,32 @@ import (
 )
 
 // SessionService defines the business logic interface for session management
+// Organized by responsibility following Single Responsibility Principle
 type SessionService interface {
-	// Session CRUD operations
+	// Session lifecycle management
 	CreateSession(ctx context.Context, name string) (*Session, error)
 	GetSession(ctx context.Context, id string) (*Session, error)
 	GetAllSessions(ctx context.Context) ([]*Session, error)
-	UpdateSession(ctx context.Context, session *Session) error
 	DeleteSession(ctx context.Context, id string) error
 
-	// WhatsApp operations
+	// Connection management
 	ConnectSession(ctx context.Context, id string) error
 	DisconnectSession(ctx context.Context, id string) error
+
+	// Authentication management
 	GetQRCode(ctx context.Context, id string) (string, error)
 	PairWithPhone(ctx context.Context, id, phoneNumber string) (string, error)
 
-	// Proxy operations
+	// Configuration management
 	SetProxy(ctx context.Context, id, proxyURL string) error
-	GetProxy(ctx context.Context, id string) (string, error)
+	ClearProxy(ctx context.Context, id string) error
 
-	// Startup operations
+	// System operations
 	ConnectOnStartup(ctx context.Context) error
 }
 
 // WhatsAppService defines the interface for WhatsApp operations
+// Separated for better testability and dependency inversion
 type WhatsAppService interface {
 	StartClient(sessionID string) error
 	StopClient(sessionID string) error
@@ -48,7 +51,7 @@ type SessionServiceImpl struct {
 	whatsappService WhatsAppService
 }
 
-// NewSessionService creates a new session service
+// NewSessionService creates a new session service with dependency injection
 func NewSessionService(repo SessionRepository, whatsappService WhatsAppService) SessionService {
 	return &SessionServiceImpl{
 		repo:            repo,
@@ -56,93 +59,71 @@ func NewSessionService(repo SessionRepository, whatsappService WhatsAppService) 
 	}
 }
 
-// CreateSession creates a new session
+// Session lifecycle management
+
+// CreateSession creates a new session with validation
 func (s *SessionServiceImpl) CreateSession(ctx context.Context, name string) (*Session, error) {
-	// Validate input
-	if name == "" {
-		return nil, ErrInvalidSessionName
+	if err := s.validateSessionName(name); err != nil {
+		return nil, err
 	}
 
-	// Create new session entity
 	session := NewSession(generateSessionID(), name)
 
-	// Validate entity
 	if err := session.Validate(); err != nil {
 		return nil, err
 	}
 
-	// Save to repository
-	if err := s.repo.Save(ctx, session); err != nil {
+	if err := s.repo.Create(ctx, session); err != nil {
 		return nil, err
 	}
 
 	return session, nil
 }
 
-// GetSession retrieves a session by ID
+// GetSession retrieves a session by ID with validation
 func (s *SessionServiceImpl) GetSession(ctx context.Context, id string) (*Session, error) {
-	if id == "" {
-		return nil, ErrInvalidSessionID
-	}
-
-	session, err := s.repo.FindByID(ctx, id)
-	if err != nil {
+	if err := s.validateSessionID(id); err != nil {
 		return nil, err
 	}
 
-	return session, nil
+	return s.repo.GetByID(ctx, id)
 }
 
 // GetAllSessions retrieves all sessions
 func (s *SessionServiceImpl) GetAllSessions(ctx context.Context) ([]*Session, error) {
-	return s.repo.FindAll(ctx)
+	return s.repo.GetAll(ctx)
 }
 
-// UpdateSession updates an existing session
-func (s *SessionServiceImpl) UpdateSession(ctx context.Context, session *Session) error {
-	if err := session.Validate(); err != nil {
+// DeleteSession deletes a session with proper cleanup
+func (s *SessionServiceImpl) DeleteSession(ctx context.Context, id string) error {
+	if err := s.validateSessionID(id); err != nil {
 		return err
 	}
 
-	return s.repo.Update(ctx, session)
-}
-
-// DeleteSession deletes a session
-func (s *SessionServiceImpl) DeleteSession(ctx context.Context, id string) error {
-	if id == "" {
-		return ErrInvalidSessionID
-	}
-
-	// Disconnect WhatsApp client first
+	// Ensure WhatsApp client is stopped before deletion
 	_ = s.whatsappService.StopClient(id)
 
 	return s.repo.Delete(ctx, id)
 }
 
-// ConnectSession connects a session to WhatsApp
+// Connection management
+
+// ConnectSession connects a session to WhatsApp with proper validation
 func (s *SessionServiceImpl) ConnectSession(ctx context.Context, id string) error {
 	session, err := s.GetSession(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	// Check if client is already connected (like wuzapi does)
 	if s.whatsappService.IsClientConnected(id) {
-		return NewDomainError("already connected")
+		return ErrSessionAlreadyConnected
 	}
 
 	if !session.CanConnect() {
-		return NewDomainError("session cannot be connected in current state")
+		return ErrSessionCannotConnect
 	}
 
-	// Update status to connecting
-	session.SetStatus(types.StatusConnecting)
-	if err := s.repo.Update(ctx, session); err != nil {
-		return err
-	}
-
-	// Start WhatsApp client
-	return s.whatsappService.StartClient(id)
+	return s.performConnection(ctx, session)
 }
 
 // DisconnectSession disconnects a session from WhatsApp
@@ -152,21 +133,40 @@ func (s *SessionServiceImpl) DisconnectSession(ctx context.Context, id string) e
 		return err
 	}
 
-	// Stop WhatsApp client
 	if err := s.whatsappService.StopClient(id); err != nil {
 		return err
 	}
 
-	// Update status
 	session.SetStatus(types.StatusDisconnected)
 	return s.repo.Update(ctx, session)
 }
+
+// performConnection handles the connection process
+func (s *SessionServiceImpl) performConnection(ctx context.Context, session *Session) error {
+	session.SetStatus(types.StatusConnecting)
+	if err := s.repo.Update(ctx, session); err != nil {
+		return err
+	}
+
+	return s.whatsappService.StartClient(session.ID)
+}
+
+// Authentication management
 
 // GetQRCode retrieves the QR code for a session
 func (s *SessionServiceImpl) GetQRCode(ctx context.Context, id string) (string, error) {
 	session, err := s.GetSession(ctx, id)
 	if err != nil {
 		return "", err
+	}
+
+	if session.IsConnected() {
+		return "", ErrSessionAlreadyConnected
+	}
+
+	// Try to get fresh QR code if session can connect and doesn't have one
+	if !session.HasQRCode() && session.CanConnect() {
+		return s.whatsappService.GetQRCode(id)
 	}
 
 	return session.QRCode, nil
@@ -180,11 +180,13 @@ func (s *SessionServiceImpl) PairWithPhone(ctx context.Context, id, phoneNumber 
 	}
 
 	if !session.CanConnect() {
-		return "", NewDomainError("session cannot be paired in current state")
+		return "", ErrSessionCannotConnect
 	}
 
 	return s.whatsappService.PairPhone(id, phoneNumber)
 }
+
+// Configuration management
 
 // SetProxy sets the proxy for a session
 func (s *SessionServiceImpl) SetProxy(ctx context.Context, id, proxyURL string) error {
@@ -197,19 +199,40 @@ func (s *SessionServiceImpl) SetProxy(ctx context.Context, id, proxyURL string) 
 	return s.repo.Update(ctx, session)
 }
 
-// GetProxy gets the proxy for a session
-func (s *SessionServiceImpl) GetProxy(ctx context.Context, id string) (string, error) {
+// ClearProxy removes the proxy configuration for a session
+func (s *SessionServiceImpl) ClearProxy(ctx context.Context, id string) error {
 	session, err := s.GetSession(ctx, id)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	return session.ProxyURL, nil
+	session.ClearProxy()
+	return s.repo.Update(ctx, session)
 }
+
+// System operations
 
 // ConnectOnStartup connects all previously connected sessions on startup
 func (s *SessionServiceImpl) ConnectOnStartup(ctx context.Context) error {
 	return s.whatsappService.ConnectOnStartup(ctx)
+}
+
+// Private helper methods
+
+// validateSessionID validates a session ID
+func (s *SessionServiceImpl) validateSessionID(id string) error {
+	if id == "" {
+		return ErrInvalidSessionID
+	}
+	return nil
+}
+
+// validateSessionName validates a session name
+func (s *SessionServiceImpl) validateSessionName(name string) error {
+	if name == "" {
+		return ErrInvalidSessionName
+	}
+	return nil
 }
 
 // generateSessionID generates a unique session ID

@@ -8,9 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"zpmeow/internal/config"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
+	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
 // Logger is our application logger interface
@@ -55,25 +58,6 @@ type Config interface {
 	GetFileMaxAge() int
 	GetFileCompress() bool
 	GetFileFormat() string
-}
-
-// defaultConfig implements Config interface with default values
-type defaultConfig struct{}
-
-func (d *defaultConfig) GetLevel() string           { return "info" }
-func (d *defaultConfig) GetFormat() string          { return "console" }
-func (d *defaultConfig) GetConsoleColor() bool      { return true }
-func (d *defaultConfig) GetFileEnabled() bool       { return true }
-func (d *defaultConfig) GetFilePath() string        { return "log/app.log" }
-func (d *defaultConfig) GetFileMaxSize() int        { return 100 }
-func (d *defaultConfig) GetFileMaxBackups() int     { return 3 }
-func (d *defaultConfig) GetFileMaxAge() int         { return 28 }
-func (d *defaultConfig) GetFileCompress() bool      { return true }
-func (d *defaultConfig) GetFileFormat() string      { return "json" }
-
-// DefaultConfig returns default logger configuration
-func DefaultConfig() Config {
-	return &defaultConfig{}
 }
 
 // zerologLogger implements our Logger interface using zerolog
@@ -326,7 +310,7 @@ var globalLogger Logger
 // GetLogger returns the global logger instance
 func GetLogger() Logger {
 	if globalLogger == nil {
-		globalLogger = Initialize(DefaultConfig())
+		globalLogger = Initialize(config.DefaultLoggerConfig())
 	}
 	return globalLogger
 }
@@ -336,4 +320,48 @@ func GetLogger() Logger {
 // SetLogger sets the global logger instance
 func SetLogger(logger Logger) {
 	globalLogger = logger
+}
+
+// waLogAdapter adapts our Logger interface to implement waLog.Logger
+type waLogAdapter struct {
+	logger Logger
+}
+
+// NewWALogAdapter creates a new adapter that implements waLog.Logger interface
+func NewWALogAdapter(logger Logger) waLog.Logger {
+	return &waLogAdapter{
+		logger: logger,
+	}
+}
+
+// Warnf implements waLog.Logger interface
+func (w *waLogAdapter) Warnf(msg string, args ...interface{}) {
+	w.logger.Warnf(msg, args...)
+}
+
+// Errorf implements waLog.Logger interface
+func (w *waLogAdapter) Errorf(msg string, args ...interface{}) {
+	w.logger.Errorf(msg, args...)
+}
+
+// Infof implements waLog.Logger interface
+func (w *waLogAdapter) Infof(msg string, args ...interface{}) {
+	w.logger.Infof(msg, args...)
+}
+
+// Debugf implements waLog.Logger interface
+func (w *waLogAdapter) Debugf(msg string, args ...interface{}) {
+	w.logger.Debugf(msg, args...)
+}
+
+// Sub implements waLog.Logger interface
+func (w *waLogAdapter) Sub(module string) waLog.Logger {
+	return &waLogAdapter{
+		logger: w.logger.Sub(module),
+	}
+}
+
+// GetWALogger returns a waLog.Logger that uses our logger system
+func GetWALogger(module string) waLog.Logger {
+	return NewWALogAdapter(GetLogger().Sub(module))
 }

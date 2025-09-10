@@ -65,17 +65,38 @@ dev-local: ## Start development with local PostgreSQL
 # Database commands
 db-create: ## Create database
 	@echo "Creating database $(DB_NAME)..."
-	PGPASSWORD=$(DB_PASSWORD) psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d postgres -c "CREATE DATABASE $(DB_NAME);"
+	@if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
+		docker compose exec -T postgres psql -U $(DB_USER) -d postgres -c "CREATE DATABASE $(DB_NAME);"; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose exec -T postgres psql -U $(DB_USER) -d postgres -c "CREATE DATABASE $(DB_NAME);"; \
+	else \
+		echo "❌ docker compose not found. Install Docker first."; \
+		exit 1; \
+	fi
 
 db-drop: ## Drop database
 	@echo "Dropping database $(DB_NAME)..."
-	PGPASSWORD=$(DB_PASSWORD) psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d postgres -c "DROP DATABASE IF EXISTS $(DB_NAME);"
+	@if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
+		docker compose exec -T postgres psql -U $(DB_USER) -d postgres -c "DROP DATABASE IF EXISTS $(DB_NAME);"; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose exec -T postgres psql -U $(DB_USER) -d postgres -c "DROP DATABASE IF EXISTS $(DB_NAME);"; \
+	else \
+		echo "❌ docker compose not found. Install Docker first."; \
+		exit 1; \
+	fi
 
 db-reset: db-drop db-create ## Reset database (drop and create)
 
 db-test: ## Test database connection
 	@echo "Testing database connection..."
-	PGPASSWORD=$(DB_PASSWORD) psql -h $(DB_HOST) -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -c "SELECT version();"
+	@if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then \
+		docker compose exec -T postgres psql -U $(DB_USER) -d $(DB_NAME) -c "SELECT version();"; \
+	elif command -v docker-compose >/dev/null 2>&1; then \
+		docker-compose exec -T postgres psql -U $(DB_USER) -d $(DB_NAME) -c "SELECT version();"; \
+	else \
+		echo "❌ docker compose not found. Install Docker first."; \
+		exit 1; \
+	fi
 
 # DBGate commands
 dbgate-up: ## Start DBGate database management tool

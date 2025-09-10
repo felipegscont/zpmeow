@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infra/meow"
@@ -11,6 +10,7 @@ import (
 	"zpmeow/internal/utils"
 
 	"github.com/gin-gonic/gin"
+	"go.mau.fi/whatsmeow"
 	"go.mau.fi/whatsmeow/proto/waE2E"
 )
 
@@ -19,6 +19,19 @@ type SendHandler struct {
 	sessionService session.SessionService
 	meowService    *meow.MeowServiceImpl
 	logger         logger.Logger
+}
+
+// handleSendResponse is a helper function to standardize response handling for send operations
+func (h *SendHandler) handleSendResponse(c *gin.Context, resp *whatsmeow.SendResponse, requestID string, err error, operation string) {
+	if err != nil {
+		h.logger.Errorf("Failed to %s: %v", operation, err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to "+operation, err.Error())
+		return
+	}
+
+	// Convert whatsmeow response to our API response format
+	response := types.NewSendResponseFromWhatsmeow(resp, requestID)
+	utils.RespondWithJSON(c, http.StatusOK, response)
 }
 
 // NewSendHandler creates a new send handler
@@ -83,20 +96,8 @@ func (h *SendHandler) SendText(c *gin.Context) {
 		}
 	}
 
-	err := h.meowService.SendTextMessage(c.Request.Context(), sessionID, req.Phone, req.Body, contextInfo)
-	if err != nil {
-		h.logger.Errorf("Failed to send text message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send message", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendTextMessage(c.Request.Context(), sessionID, req.Phone, req.Body, contextInfo)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send text message")
 }
 
 // SendImage godoc
@@ -131,20 +132,21 @@ func (h *SendHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Decode base64 image data
-	imageData, mimeType, err := utils.DecodeBase64Media(req.Image)
+	// Decode image data using universal decoder (supports all image formats)
+	imageData, mimeType, err := utils.DecodeUniversalMedia(req.Image, "image")
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid image data", err.Error())
 		return
 	}
 
-	// Validate MIME type
+	// Allow override of MIME type if provided
 	if req.MimeType != "" {
-		mimeType = req.MimeType
-	}
-	if err := utils.ValidateMimeType(mimeType, "image"); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid image type", err.Error())
-		return
+		normalizedMimeType, err := utils.ValidateAndNormalizeMimeType(req.MimeType, "image")
+		if err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "Invalid MIME type override", err.Error())
+			return
+		}
+		mimeType = normalizedMimeType
 	}
 
 	// Validate size
@@ -156,20 +158,8 @@ func (h *SendHandler) SendImage(c *gin.Context) {
 	// Send image message through Meow service
 	h.logger.Infof("Sending image message to %s from session %s", req.Phone, sessionID)
 
-	err = h.meowService.SendImageMessage(c.Request.Context(), sessionID, req.Phone, imageData, req.Caption, mimeType)
-	if err != nil {
-		h.logger.Errorf("Failed to send image message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send image", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendImageMessage(c.Request.Context(), sessionID, req.Phone, imageData, req.Caption, mimeType)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send image message")
 }
 
 // SendAudio godoc
@@ -204,16 +194,10 @@ func (h *SendHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Decode base64 audio data
-	audioData, mimeType, err := utils.DecodeBase64Media(req.Audio)
+	// Decode audio data using universal decoder (supports all audio formats)
+	audioData, mimeType, err := utils.DecodeUniversalMedia(req.Audio, "audio")
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid audio data", err.Error())
-		return
-	}
-
-	// Validate MIME type
-	if err := utils.ValidateMimeType(mimeType, "audio"); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid audio type", err.Error())
 		return
 	}
 
@@ -226,20 +210,8 @@ func (h *SendHandler) SendAudio(c *gin.Context) {
 	// Send audio message through Meow service
 	h.logger.Infof("Sending audio message to %s from session %s", req.Phone, sessionID)
 
-	err = h.meowService.SendAudioMessage(c.Request.Context(), sessionID, req.Phone, audioData, mimeType)
-	if err != nil {
-		h.logger.Errorf("Failed to send audio message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send audio", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendAudioMessage(c.Request.Context(), sessionID, req.Phone, audioData, mimeType)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send audio message")
 }
 
 // SendDocument godoc
@@ -274,16 +246,10 @@ func (h *SendHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Decode base64 document data
-	documentData, mimeType, err := utils.DecodeBase64Media(req.Document)
+	// Decode document data using universal decoder (supports all document formats)
+	documentData, mimeType, err := utils.DecodeUniversalMedia(req.Document, "document")
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid document data", err.Error())
-		return
-	}
-
-	// Validate MIME type
-	if err := utils.ValidateMimeType(mimeType, "document"); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid document type", err.Error())
 		return
 	}
 
@@ -303,20 +269,8 @@ func (h *SendHandler) SendDocument(c *gin.Context) {
 	// Send document message through Meow service
 	h.logger.Infof("Sending document message to %s from session %s", req.Phone, sessionID)
 
-	err = h.meowService.SendDocumentMessage(c.Request.Context(), sessionID, req.Phone, documentData, filename, req.Caption, mimeType)
-	if err != nil {
-		h.logger.Errorf("Failed to send document message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send document", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendDocumentMessage(c.Request.Context(), sessionID, req.Phone, documentData, filename, req.Caption, mimeType)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send document message")
 }
 
 // SendVideo godoc
@@ -351,16 +305,10 @@ func (h *SendHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Decode base64 video data
-	videoData, mimeType, err := utils.DecodeBase64Media(req.Video)
+	// Decode video data using universal decoder (supports all video formats)
+	videoData, mimeType, err := utils.DecodeUniversalMedia(req.Video, "video")
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid video data", err.Error())
-		return
-	}
-
-	// Validate MIME type
-	if err := utils.ValidateMimeType(mimeType, "video"); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid video type", err.Error())
 		return
 	}
 
@@ -373,20 +321,8 @@ func (h *SendHandler) SendVideo(c *gin.Context) {
 	// Send video message through Meow service
 	h.logger.Infof("Sending video message to %s from session %s", req.Phone, sessionID)
 
-	err = h.meowService.SendVideoMessage(c.Request.Context(), sessionID, req.Phone, videoData, req.Caption, mimeType)
-	if err != nil {
-		h.logger.Errorf("Failed to send video message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send video", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendVideoMessage(c.Request.Context(), sessionID, req.Phone, videoData, req.Caption, mimeType)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send video message")
 }
 
 // SendSticker godoc
@@ -421,16 +357,10 @@ func (h *SendHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Decode base64 sticker data
-	stickerData, mimeType, err := utils.DecodeBase64Media(req.Sticker)
+	// Decode sticker data using universal decoder (supports all image formats for stickers)
+	stickerData, mimeType, err := utils.DecodeUniversalMedia(req.Sticker, "sticker")
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid sticker data", err.Error())
-		return
-	}
-
-	// Validate MIME type
-	if err := utils.ValidateMimeType(mimeType, "sticker"); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid sticker type", err.Error())
 		return
 	}
 
@@ -443,20 +373,8 @@ func (h *SendHandler) SendSticker(c *gin.Context) {
 	// Send sticker message through Meow service
 	h.logger.Infof("Sending sticker message to %s from session %s", req.Phone, sessionID)
 
-	err = h.meowService.SendStickerMessage(c.Request.Context(), sessionID, req.Phone, stickerData, mimeType)
-	if err != nil {
-		h.logger.Errorf("Failed to send sticker message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send sticker", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendStickerMessage(c.Request.Context(), sessionID, req.Phone, stickerData, mimeType)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send sticker message")
 }
 
 // SendLocation godoc
@@ -504,20 +422,8 @@ func (h *SendHandler) SendLocation(c *gin.Context) {
 	// Send location message through Meow service
 	h.logger.Infof("Sending location message to %s from session %s", req.Phone, sessionID)
 
-	err := h.meowService.SendLocationMessage(c.Request.Context(), sessionID, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
-	if err != nil {
-		h.logger.Errorf("Failed to send location message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send location", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendLocationMessage(c.Request.Context(), sessionID, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send location message")
 }
 
 // SendContact godoc
@@ -555,20 +461,8 @@ func (h *SendHandler) SendContact(c *gin.Context) {
 	// Send contact message through Meow service
 	h.logger.Infof("Sending contact message to %s from session %s", req.Phone, sessionID)
 
-	err := h.meowService.SendContactMessage(c.Request.Context(), sessionID, req.Phone, req.Contact.DisplayName, req.Contact.VCard)
-	if err != nil {
-		h.logger.Errorf("Failed to send contact message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send contact", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendContactMessage(c.Request.Context(), sessionID, req.Phone, req.Contact.DisplayName, req.Contact.VCard)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send contact message")
 }
 
 // SendButtons godoc
@@ -616,20 +510,8 @@ func (h *SendHandler) SendButtons(c *gin.Context) {
 	// Send buttons message through Meow service
 	h.logger.Infof("Sending buttons message to %s from session %s", req.Phone, sessionID)
 
-	err := h.meowService.SendButtonsMessage(c.Request.Context(), sessionID, req.Phone, req.Text, req.Buttons, req.Footer)
-	if err != nil {
-		h.logger.Errorf("Failed to send buttons message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send buttons message", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendButtonsMessage(c.Request.Context(), sessionID, req.Phone, req.Text, req.Buttons, req.Footer)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send buttons message")
 }
 
 // SendList godoc
@@ -677,20 +559,8 @@ func (h *SendHandler) SendList(c *gin.Context) {
 	// Send list message through Meow service
 	h.logger.Infof("Sending list message to %s from session %s", req.Phone, sessionID)
 
-	err := h.meowService.SendListMessage(c.Request.Context(), sessionID, req.Phone, req.Text, req.ButtonText, req.Sections, req.Footer)
-	if err != nil {
-		h.logger.Errorf("Failed to send list message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send list message", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendListMessage(c.Request.Context(), sessionID, req.Phone, req.Text, req.ButtonText, req.Sections, req.Footer)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send list message")
 }
 
 // SendPoll godoc
@@ -747,18 +617,6 @@ func (h *SendHandler) SendPoll(c *gin.Context) {
 	// Send poll message through Meow service
 	h.logger.Infof("Sending poll message to %s from session %s", req.Phone, sessionID)
 
-	err := h.meowService.SendPollMessage(c.Request.Context(), sessionID, req.Phone, req.Name, req.Options, req.SelectableCount)
-	if err != nil {
-		h.logger.Errorf("Failed to send poll message: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send poll message", err.Error())
-		return
-	}
-
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.ID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	whatsmeowResp, err := h.meowService.SendPollMessage(c.Request.Context(), sessionID, req.Phone, req.Name, req.Options, req.SelectableCount)
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send poll message")
 }

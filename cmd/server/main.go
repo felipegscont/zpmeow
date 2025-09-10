@@ -44,18 +44,7 @@ func main() {
 	}
 
 	// Initialize logger
-	loggerConfig := logger.NewConfigAdapter(
-		cfg.LogLevel,
-		cfg.LogFormat,
-		cfg.LogFilePath,
-		cfg.LogFileFormat,
-		cfg.LogConsoleColor,
-		cfg.LogFileEnabled,
-		cfg.LogFileCompress,
-		cfg.LogFileMaxSize,
-		cfg.LogFileMaxBackups,
-		cfg.LogFileMaxAge,
-	)
+	loggerConfig := cfg.GetLoggerConfig()
 	log := logger.Initialize(loggerConfig)
 	logger.SetLogger(log)
 	log.Info("Starting zpmeow server")
@@ -102,7 +91,8 @@ func main() {
 
 	gin.SetMode(cfg.GinMode)
 
-	ginRouter := gin.Default()
+	// Use gin.New() instead of gin.Default() to avoid default logging middleware
+	ginRouter := gin.New()
 	router.SetupRoutes(ginRouter, sessionHandler, healthHandler, sendHandler, chatHandler, groupHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)

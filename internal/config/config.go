@@ -109,7 +109,7 @@ func getIntEnv(key string, defaultValue int) int {
 	return defaultValue
 }
 
-// LoggerConfig represents logger configuration
+// LoggerConfig represents logger configuration and implements logger.Config interface
 type LoggerConfig struct {
 	Level           string
 	Format          string
@@ -121,6 +121,56 @@ type LoggerConfig struct {
 	FileMaxAge      int
 	FileCompress    bool
 	FileFormat      string
+}
+
+// GetLevel implements logger.Config interface
+func (c *LoggerConfig) GetLevel() string {
+	return c.Level
+}
+
+// GetFormat implements logger.Config interface
+func (c *LoggerConfig) GetFormat() string {
+	return c.Format
+}
+
+// GetConsoleColor implements logger.Config interface
+func (c *LoggerConfig) GetConsoleColor() bool {
+	return c.ConsoleColor
+}
+
+// GetFileEnabled implements logger.Config interface
+func (c *LoggerConfig) GetFileEnabled() bool {
+	return c.FileEnabled
+}
+
+// GetFilePath implements logger.Config interface
+func (c *LoggerConfig) GetFilePath() string {
+	return c.FilePath
+}
+
+// GetFileMaxSize implements logger.Config interface
+func (c *LoggerConfig) GetFileMaxSize() int {
+	return c.FileMaxSize
+}
+
+// GetFileMaxBackups implements logger.Config interface
+func (c *LoggerConfig) GetFileMaxBackups() int {
+	return c.FileMaxBackups
+}
+
+// GetFileMaxAge implements logger.Config interface
+func (c *LoggerConfig) GetFileMaxAge() int {
+	return c.FileMaxAge
+}
+
+// GetFileCompress implements logger.Config interface
+func (c *LoggerConfig) GetFileCompress() bool {
+	return c.FileCompress
+}
+
+// GetFileFormat implements logger.Config interface
+func (c *LoggerConfig) GetFileFormat() string {
+	return c.FileFormat
 }
 
 // GetLoggerConfig creates logger configuration from app config
@@ -136,5 +186,21 @@ func (c *Config) GetLoggerConfig() *LoggerConfig {
 		FileMaxAge:      c.LogFileMaxAge,
 		FileCompress:    c.LogFileCompress,
 		FileFormat:      c.LogFileFormat,
+	}
+}
+
+// DefaultLoggerConfig returns default logger configuration
+func DefaultLoggerConfig() *LoggerConfig {
+	return &LoggerConfig{
+		Level:           "info",
+		Format:          "console",
+		ConsoleColor:    true,
+		FileEnabled:     true,
+		FilePath:        "log/app.log",
+		FileMaxSize:     100,
+		FileMaxBackups:  3,
+		FileMaxAge:      28,
+		FileCompress:    true,
+		FileFormat:      "json",
 	}
 }

@@ -67,7 +67,23 @@ func fromEntity(s *session.Session) *sessionModel {
 	}
 }
 
-// Save creates or updates a session
+// Create creates a new session
+func (r *PostgresSessionRepository) Create(ctx context.Context, sess *session.Session) error {
+	model := fromEntity(sess)
+
+	query := `
+		INSERT INTO sessions (id, name, device_jid, status, qr_code, proxy_url, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`
+
+	_, err := r.db.ExecContext(ctx, query,
+		model.ID, model.Name, model.WhatsAppJID, model.Status,
+		model.QRCode, model.ProxyURL, model.CreatedAt, model.UpdatedAt)
+
+	return err
+}
+
+// Save creates or updates a session (for backward compatibility)
 func (r *PostgresSessionRepository) Save(ctx context.Context, sess *session.Session) error {
 	model := fromEntity(sess)
 	
@@ -90,8 +106,8 @@ func (r *PostgresSessionRepository) Save(ctx context.Context, sess *session.Sess
 	return err
 }
 
-// FindByID retrieves a session by its ID
-func (r *PostgresSessionRepository) FindByID(ctx context.Context, id string) (*session.Session, error) {
+// GetByID retrieves a session by its ID
+func (r *PostgresSessionRepository) GetByID(ctx context.Context, id string) (*session.Session, error) {
 	var model sessionModel
 	
 	query := `
@@ -112,8 +128,8 @@ func (r *PostgresSessionRepository) FindByID(ctx context.Context, id string) (*s
 	return model.toEntity(), nil
 }
 
-// FindAll retrieves all sessions
-func (r *PostgresSessionRepository) FindAll(ctx context.Context) ([]*session.Session, error) {
+// GetAll retrieves all sessions
+func (r *PostgresSessionRepository) GetAll(ctx context.Context) ([]*session.Session, error) {
 	var models []sessionModel
 	
 	query := `
@@ -225,8 +241,8 @@ func (r *PostgresSessionRepository) FindByName(ctx context.Context, name string)
 	return sessions, nil
 }
 
-// FindByStatus retrieves sessions by status
-func (r *PostgresSessionRepository) FindByStatus(ctx context.Context, status string) ([]*session.Session, error) {
+// GetByStatus retrieves sessions by status
+func (r *PostgresSessionRepository) GetByStatus(ctx context.Context, status types.Status) ([]*session.Session, error) {
 	var models []sessionModel
 	
 	query := `
@@ -236,7 +252,7 @@ func (r *PostgresSessionRepository) FindByStatus(ctx context.Context, status str
 		FROM sessions WHERE status = $1 ORDER BY created_at DESC
 	`
 	
-	err := r.db.SelectContext(ctx, &models, query, status)
+	err := r.db.SelectContext(ctx, &models, query, string(status))
 	if err != nil {
 		return nil, err
 	}
@@ -247,6 +263,23 @@ func (r *PostgresSessionRepository) FindByStatus(ctx context.Context, status str
 	}
 	
 	return sessions, nil
+}
+
+// Compatibility methods for existing code
+
+// FindByID is an alias for GetByID (for backward compatibility)
+func (r *PostgresSessionRepository) FindByID(ctx context.Context, id string) (*session.Session, error) {
+	return r.GetByID(ctx, id)
+}
+
+// FindAll is an alias for GetAll (for backward compatibility)
+func (r *PostgresSessionRepository) FindAll(ctx context.Context) ([]*session.Session, error) {
+	return r.GetAll(ctx)
+}
+
+// FindByStatus is an alias for GetByStatus (for backward compatibility)
+func (r *PostgresSessionRepository) FindByStatus(ctx context.Context, status string) ([]*session.Session, error) {
+	return r.GetByStatus(ctx, types.Status(status))
 }
 
 // Database connection and migration functions

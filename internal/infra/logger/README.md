@@ -9,11 +9,11 @@ Este pacote fornece uma camada de abstração de logging unificada para toda a a
 - **Rotação automática** de arquivos de log
 - **Múltiplos outputs** (console + arquivo)
 - **Adapter para waLog** (whatsmeow)
-- **Configuração via .env**
+- **Configuração centralizada** no módulo config
 
 ## Configuração
 
-### Variáveis de Ambiente
+A configuração do logger agora está centralizada no módulo `internal/config`. Veja as variáveis de ambiente disponíveis:
 
 ```bash
 # Nível de log (debug, info, warn, error, fatal)
@@ -52,25 +52,36 @@ LOG_FILE_FORMAT=json
 ### Inicialização
 
 ```go
-import "zpmeow/internal/infra/logger"
+import (
+    "zpmeow/internal/config"
+    "zpmeow/internal/infra/logger"
+)
 
 // Usar configuração padrão
-log := logger.Initialize(logger.DefaultConfig())
+log := logger.Initialize(config.DefaultLoggerConfig())
+
+// Ou carregar configuração do ambiente
+cfg, err := config.LoadConfig()
+if err != nil {
+    log.Fatal("Failed to load config")
+}
+loggerConfig := cfg.GetLoggerConfig()
+log := logger.Initialize(loggerConfig)
 
 // Ou criar configuração customizada
-config := logger.NewConfigAdapter(
-    "info",           // level
-    "console",        // format
-    "log/app.log",    // filePath
-    "json",           // fileFormat
-    true,             // consoleColor
-    true,             // fileEnabled
-    true,             // fileCompress
-    100,              // fileMaxSize
-    3,                // fileMaxBackups
-    28,               // fileMaxAge
-)
-log := logger.Initialize(config)
+customConfig := &config.LoggerConfig{
+    Level:           "info",
+    Format:          "console",
+    ConsoleColor:    true,
+    FileEnabled:     true,
+    FilePath:        "log/app.log",
+    FileMaxSize:     100,
+    FileMaxBackups:  3,
+    FileMaxAge:      28,
+    FileCompress:    true,
+    FileFormat:      "json",
+}
+log := logger.Initialize(customConfig)
 ```
 
 ### Logging Simples
@@ -139,34 +150,15 @@ client := whatsmeow.NewClient(deviceStore, waLogger)
 ## Estrutura de Arquivos
 
 ```
-log/
-├── app.log          # Log atual
-├── app.log.1        # Backup 1
-├── app.log.2        # Backup 2
-├── app.log.3.gz     # Backup comprimido
-└── README.md        # Documentação
-```
-
-## Níveis de Log
-
-- **DEBUG**: Informações detalhadas para debugging
-- **INFO**: Informações gerais sobre funcionamento
-- **WARN**: Avisos sobre situações que podem precisar atenção
-- **ERROR**: Erros que não impedem o funcionamento
-- **FATAL**: Erros críticos que causam encerramento
-
-## Formatos de Saída
-
-### Console (Desenvolvimento)
-```
-2024-01-15 10:30:45 INF Starting server module=app
-2024-01-15 10:30:45 DBG Database connected module=database
-```
-
-### JSON (Produção)
-```json
-{"level":"info","module":"app","time":"2024-01-15T10:30:45Z","message":"Starting server"}
-{"level":"debug","module":"database","time":"2024-01-15T10:30:45Z","message":"Database connected"}
+internal/
+├── config/
+│   └── config.go           # Configuração centralizada
+└── infra/
+    └── logger/
+        ├── logger.go       # Logger principal consolidado
+        ├── logger_test.go  # Testes
+        └── log/
+            └── app.log     # Arquivos de log
 ```
 
 ## Integração com Gin
@@ -179,8 +171,22 @@ router.Use(middleware.Logger())
 
 ## Melhores Práticas
 
-1. **Use sub-loggers** para diferentes módulos
-2. **Prefira logging estruturado** em produção
-3. **Configure níveis apropriados** por ambiente
-4. **Use campos contextuais** para facilitar debugging
-5. **Evite logging excessivo** em hot paths
+1. **Use a configuração centralizada** do módulo config
+2. **Use sub-loggers** para diferentes módulos
+3. **Prefira logging estruturado** em produção
+4. **Configure níveis apropriados** por ambiente
+5. **Use campos contextuais** para facilitar debugging
+6. **Evite logging excessivo** em hot paths
+
+## Migração
+
+Se você estava usando `logger.NewConfigAdapter()`, agora use:
+
+```go
+// Antes
+config := logger.NewConfigAdapter(...)
+
+// Depois
+cfg, _ := config.LoadConfig()
+loggerConfig := cfg.GetLoggerConfig()
+```

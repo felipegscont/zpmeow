@@ -90,14 +90,16 @@ func (h *SessionHandler) ListSessions(c *gin.Context) {
 	sessionResponses := make([]session.SessionInfoResponse, len(sessions))
 	for i, sess := range sessions {
 		sessionResponses[i] = session.SessionInfoResponse{
-			ID:          sess.ID,
-			Name:        sess.Name,
+			BaseSessionInfo: session.BaseSessionInfo{
+				ID:        sess.ID,
+				Name:      sess.Name,
+				Status:    string(sess.Status),
+				CreatedAt: sess.CreatedAt,
+				UpdatedAt: sess.UpdatedAt,
+			},
 			WhatsAppJID: sess.WhatsAppJID,
-			Status:      string(sess.Status),
 			QRCode:      sess.QRCode,
 			ProxyURL:    sess.ProxyURL,
-			CreatedAt:   sess.CreatedAt,
-			UpdatedAt:   sess.UpdatedAt,
 		}
 	}
 
@@ -138,14 +140,16 @@ func (h *SessionHandler) GetSessionInfo(c *gin.Context) {
 	}
 
 	response := session.SessionInfoResponse{
-		ID:          sess.ID,
-		Name:        sess.Name,
+		BaseSessionInfo: session.BaseSessionInfo{
+			ID:        sess.ID,
+			Name:      sess.Name,
+			Status:    string(sess.Status),
+			CreatedAt: sess.CreatedAt,
+			UpdatedAt: sess.UpdatedAt,
+		},
 		WhatsAppJID: sess.WhatsAppJID,
-		Status:      string(sess.Status),
 		QRCode:      sess.QRCode,
 		ProxyURL:    sess.ProxyURL,
-		CreatedAt:   sess.CreatedAt,
-		UpdatedAt:   sess.UpdatedAt,
 	}
 
 	utils.RespondWithData(c, response)
@@ -382,18 +386,18 @@ func (h *SessionHandler) GetProxy(c *gin.Context) {
 		return
 	}
 
-	proxyURL, err := h.sessionService.GetProxy(c.Request.Context(), id)
+	sess, err := h.sessionService.GetSession(c.Request.Context(), id)
 	if err != nil {
 		if err == session.ErrSessionNotFound {
 			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
 			return
 		}
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to get proxy", err.Error())
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to get session", err.Error())
 		return
 	}
 
 	response := session.ProxyResponse{
-		ProxyURL: proxyURL,
+		ProxyURL: sess.ProxyURL,
 		Message:  "Proxy configuration retrieved successfully.",
 	}
 

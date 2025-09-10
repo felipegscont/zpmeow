@@ -1,5 +1,10 @@
 package types
 
+import (
+	"fmt"
+	"go.mau.fi/whatsmeow"
+)
+
 // SendTextRequest represents a text message send request
 type SendTextRequest struct {
 	Phone       string      `json:"phone" binding:"required" example:"+5511999999999"`
@@ -138,11 +143,45 @@ type Row struct {
 	RowID       string `json:"rowId" binding:"required" example:"row_1"`
 }
 
-// SendResponse represents a successful send response
+// SendResponse represents a successful send response - directly uses whatsmeow.SendResponse structure
 type SendResponse struct {
+	// The message timestamp returned by the server (Unix timestamp)
+	Timestamp int64 `json:"timestamp" example:"1640995200"`
+
+	// The ID of the sent message
+	ID string `json:"id" example:"3EB0C431C26A1916E07A"`
+
+	// The server-specified ID of the sent message. Only present for newsletter messages.
+	ServerID string `json:"serverId,omitempty" example:"wamid.HBgNNTU5OTgxNzY5NTM2FQIAERgSMzNFNzE4QzY5QzE5MjE2RTdB"`
+
+	// The identity the message was sent with (LID or PN)
+	Sender string `json:"sender,omitempty" example:"5511999999999@s.whatsapp.net"`
+
+	// Legacy fields for backward compatibility
 	Success   bool   `json:"success" example:"true"`
 	MessageID string `json:"messageId" example:"3EB0C431C26A1916E07A"`
-	Timestamp int64  `json:"timestamp" example:"1640995200"`
+}
+
+// NewSendResponseFromWhatsmeow creates a SendResponse from whatsmeow.SendResponse
+func NewSendResponseFromWhatsmeow(resp *whatsmeow.SendResponse, requestID string) SendResponse {
+	return SendResponse{
+		Timestamp: resp.Timestamp.Unix(),
+		ID:        string(resp.ID),
+		ServerID:  func() string {
+			if resp.ServerID == 0 {
+				return ""
+			}
+			return fmt.Sprintf("%d", resp.ServerID)
+		}(),
+		Sender:    resp.Sender.String(),
+		Success:   true,
+		MessageID: func() string {
+			if requestID != "" {
+				return requestID
+			}
+			return string(resp.ID)
+		}(),
+	}
 }
 
 // Chat operation types
