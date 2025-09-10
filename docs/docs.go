@@ -1854,6 +1854,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/session/{sessionId}/send/media": {
+            "post": {
+                "description": "Send any type of media message (image, audio, document, video) using a unified endpoint",
+                "consumes": [
+                    "application/json",
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "send"
+                ],
+                "summary": "Send a media message (unified endpoint)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Media message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/types.SendMediaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/types.SendResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/utils.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/session/{sessionId}/send/poll": {
             "post": {
                 "description": "Send a poll message to a WhatsApp contact",
@@ -2649,7 +2709,7 @@ const docTemplate = `{
                 },
                 "status": {
                     "type": "string",
-                    "example": "connected"
+                    "example": "disconnected"
                 },
                 "updated_at": {
                     "type": "string",
@@ -3322,6 +3382,52 @@ const docTemplate = `{
                 }
             }
         },
+        "types.SendMediaRequest": {
+            "type": "object",
+            "required": [
+                "mediaType",
+                "phone"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Media caption"
+                },
+                "contextInfo": {
+                    "$ref": "#/definitions/types.ContextInfo"
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "custom-message-id"
+                },
+                "media": {
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQ..."
+                },
+                "mediaType": {
+                    "type": "string",
+                    "enum": [
+                        "image",
+                        "audio",
+                        "document",
+                        "video"
+                    ],
+                    "example": "image"
+                },
+                "mimeType": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "+5511999999999"
+                }
+            }
+        },
         "types.SendPollRequest": {
             "type": "object",
             "required": [
@@ -3362,15 +3468,32 @@ const docTemplate = `{
         "types.SendResponse": {
             "type": "object",
             "properties": {
+                "id": {
+                    "description": "The ID of the sent message",
+                    "type": "string",
+                    "example": "3EB0C431C26A1916E07A"
+                },
                 "messageId": {
                     "type": "string",
                     "example": "3EB0C431C26A1916E07A"
                 },
+                "sender": {
+                    "description": "The identity the message was sent with (LID or PN)",
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "serverId": {
+                    "description": "The server-specified ID of the sent message. Only present for newsletter messages.",
+                    "type": "string",
+                    "example": "wamid.HBgNNTU5OTgxNzY5NTM2FQIAERgSMzNFNzE4QzY5QzE5MjE2RTdB"
+                },
                 "success": {
+                    "description": "Legacy fields for backward compatibility",
                     "type": "boolean",
                     "example": true
                 },
                 "timestamp": {
+                    "description": "The message timestamp returned by the server (Unix timestamp)",
                     "type": "integer",
                     "example": 1640995200
                 }

@@ -96,7 +96,7 @@ definitions:
         example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         type: string
       status:
-        example: connected
+        example: disconnected
         type: string
       updated_at:
         example: "2023-01-01T00:00:00Z"
@@ -578,6 +578,40 @@ definitions:
     - longitude
     - phone
     type: object
+  types.SendMediaRequest:
+    properties:
+      caption:
+        example: Media caption
+        type: string
+      contextInfo:
+        $ref: '#/definitions/types.ContextInfo'
+      filename:
+        example: document.pdf
+        type: string
+      id:
+        example: custom-message-id
+        type: string
+      media:
+        example: data:image/jpeg;base64,/9j/4AAQ...
+        type: string
+      mediaType:
+        enum:
+        - image
+        - audio
+        - document
+        - video
+        example: image
+        type: string
+      mimeType:
+        example: image/jpeg
+        type: string
+      phone:
+        example: "+5511999999999"
+        type: string
+    required:
+    - mediaType
+    - phone
+    type: object
   types.SendPollRequest:
     properties:
       id:
@@ -607,13 +641,28 @@ definitions:
     type: object
   types.SendResponse:
     properties:
+      id:
+        description: The ID of the sent message
+        example: 3EB0C431C26A1916E07A
+        type: string
       messageId:
         example: 3EB0C431C26A1916E07A
         type: string
+      sender:
+        description: The identity the message was sent with (LID or PN)
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      serverId:
+        description: The server-specified ID of the sent message. Only present for
+          newsletter messages.
+        example: wamid.HBgNNTU5OTgxNzY5NTM2FQIAERgSMzNFNzE4QzY5QzE5MjE2RTdB
+        type: string
       success:
+        description: Legacy fields for backward compatibility
         example: true
         type: boolean
       timestamp:
+        description: The message timestamp returned by the server (Unix timestamp)
         example: 1640995200
         type: integer
     type: object
@@ -1910,6 +1959,47 @@ paths:
           schema:
             $ref: '#/definitions/utils.ErrorResponse'
       summary: Send a location message
+      tags:
+      - send
+  /session/{sessionId}/send/media:
+    post:
+      consumes:
+      - application/json
+      - multipart/form-data
+      description: Send any type of media message (image, audio, document, video)
+        using a unified endpoint
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Media message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/types.SendMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/types.SendResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/utils.ErrorResponse'
+      summary: Send a media message (unified endpoint)
       tags:
       - send
   /session/{sessionId}/send/poll:
