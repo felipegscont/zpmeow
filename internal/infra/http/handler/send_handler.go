@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infra/meow"
@@ -121,9 +123,14 @@ func (h *SendHandler) SendImage(c *gin.Context) {
 	}
 
 	var req types.SendImageRequest
+
+	// Try to parse as JSON first
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
-		return
+		// If JSON parsing fails, try form-data
+		if err := c.ShouldBind(&req); err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
+			return
+		}
 	}
 
 	// Validate phone number format
@@ -132,8 +139,29 @@ func (h *SendHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Decode image data using universal decoder (supports all image formats)
-	imageData, mimeType, err := utils.DecodeUniversalMedia(req.Image, "image")
+	// Process media using unified processor (supports base64, URL, and form-data)
+	var imageData []byte
+	var mimeType string
+	var err error
+
+	// Check if there's a file upload
+	file, _ := c.FormFile("image")
+	if file == nil {
+		file, _ = c.FormFile("media") // Also check for 'media' field
+	}
+
+	if file != nil {
+		// Process form-data upload
+		imageData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), "", file, "image")
+	} else {
+		// Process base64 or URL
+		media := req.Image
+		if media == "" {
+			media = c.PostForm("media") // Also check for 'media' field
+		}
+		imageData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), media, nil, "image")
+	}
+
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid image data", err.Error())
 		return
@@ -183,9 +211,14 @@ func (h *SendHandler) SendAudio(c *gin.Context) {
 	}
 
 	var req types.SendAudioRequest
+
+	// Try to parse as JSON first
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
-		return
+		// If JSON parsing fails, try form-data
+		if err := c.ShouldBind(&req); err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
+			return
+		}
 	}
 
 	// Validate phone number format
@@ -194,8 +227,29 @@ func (h *SendHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Decode audio data using universal decoder (supports all audio formats)
-	audioData, mimeType, err := utils.DecodeUniversalMedia(req.Audio, "audio")
+	// Process media using unified processor (supports base64, URL, and form-data)
+	var audioData []byte
+	var mimeType string
+	var err error
+
+	// Check if there's a file upload
+	file, _ := c.FormFile("audio")
+	if file == nil {
+		file, _ = c.FormFile("media") // Also check for 'media' field
+	}
+
+	if file != nil {
+		// Process form-data upload
+		audioData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), "", file, "audio")
+	} else {
+		// Process base64 or URL
+		media := req.Audio
+		if media == "" {
+			media = c.PostForm("media") // Also check for 'media' field
+		}
+		audioData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), media, nil, "audio")
+	}
+
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid audio data", err.Error())
 		return
@@ -235,9 +289,14 @@ func (h *SendHandler) SendDocument(c *gin.Context) {
 	}
 
 	var req types.SendDocumentRequest
+
+	// Try to parse as JSON first
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
-		return
+		// If JSON parsing fails, try form-data
+		if err := c.ShouldBind(&req); err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
+			return
+		}
 	}
 
 	// Validate phone number format
@@ -246,8 +305,29 @@ func (h *SendHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Decode document data using universal decoder (supports all document formats)
-	documentData, mimeType, err := utils.DecodeUniversalMedia(req.Document, "document")
+	// Process media using unified processor (supports base64, URL, and form-data)
+	var documentData []byte
+	var mimeType string
+	var err error
+
+	// Check if there's a file upload
+	file, _ := c.FormFile("document")
+	if file == nil {
+		file, _ = c.FormFile("media") // Also check for 'media' field
+	}
+
+	if file != nil {
+		// Process form-data upload
+		documentData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), "", file, "document")
+	} else {
+		// Process base64 or URL
+		media := req.Document
+		if media == "" {
+			media = c.PostForm("media") // Also check for 'media' field
+		}
+		documentData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), media, nil, "document")
+	}
+
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid document data", err.Error())
 		return
@@ -294,9 +374,14 @@ func (h *SendHandler) SendVideo(c *gin.Context) {
 	}
 
 	var req types.SendVideoRequest
+
+	// Try to parse as JSON first
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
-		return
+		// If JSON parsing fails, try form-data
+		if err := c.ShouldBind(&req); err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
+			return
+		}
 	}
 
 	// Validate phone number format
@@ -305,8 +390,29 @@ func (h *SendHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Decode video data using universal decoder (supports all video formats)
-	videoData, mimeType, err := utils.DecodeUniversalMedia(req.Video, "video")
+	// Process media using unified processor (supports base64, URL, and form-data)
+	var videoData []byte
+	var mimeType string
+	var err error
+
+	// Check if there's a file upload
+	file, _ := c.FormFile("video")
+	if file == nil {
+		file, _ = c.FormFile("media") // Also check for 'media' field
+	}
+
+	if file != nil {
+		// Process form-data upload
+		videoData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), "", file, "video")
+	} else {
+		// Process base64 or URL
+		media := req.Video
+		if media == "" {
+			media = c.PostForm("media") // Also check for 'media' field
+		}
+		videoData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), media, nil, "video")
+	}
+
 	if err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid video data", err.Error())
 		return
@@ -323,6 +429,113 @@ func (h *SendHandler) SendVideo(c *gin.Context) {
 
 	whatsmeowResp, err := h.meowService.SendVideoMessage(c.Request.Context(), sessionID, req.Phone, videoData, req.Caption, mimeType)
 	h.handleSendResponse(c, whatsmeowResp, req.ID, err, "send video message")
+}
+
+// SendMedia godoc
+// @Summary Send a media message (unified endpoint)
+// @Description Send any type of media message (image, audio, document, video) using a unified endpoint
+// @Tags send
+// @Accept json,multipart/form-data
+// @Produce json
+// @Param sessionId path string true "Session ID"
+// @Param request body types.SendMediaRequest true "Media message request"
+// @Success 200 {object} types.SendResponse
+// @Failure 400 {object} utils.ErrorResponse
+// @Failure 404 {object} utils.ErrorResponse
+// @Failure 500 {object} utils.ErrorResponse
+// @Router /session/{sessionId}/send/media [post]
+func (h *SendHandler) SendMedia(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+	if sessionID == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return
+	}
+
+	var req types.SendMediaRequest
+
+	// Check content type to determine parsing method
+	contentType := c.GetHeader("Content-Type")
+
+	if strings.Contains(contentType, "multipart/form-data") {
+		// Handle form-data
+		req.Phone = c.PostForm("phone")
+		req.MediaType = c.PostForm("mediaType")
+		req.Caption = c.PostForm("caption")
+		req.Filename = c.PostForm("filename")
+		req.ID = c.PostForm("id")
+		req.MimeType = c.PostForm("mimeType")
+	} else {
+		// Handle JSON
+		if err := c.ShouldBindJSON(&req); err != nil {
+			utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
+			return
+		}
+	}
+
+	// Validate phone number format
+	if !utils.IsValidPhoneNumber(req.Phone) {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
+		return
+	}
+
+	// Validate mediaType
+	if err := utils.ValidateMediaType(req.MediaType); err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid media type", err.Error())
+		return
+	}
+
+	// Process media using unified processor (supports base64, URL, and form-data)
+	var mediaData []byte
+	var mimeType string
+	var err error
+
+	// Check if there's a file upload
+	file, _ := c.FormFile("media")
+
+	if file != nil {
+		// Process form-data upload
+		mediaData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), "", file, req.MediaType)
+	} else {
+		// Process base64 or URL
+		mediaData, mimeType, err = utils.ProcessUnifiedMedia(c.Request.Context(), req.Media, nil, req.MediaType)
+	}
+
+	if err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid media data", err.Error())
+		return
+	}
+
+	// Validate size
+	if err := utils.ValidateMediaSize(mediaData, req.MediaType); err != nil {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid media size", err.Error())
+		return
+	}
+
+	// Send media message through appropriate service method based on mediaType
+	h.logger.Infof("Sending %s message to %s from session %s", req.MediaType, req.Phone, sessionID)
+
+	var whatsmeowResp *whatsmeow.SendResponse
+
+	switch req.MediaType {
+	case "image":
+		whatsmeowResp, err = h.meowService.SendImageMessage(c.Request.Context(), sessionID, req.Phone, mediaData, req.Caption, mimeType)
+	case "audio":
+		whatsmeowResp, err = h.meowService.SendAudioMessage(c.Request.Context(), sessionID, req.Phone, mediaData, mimeType)
+	case "document":
+		filename := req.Filename
+		if filename == "" {
+			ext := utils.GetFileExtension(mimeType)
+			filename = "document" + ext
+		}
+		whatsmeowResp, err = h.meowService.SendDocumentMessage(c.Request.Context(), sessionID, req.Phone, mediaData, filename, req.Caption, mimeType)
+	case "video":
+		whatsmeowResp, err = h.meowService.SendVideoMessage(c.Request.Context(), sessionID, req.Phone, mediaData, req.Caption, mimeType)
+	default:
+		utils.RespondWithError(c, http.StatusBadRequest, "Unsupported media type")
+		return
+	}
+
+	h.handleSendResponse(c, whatsmeowResp, req.ID, err, fmt.Sprintf("send %s message", req.MediaType))
 }
 
 // SendSticker godoc

@@ -59,6 +59,19 @@ type SendStickerRequest struct {
 	ContextInfo ContextInfo `json:"contextInfo,omitempty"`
 }
 
+// SendMediaRequest represents a unified media message send request
+// Supports base64, URL, and form-data uploads
+type SendMediaRequest struct {
+	Phone       string      `json:"phone" form:"phone" binding:"required" example:"+5511999999999"`
+	MediaType   string      `json:"mediaType" form:"mediaType" binding:"required" example:"image" enums:"image,audio,document,video"`
+	Media       string      `json:"media" form:"media" example:"data:image/jpeg;base64,/9j/4AAQ..." swaggertype:"string"`
+	Caption     string      `json:"caption" form:"caption" example:"Media caption"`
+	Filename    string      `json:"filename" form:"filename" example:"document.pdf"`
+	ID          string      `json:"id" form:"id" example:"custom-message-id"`
+	MimeType    string      `json:"mimeType" form:"mimeType" example:"image/jpeg"`
+	ContextInfo ContextInfo `json:"contextInfo,omitempty"`
+}
+
 // SendLocationRequest represents a location message send request
 type SendLocationRequest struct {
 	Phone     string  `json:"phone" binding:"required" example:"+5511999999999"`

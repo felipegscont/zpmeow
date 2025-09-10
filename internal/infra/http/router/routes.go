@@ -48,6 +48,7 @@ func SetupRoutes(
 		sendGroup := sessionAPIGroup.Group("/send")
 		{
 			sendGroup.POST("/text", sendHandler.SendText)
+			sendGroup.POST("/media", sendHandler.SendMedia)
 			sendGroup.POST("/image", sendHandler.SendImage)
 			sendGroup.POST("/audio", sendHandler.SendAudio)
 			sendGroup.POST("/document", sendHandler.SendDocument)

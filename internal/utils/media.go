@@ -1,10 +1,17 @@
 package utils
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"mime"
+	"mime/multipart"
+	"net/http"
+	"net/url"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/vincent-petithory/dataurl"
 )
@@ -481,10 +488,152 @@ func ValidateMediaSize(data []byte, mediaType string) error {
 			return fmt.Errorf("sticker size too large: %d bytes (max 1MB)", size)
 		}
 	}
-	
+
 	if size == 0 {
 		return fmt.Errorf("media data is empty")
 	}
-	
+
+	return nil
+}
+
+// ProcessUnifiedMedia processes media from different sources: base64, URL, or form-data
+// Returns the media data, MIME type, and any error
+func ProcessUnifiedMedia(ctx context.Context, media string, file *multipart.FileHeader, mediaType string) ([]byte, string, error) {
+	// If file is provided (form-data), process it first
+	if file != nil {
+		return processFormDataMedia(file, mediaType)
+	}
+
+	// If media is empty, return error
+	if media == "" {
+		return nil, "", fmt.Errorf("media parameter is required")
+	}
+
+	// Check if it's a URL
+	if isValidURL(media) {
+		return downloadMediaFromURL(ctx, media, mediaType)
+	}
+
+	// Otherwise, treat as base64 data URL
+	return DecodeUniversalMedia(media, mediaType)
+}
+
+// processFormDataMedia processes media uploaded via multipart/form-data
+func processFormDataMedia(fileHeader *multipart.FileHeader, mediaType string) ([]byte, string, error) {
+	// Open the uploaded file
+	file, err := fileHeader.Open()
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to open uploaded file: %w", err)
+	}
+	defer file.Close()
+
+	// Read file content
+	data, err := io.ReadAll(file)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read uploaded file: %w", err)
+	}
+
+	// Detect MIME type from file content
+	mimeType := http.DetectContentType(data)
+
+	// If MIME type detection fails, try to get from filename
+	if mimeType == "application/octet-stream" {
+		ext := filepath.Ext(fileHeader.Filename)
+		if ext != "" {
+			detectedMime := mime.TypeByExtension(ext)
+			if detectedMime != "" {
+				mimeType = detectedMime
+			}
+		}
+	}
+
+	// Validate and normalize the MIME type
+	normalizedMimeType, err := ValidateAndNormalizeMimeType(mimeType, mediaType)
+	if err != nil {
+		return nil, "", fmt.Errorf("MIME type validation failed: %w", err)
+	}
+
+	return data, normalizedMimeType, nil
+}
+
+// downloadMediaFromURL downloads media from a public URL
+func downloadMediaFromURL(ctx context.Context, mediaURL string, mediaType string) ([]byte, string, error) {
+	// Create HTTP client with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+
+	// Create request with context
+	req, err := http.NewRequestWithContext(ctx, "GET", mediaURL, nil)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Set user agent
+	req.Header.Set("User-Agent", "ZpMeow/1.0")
+
+	// Make the request
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download media from URL: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check status code
+	if resp.StatusCode != http.StatusOK {
+		return nil, "", fmt.Errorf("failed to download media: HTTP %d", resp.StatusCode)
+	}
+
+	// Check content length (limit to 100MB)
+	if resp.ContentLength > 100*1024*1024 {
+		return nil, "", fmt.Errorf("file too large: %d bytes (max 100MB)", resp.ContentLength)
+	}
+
+	// Read response body
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Get MIME type from response header or detect from content
+	mimeType := resp.Header.Get("Content-Type")
+	if mimeType == "" {
+		mimeType = http.DetectContentType(data)
+	}
+
+	// Clean up MIME type (remove charset and other parameters)
+	if strings.Contains(mimeType, ";") {
+		mimeType = strings.Split(mimeType, ";")[0]
+	}
+	mimeType = strings.TrimSpace(mimeType)
+
+	// Validate and normalize the MIME type
+	normalizedMimeType, err := ValidateAndNormalizeMimeType(mimeType, mediaType)
+	if err != nil {
+		return nil, "", fmt.Errorf("MIME type validation failed: %w", err)
+	}
+
+	return data, normalizedMimeType, nil
+}
+
+// isValidURL checks if a string is a valid HTTP/HTTPS URL
+func isValidURL(str string) bool {
+	u, err := url.Parse(str)
+	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
+}
+
+// ValidateMediaType validates that the mediaType is one of the supported types
+func ValidateMediaType(mediaType string) error {
+	validTypes := map[string]bool{
+		"image":    true,
+		"audio":    true,
+		"document": true,
+		"video":    true,
+	}
+
+	if !validTypes[mediaType] {
+		return fmt.Errorf("invalid mediaType '%s': must be one of: image, audio, document, video", mediaType)
+	}
+
 	return nil
 }
