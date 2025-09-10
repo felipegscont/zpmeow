@@ -24,7 +24,8 @@ go.work
 go.work.sum
 
 # Environment files
-.env
+*.env
+.env*
 .env.local
 .env.development.local
 .env.test.local
