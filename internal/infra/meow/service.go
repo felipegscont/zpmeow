@@ -814,13 +814,11 @@ func (m *MeowServiceImpl) waitForConnectionsToEstablish(ctx context.Context, exp
 			return
 		}
 
-		var sessionIDs []string
 		for rows.Next() {
 			var sessionID string
 			if err := rows.Scan(&sessionID); err != nil {
 				continue
 			}
-			sessionIDs = append(sessionIDs, sessionID)
 
 			// Check if this session is actually connected
 			if m.clientManager.IsClientConnected(sessionID) {
