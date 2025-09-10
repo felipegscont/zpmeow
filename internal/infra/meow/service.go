@@ -17,6 +17,18 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
+// MediaDownloadInfo contains the information needed to download media
+type MediaDownloadInfo struct {
+	MediaType     string `json:"mediaType"`     // image, video, audio, document
+	URL           string `json:"url"`
+	DirectPath    string `json:"directPath"`
+	MediaKey      []byte `json:"mediaKey"`
+	MimeType      string `json:"mimeType"`
+	FileEncSHA256 []byte `json:"fileEncSHA256"`
+	FileSHA256    []byte `json:"fileSHA256"`
+	FileLength    uint64 `json:"fileLength"`
+}
+
 
 // parseJID parses a phone number or JID string into a WhatsApp JID
 // Deprecated: Use JID.ParseJID instead
@@ -297,50 +309,51 @@ func (m *MeowServiceImpl) SendContactMessage(ctx context.Context, sessionID, to,
 }
 
 
-func (m *MeowServiceImpl) ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, emoji string) error {
+
+
+func (m *MeowServiceImpl) SetChatPresence(ctx context.Context, sessionID, chatJID, state, media string) error {
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	
-
-	
-	jid, ok := parseJID(chatJID)
-	if !ok {
-		return fmt.Errorf("invalid JID %s", chatJID)
-	}
-
-	return client.ReactToMessage(ctx, jid, messageID, emoji)
-}
-
-
-func (m *MeowServiceImpl) SetChatPresence(ctx context.Context, sessionID, chatJID, presence string) error {
-	client, exists := m.clientManager.GetClient(sessionID)
-	if !exists {
-		return fmt.Errorf("client not found for session %s", sessionID)
-	}
-
-	
-	jid, err := waTypes.ParseJID(chatJID)
+	// Parse chat JID - use our JID utility for better parsing
+	jid, err := JID.ParseJID(chatJID)
 	if err != nil {
 		return fmt.Errorf("invalid JID %s: %w", chatJID, err)
 	}
 
-	
-	var presenceType waTypes.Presence
-	switch presence {
-	case "typing":
-		presenceType = waTypes.PresenceAvailable 
-	case "recording":
-		presenceType = waTypes.PresenceAvailable 
-	case "paused":
-		presenceType = waTypes.PresenceUnavailable
-	default:
-		return fmt.Errorf("invalid presence type: %s", presence)
+	// Validate presence parameters
+	if err := m.validatePresenceParams(state, media); err != nil {
+		return err
 	}
 
-	return client.SetChatPresence(ctx, jid, presenceType)
+	// Convert to whatsmeow types
+	chatPresence := waTypes.ChatPresence(state)
+	mediaType := waTypes.ChatPresenceMedia(media)
+
+	// Send chat presence using whatsmeow client
+	err = client.client.SendChatPresence(jid, chatPresence, mediaType)
+	if err != nil {
+		return fmt.Errorf("failed to set chat presence: %w", err)
+	}
+
+	return nil
+}
+
+// validatePresenceParams validates chat presence parameters
+func (m *MeowServiceImpl) validatePresenceParams(state, media string) error {
+	// Validate state - only composing and paused are supported by whatsmeow
+	if state != "composing" && state != "paused" {
+		return fmt.Errorf("invalid state: %s (valid: composing, paused)", state)
+	}
+
+	// Validate media - empty string (ChatPresenceMediaText), "audio" are valid
+	if media != "" && media != "audio" {
+		return fmt.Errorf("invalid media: %s (valid: \"\", audio)", media)
+	}
+
+	return nil
 }
 
 
@@ -572,6 +585,261 @@ func (m *MeowServiceImpl) SendListMessage(ctx context.Context, sessionID, to, te
 	}
 
 	return client.SendListMessage(ctx, jid, text, buttonText, sections, footer)
+}
+
+// ============================================================================
+// Chat Operations Implementation
+// ============================================================================
+
+// DeleteMessage deletes a message from a chat
+func (m *MeowServiceImpl) DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string, forEveryone bool) error {
+	m.logger.Infof("Deleting message %s in chat %s for session %s (forEveryone: %v)", messageID, chatJID, sessionID, forEveryone)
+
+	// Validate inputs
+	if err := m.validateChatOperation(sessionID, chatJID, messageID); err != nil {
+		return err
+	}
+
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	// Check if client is connected
+	if !client.IsConnected() {
+		return fmt.Errorf("client for session %s is not connected", sessionID)
+	}
+
+	// Parse chat JID
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID %s: %w", chatJID, err)
+	}
+
+	// Use whatsmeow's BuildRevoke to create revoke message
+	revokeMsg := client.client.BuildRevoke(jid, waTypes.EmptyJID, waTypes.MessageID(messageID))
+
+	// Send the revoke message with timeout
+	_, err = client.client.SendMessage(ctx, jid, revokeMsg)
+	if err != nil {
+		return fmt.Errorf("failed to delete message %s: %w", messageID, err)
+	}
+
+	m.logger.Infof("Successfully deleted message %s", messageID)
+	return nil
+}
+
+// validateChatOperation validates common parameters for chat operations
+func (m *MeowServiceImpl) validateChatOperation(sessionID, chatJID, messageID string) error {
+	if sessionID == "" {
+		return fmt.Errorf("session ID cannot be empty")
+	}
+	if chatJID == "" {
+		return fmt.Errorf("chat JID cannot be empty")
+	}
+	if messageID == "" {
+		return fmt.Errorf("message ID cannot be empty")
+	}
+
+	// Validate message ID format (basic check)
+	if len(messageID) < 10 {
+		return fmt.Errorf("invalid message ID format")
+	}
+
+	return nil
+}
+
+// EditMessage edits a text message in a chat
+func (m *MeowServiceImpl) EditMessage(ctx context.Context, sessionID, chatJID, messageID, newText string) (*types.SendResponse, error) {
+	m.logger.Infof("Editing message %s in chat %s for session %s", messageID, chatJID, sessionID)
+
+	// Validate inputs
+	if err := m.validateChatOperation(sessionID, chatJID, messageID); err != nil {
+		return nil, err
+	}
+
+	// Validate new text
+	if newText == "" {
+		return nil, fmt.Errorf("new text cannot be empty")
+	}
+	if len(newText) > 4096 {
+		return nil, fmt.Errorf("new text too long (max 4096 characters)")
+	}
+
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	// Check if client is connected
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client for session %s is not connected", sessionID)
+	}
+
+	// Parse chat JID
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid chat JID %s: %w", chatJID, err)
+	}
+
+	// Create the new text message
+	textMsg := &waE2E.Message{
+		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
+			Text: &newText,
+		},
+	}
+
+	// Use whatsmeow's BuildEdit to create edit message
+	editMsg := client.client.BuildEdit(jid, waTypes.MessageID(messageID), textMsg)
+
+	// Send the edit message
+	resp, err := client.client.SendMessage(ctx, jid, editMsg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to edit message %s: %w", messageID, err)
+	}
+
+	m.logger.Infof("Successfully edited message %s", messageID)
+
+	// Convert whatsmeow response to our types.SendResponse
+	response := types.NewSendResponseFromWhatsmeow(&resp, messageID)
+	return &response, nil
+}
+
+// DownloadMedia downloads media from a message and returns the data and mime type
+func (m *MeowServiceImpl) DownloadMedia(ctx context.Context, sessionID, messageID string) ([]byte, string, error) {
+	m.logger.Infof("Downloading media for message %s in session %s", messageID, sessionID)
+
+	// Note: This is a simplified implementation. In a real-world scenario,
+	// you would need to store message metadata (URL, DirectPath, MediaKey, etc.)
+	// when messages are received and retrieve them here using the messageID.
+	// For now, this returns an error indicating the limitation.
+
+	return nil, "", fmt.Errorf("media download requires message metadata storage - not implemented in this simplified version")
+}
+
+// DownloadMediaWithInfo downloads media using provided media information
+func (m *MeowServiceImpl) DownloadMediaWithInfo(ctx context.Context, sessionID string, mediaInfo MediaDownloadInfo) ([]byte, string, error) {
+	m.logger.Infof("Downloading media with info for session %s", sessionID)
+
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return nil, "", fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	var mediaData []byte
+	var err error
+	var mimeType string
+
+	// Create appropriate message based on media type
+	switch mediaInfo.MediaType {
+	case "image":
+		msg := &waE2E.Message{ImageMessage: &waE2E.ImageMessage{
+			URL:           &mediaInfo.URL,
+			DirectPath:    &mediaInfo.DirectPath,
+			MediaKey:      mediaInfo.MediaKey,
+			Mimetype:      &mediaInfo.MimeType,
+			FileEncSHA256: mediaInfo.FileEncSHA256,
+			FileSHA256:    mediaInfo.FileSHA256,
+			FileLength:    &mediaInfo.FileLength,
+		}}
+		mediaData, err = client.client.Download(ctx, msg.GetImageMessage())
+		mimeType = msg.GetImageMessage().GetMimetype()
+
+	case "video":
+		msg := &waE2E.Message{VideoMessage: &waE2E.VideoMessage{
+			URL:           &mediaInfo.URL,
+			DirectPath:    &mediaInfo.DirectPath,
+			MediaKey:      mediaInfo.MediaKey,
+			Mimetype:      &mediaInfo.MimeType,
+			FileEncSHA256: mediaInfo.FileEncSHA256,
+			FileSHA256:    mediaInfo.FileSHA256,
+			FileLength:    &mediaInfo.FileLength,
+		}}
+		mediaData, err = client.client.Download(ctx, msg.GetVideoMessage())
+		mimeType = msg.GetVideoMessage().GetMimetype()
+
+	case "audio":
+		msg := &waE2E.Message{AudioMessage: &waE2E.AudioMessage{
+			URL:           &mediaInfo.URL,
+			DirectPath:    &mediaInfo.DirectPath,
+			MediaKey:      mediaInfo.MediaKey,
+			Mimetype:      &mediaInfo.MimeType,
+			FileEncSHA256: mediaInfo.FileEncSHA256,
+			FileSHA256:    mediaInfo.FileSHA256,
+			FileLength:    &mediaInfo.FileLength,
+		}}
+		mediaData, err = client.client.Download(ctx, msg.GetAudioMessage())
+		mimeType = msg.GetAudioMessage().GetMimetype()
+
+	case "document":
+		msg := &waE2E.Message{DocumentMessage: &waE2E.DocumentMessage{
+			URL:           &mediaInfo.URL,
+			DirectPath:    &mediaInfo.DirectPath,
+			MediaKey:      mediaInfo.MediaKey,
+			Mimetype:      &mediaInfo.MimeType,
+			FileEncSHA256: mediaInfo.FileEncSHA256,
+			FileSHA256:    mediaInfo.FileSHA256,
+			FileLength:    &mediaInfo.FileLength,
+		}}
+		mediaData, err = client.client.Download(ctx, msg.GetDocumentMessage())
+		mimeType = msg.GetDocumentMessage().GetMimetype()
+
+	default:
+		return nil, "", fmt.Errorf("unsupported media type: %s", mediaInfo.MediaType)
+	}
+
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to download %s media: %w", mediaInfo.MediaType, err)
+	}
+
+	m.logger.Infof("Successfully downloaded %s media (%d bytes)", mediaInfo.MediaType, len(mediaData))
+	return mediaData, mimeType, nil
+}
+
+// ReactToMessage sends a reaction to a message
+func (m *MeowServiceImpl) ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, emoji string) error {
+	m.logger.Infof("Reacting to message %s in chat %s for session %s with emoji: %s", messageID, chatJID, sessionID, emoji)
+
+	// Validate inputs
+	if err := m.validateChatOperation(sessionID, chatJID, messageID); err != nil {
+		return err
+	}
+
+	// Validate emoji (basic check)
+	if emoji == "" {
+		return fmt.Errorf("emoji cannot be empty")
+	}
+	if len(emoji) > 10 {
+		return fmt.Errorf("emoji too long")
+	}
+
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	// Check if client is connected
+	if !client.IsConnected() {
+		return fmt.Errorf("client for session %s is not connected", sessionID)
+	}
+
+	// Parse chat JID
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID %s: %w", chatJID, err)
+	}
+
+	// Use whatsmeow's BuildReaction to create reaction message
+	reactionMsg := client.client.BuildReaction(jid, waTypes.EmptyJID, waTypes.MessageID(messageID), emoji)
+
+	// Send the reaction message
+	_, err = client.client.SendMessage(ctx, jid, reactionMsg)
+	if err != nil {
+		return fmt.Errorf("failed to react to message %s: %w", messageID, err)
+	}
+
+	m.logger.Infof("Successfully reacted to message %s with %s", messageID, emoji)
+	return nil
 }
 
 

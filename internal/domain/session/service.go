@@ -12,7 +12,7 @@ import (
 type SessionService interface {
 	// Session lifecycle management
 	CreateSession(ctx context.Context, name string) (*Session, error)
-	GetSession(ctx context.Context, id string) (*Session, error)
+	GetSession(ctx context.Context, idOrName string) (*Session, error)
 	GetAllSessions(ctx context.Context) ([]*Session, error)
 	DeleteSession(ctx context.Context, id string) error
 
@@ -35,6 +35,7 @@ type SessionService interface {
 // WhatsAppService defines the interface for WhatsApp operations
 // Separated for better testability and dependency inversion
 type WhatsAppService interface {
+	// Session management
 	StartClient(sessionID string) error
 	StopClient(sessionID string) error
 	LogoutClient(sessionID string) error
@@ -43,6 +44,12 @@ type WhatsAppService interface {
 	IsClientConnected(sessionID string) bool
 	GetClientStatus(sessionID string) types.Status
 	ConnectOnStartup(ctx context.Context) error
+
+	// Chat operations
+	DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string, forEveryone bool) error
+	EditMessage(ctx context.Context, sessionID, chatJID, messageID, newText string) (*types.SendResponse, error)
+	DownloadMedia(ctx context.Context, sessionID, messageID string) ([]byte, string, error)
+	ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, emoji string) error
 }
 
 // SessionServiceImpl implements the SessionService interface
@@ -67,6 +74,15 @@ func (s *SessionServiceImpl) CreateSession(ctx context.Context, name string) (*S
 		return nil, err
 	}
 
+	// Check if a session with this name already exists
+	_, err := s.repo.GetByName(ctx, name)
+	if err == nil {
+		return nil, ErrSessionAlreadyExists
+	}
+	if err != ErrSessionNotFound {
+		return nil, err
+	}
+
 	session := NewSession(generateSessionID(), name)
 
 	if err := session.Validate(); err != nil {
@@ -80,13 +96,34 @@ func (s *SessionServiceImpl) CreateSession(ctx context.Context, name string) (*S
 	return session, nil
 }
 
-// GetSession retrieves a session by ID with validation
-func (s *SessionServiceImpl) GetSession(ctx context.Context, id string) (*Session, error) {
-	if err := s.validateSessionID(id); err != nil {
+// GetSession retrieves a session by ID or name with validation
+func (s *SessionServiceImpl) GetSession(ctx context.Context, idOrName string) (*Session, error) {
+	if err := s.validateSessionIDOrName(idOrName); err != nil {
 		return nil, err
 	}
 
-	return s.repo.GetByID(ctx, id)
+	// First try to get by ID
+	session, err := s.repo.GetByID(ctx, idOrName)
+	if err == nil {
+		return session, nil
+	}
+
+	// If not found by ID and error is "not found", try by name
+	if err == ErrSessionNotFound {
+		session, nameErr := s.repo.GetByName(ctx, idOrName)
+		if nameErr == nil {
+			return session, nil
+		}
+		// If both ID and name lookups failed, return the original "not found" error
+		if nameErr == ErrSessionNotFound {
+			return nil, ErrSessionNotFound
+		}
+		// If name lookup failed with a different error, return that error
+		return nil, nameErr
+	}
+
+	// If ID lookup failed with a different error, return that error
+	return nil, err
 }
 
 // GetAllSessions retrieves all sessions
@@ -219,21 +256,22 @@ func (s *SessionServiceImpl) ConnectOnStartup(ctx context.Context) error {
 
 // Private helper methods
 
-// validateSessionID validates a session ID
+// validateSessionID validates a session ID using centralized validation
 func (s *SessionServiceImpl) validateSessionID(id string) error {
-	if id == "" {
-		return ErrInvalidSessionID
-	}
-	return nil
+	return ValidateSessionID(id)
 }
 
-// validateSessionName validates a session name
+// validateSessionName validates a session name using centralized validation
 func (s *SessionServiceImpl) validateSessionName(name string) error {
-	if name == "" {
-		return ErrInvalidSessionName
-	}
-	return nil
+	return ValidateSessionName(name)
 }
+
+// validateSessionIDOrName validates a session ID or name using centralized validation
+func (s *SessionServiceImpl) validateSessionIDOrName(idOrName string) error {
+	return ValidateSessionIDOrName(idOrName)
+}
+
+
 
 // generateSessionID generates a unique session ID
 func generateSessionID() string {

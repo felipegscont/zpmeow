@@ -23,6 +23,28 @@ type SendHandler struct {
 	logger         logger.Logger
 }
 
+// resolveSessionID resolves sessionID parameter to actual session ID (handles both ID and name)
+func (h *SendHandler) resolveSessionID(c *gin.Context) (string, bool) {
+	sessionID := c.Param("sessionId")
+	if sessionID == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return "", false
+	}
+
+	// Resolve session to get the actual ID (in case sessionID is a name)
+	sess, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
+	if err != nil {
+		if err == session.ErrSessionNotFound {
+			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
+		} else {
+			utils.RespondWithError(c, http.StatusInternalServerError, "Failed to resolve session", err.Error())
+		}
+		return "", false
+	}
+
+	return sess.ID, true
+}
+
 // handleSendResponse is a helper function to standardize response handling for send operations
 func (h *SendHandler) handleSendResponse(c *gin.Context, resp *whatsmeow.SendResponse, requestID string, err error, operation string) {
 	if err != nil {
@@ -51,7 +73,7 @@ func NewSendHandler(sessionService session.SessionService, meowService *meow.Meo
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendTextRequest true "Text message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -59,14 +81,12 @@ func NewSendHandler(sessionService session.SessionService, meowService *meow.Meo
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/text [post]
 func (h *SendHandler) SendText(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	h.logger.Infof("DEBUG: SendText called with sessionID: %s", sessionID)
-
-	if sessionID == "" {
-		h.logger.Errorf("DEBUG: Session ID is empty")
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
+	h.logger.Infof("DEBUG: Using resolved sessionID: %s", sessionID)
 
 	var req types.SendTextRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,7 +128,7 @@ func (h *SendHandler) SendText(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendImageRequest true "Image message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -116,7 +136,11 @@ func (h *SendHandler) SendText(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/image [post]
 func (h *SendHandler) SendImage(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -196,7 +220,7 @@ func (h *SendHandler) SendImage(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendAudioRequest true "Audio message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -204,7 +228,11 @@ func (h *SendHandler) SendImage(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/audio [post]
 func (h *SendHandler) SendAudio(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -274,7 +302,7 @@ func (h *SendHandler) SendAudio(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendDocumentRequest true "Document message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -282,7 +310,12 @@ func (h *SendHandler) SendAudio(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/document [post]
 func (h *SendHandler) SendDocument(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -359,7 +392,7 @@ func (h *SendHandler) SendDocument(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendVideoRequest true "Video message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -367,7 +400,12 @@ func (h *SendHandler) SendDocument(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/video [post]
 func (h *SendHandler) SendVideo(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -437,7 +475,7 @@ func (h *SendHandler) SendVideo(c *gin.Context) {
 // @Tags send
 // @Accept json,multipart/form-data
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendMediaRequest true "Media message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -445,7 +483,12 @@ func (h *SendHandler) SendVideo(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/media [post]
 func (h *SendHandler) SendMedia(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -544,7 +587,7 @@ func (h *SendHandler) SendMedia(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendStickerRequest true "Sticker message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -552,7 +595,12 @@ func (h *SendHandler) SendMedia(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/sticker [post]
 func (h *SendHandler) SendSticker(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -596,7 +644,7 @@ func (h *SendHandler) SendSticker(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendLocationRequest true "Location message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -604,7 +652,12 @@ func (h *SendHandler) SendSticker(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/location [post]
 func (h *SendHandler) SendLocation(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -645,7 +698,7 @@ func (h *SendHandler) SendLocation(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendContactRequest true "Contact message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -653,7 +706,12 @@ func (h *SendHandler) SendLocation(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/contact [post]
 func (h *SendHandler) SendContact(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -684,7 +742,7 @@ func (h *SendHandler) SendContact(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendButtonsRequest true "Buttons message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -692,7 +750,12 @@ func (h *SendHandler) SendContact(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/buttons [post]
 func (h *SendHandler) SendButtons(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -733,7 +796,7 @@ func (h *SendHandler) SendButtons(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendListRequest true "List message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -741,7 +804,12 @@ func (h *SendHandler) SendButtons(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/list [post]
 func (h *SendHandler) SendList(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return
@@ -782,7 +850,7 @@ func (h *SendHandler) SendList(c *gin.Context) {
 // @Tags send
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.SendPollRequest true "Poll message request"
 // @Success 200 {object} types.SendResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -790,7 +858,12 @@ func (h *SendHandler) SendList(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/send/poll [post]
 func (h *SendHandler) SendPoll(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	// Get resolved session from middleware
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
+		return
+	}
 	if sessionID == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
 		return

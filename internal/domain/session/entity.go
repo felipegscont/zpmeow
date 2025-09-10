@@ -160,13 +160,18 @@ func (s *Session) validateStatus() error {
 
 // Domain errors with improved messages
 var (
-	ErrInvalidSessionID     = NewDomainError("session ID cannot be empty")
-	ErrInvalidSessionName   = NewDomainError("session name cannot be empty")
-	ErrInvalidSessionStatus = NewDomainError("session status is invalid")
-	ErrSessionNotFound      = NewDomainError("session not found")
-	ErrSessionAlreadyExists = NewDomainError("session already exists")
-	ErrSessionAlreadyConnected = NewDomainError("session is already connected")
-	ErrSessionCannotConnect = NewDomainError("session cannot be connected in current state")
+	ErrInvalidSessionID          = NewDomainError("session ID cannot be empty")
+	ErrInvalidSessionName        = NewDomainError("session name cannot be empty")
+	ErrSessionNameTooShort       = NewDomainError("session name must be at least 3 characters long")
+	ErrSessionNameTooLong        = NewDomainError("session name cannot exceed 50 characters")
+	ErrInvalidSessionNameChar    = NewDomainError("session name can only contain letters, numbers, hyphens, and underscores")
+	ErrInvalidSessionNameFormat  = NewDomainError("session name cannot start or end with hyphen or underscore")
+	ErrReservedSessionName       = NewDomainError("session name is reserved and cannot be used")
+	ErrInvalidSessionStatus      = NewDomainError("session status is invalid")
+	ErrSessionNotFound           = NewDomainError("session not found")
+	ErrSessionAlreadyExists      = NewDomainError("session already exists")
+	ErrSessionAlreadyConnected   = NewDomainError("session is already connected")
+	ErrSessionCannotConnect      = NewDomainError("session cannot be connected in current state")
 )
 
 // DomainError represents a domain-specific error

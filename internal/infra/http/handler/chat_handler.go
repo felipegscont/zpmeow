@@ -2,15 +2,14 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"zpmeow/internal/domain/session"
-	"zpmeow/internal/infra/meow"
 	"zpmeow/internal/infra/logger"
+	"zpmeow/internal/infra/meow"
 	"zpmeow/internal/types"
 	"zpmeow/internal/utils"
 
-	"github.com/gin-gonic/gin"
+"github.com/gin-gonic/gin"
 )
 
 // ChatHandler handles HTTP requests for chat operations
@@ -29,13 +28,35 @@ func NewChatHandler(sessionService session.SessionService, meowService *meow.Meo
 	}
 }
 
+// resolveSessionID resolves session ID from path parameter (handles both ID and name)
+func (h *ChatHandler) resolveSessionID(c *gin.Context) (string, bool) {
+	sessionID := c.Param("sessionId")
+	if sessionID == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return "", false
+	}
+
+	// Resolve session to get the actual ID (in case sessionID is a name)
+	sess, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
+	if err != nil {
+		if err == session.ErrSessionNotFound {
+			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
+		} else {
+			utils.RespondWithError(c, http.StatusInternalServerError, "Failed to resolve session", err.Error())
+		}
+		return "", false
+	}
+
+	return sess.ID, true
+}
+
 // SetPresence godoc
-// @Summary Set chat presence
-// @Description Set presence status in a chat (typing, recording, paused)
+// @Summary Set chat presence (typing/recording/paused)
+// @Description Set chat presence status for a specific chat
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatPresenceRequest true "Chat presence request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -43,52 +64,60 @@ func NewChatHandler(sessionService session.SessionService, meowService *meow.Meo
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/presence [post]
 func (h *ChatHandler) SetPresence(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
+	// Parse request body
 	var req types.ChatPresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number format
+	// Validate phone number
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// Validate presence state
-	validStates := []string{"typing", "recording", "paused"}
-	isValid := false
-	for _, state := range validStates {
-		if req.State == state {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid presence state. Must be: typing, recording, or paused")
+	// Map user-friendly states to whatsmeow ChatPresence values
+	state, media := h.mapPresenceState(req.State, req.Media)
+	if state == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Invalid state. Allowed values: typing, recording, paused")
 		return
 	}
 
-	// Set presence through Meow service
-	h.logger.Infof("Setting presence %s for %s from session %s", req.State, req.Phone, sessionID)
+	// Set chat presence through Meow service
+	h.logger.Infof("Setting chat presence for %s to %s from session %s", req.Phone, state, sessionID)
 
-	err := h.meowService.SetChatPresence(c.Request.Context(), sessionID, req.Phone, req.State)
+	err := h.meowService.SetChatPresence(c.Request.Context(), sessionID, req.Phone, state, media)
 	if err != nil {
-		h.logger.Errorf("Failed to set presence: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to set presence", err.Error())
+		h.logger.Errorf("Failed to set chat presence: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to set chat presence", err.Error())
 		return
 	}
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
 		Success: true,
-		Message: "Presence set successfully",
+		Message: "Chat presence set successfully",
 	})
+}
+
+// mapPresenceState maps user-friendly presence states to whatsmeow values
+func (h *ChatHandler) mapPresenceState(inputState, inputMedia string) (state, media string) {
+	switch inputState {
+	case "typing":
+		return "composing", "" // ChatPresenceMediaText is empty string
+	case "recording":
+		return "composing", "audio" // ChatPresenceMediaAudio
+	case "paused":
+		return "paused", ""
+	default:
+		return "", "" // Invalid state
+	}
 }
 
 // MarkRead godoc
@@ -97,7 +126,7 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatMarkReadRequest true "Mark read request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -105,19 +134,20 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/markread [post]
 func (h *ChatHandler) MarkRead(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
+	// Parse request body
 	var req types.ChatMarkReadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number format
+	// Validate phone number
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
@@ -147,53 +177,51 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 
 // React godoc
 // @Summary React to a message
-// @Description Add an emoji reaction to a message
+// @Description Send a reaction emoji to a message
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatReactRequest true "React request"
-// @Success 200 {object} types.SendResponse
+// @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 404 {object} utils.ErrorResponse
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/react [post]
 func (h *ChatHandler) React(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
+	// Parse request body
 	var req types.ChatReactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number format
+	// Validate phone number
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// Send reaction through Meow service
-	h.logger.Infof("Reacting with %s to message %s for %s from session %s", req.Emoji, req.MessageID, req.Phone, sessionID)
+	// React to message through Meow service
+	h.logger.Infof("Reacting to message %s with emoji %s for %s from session %s", req.MessageID, req.Emoji, req.Phone, sessionID)
 
 	err := h.meowService.ReactToMessage(c.Request.Context(), sessionID, req.Phone, req.MessageID, req.Emoji)
 	if err != nil {
-		h.logger.Errorf("Failed to send reaction: %v", err)
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to send reaction", err.Error())
+		h.logger.Errorf("Failed to react to message: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to react to message", err.Error())
 		return
 	}
 
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.MessageID,
-		Timestamp: time.Now().Unix(),
-	}
-
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
+		Success: true,
+		Message: "Message reaction sent successfully",
+	})
 }
 
 // Delete godoc
@@ -202,7 +230,7 @@ func (h *ChatHandler) React(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatDeleteRequest true "Delete request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -210,26 +238,34 @@ func (h *ChatHandler) React(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/delete [post]
 func (h *ChatHandler) Delete(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
+	// Parse request body
 	var req types.ChatDeleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number format
+	// Validate phone number
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// TODO: Implement actual message deletion through Meow service
-	h.logger.Infof("Deleting message %s for %s from session %s (forEveryone: %v)", req.MessageID, req.Phone, sessionID, req.ForEveryone)
+	// Delete message through Meow service
+	h.logger.Infof("Deleting message %s for %s (forEveryone: %v) from session %s", req.MessageID, req.Phone, req.ForEveryone, sessionID)
+
+	err := h.meowService.DeleteMessage(c.Request.Context(), sessionID, req.Phone, req.MessageID, req.ForEveryone)
+	if err != nil {
+		h.logger.Errorf("Failed to delete message: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to delete message", err.Error())
+		return
+	}
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
 		Success: true,
@@ -243,51 +279,57 @@ func (h *ChatHandler) Delete(c *gin.Context) {
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatEditRequest true "Edit request"
-// @Success 200 {object} types.SendResponse
+// @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 404 {object} utils.ErrorResponse
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/edit [post]
 func (h *ChatHandler) Edit(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
+	// Parse request body
 	var req types.ChatEditRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number format
+	// Validate phone number
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// TODO: Implement actual message editing through Meow service
-	h.logger.Infof("Editing message %s for %s from session %s", req.MessageID, req.Phone, sessionID)
+	// Edit message through Meow service
+	h.logger.Infof("Editing message %s with new text for %s from session %s", req.MessageID, req.Phone, sessionID)
 
-	response := types.SendResponse{
-		Success:   true,
-		MessageID: req.MessageID,
-		Timestamp: 1640995200,
+	sendResp, err := h.meowService.EditMessage(c.Request.Context(), sessionID, req.Phone, req.MessageID, req.NewText)
+	if err != nil {
+		h.logger.Errorf("Failed to edit message: %v", err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to edit message", err.Error())
+		return
 	}
 
-	utils.RespondWithJSON(c, http.StatusOK, response)
+	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
+		Success: true,
+		Message: "Message edited successfully",
+		Data:    sendResp,
+	})
 }
 
 // DownloadImage godoc
-// @Summary Download an image from a message
-// @Description Download an image attachment from a WhatsApp message
+// @Summary Download image media
+// @Description Download image media from a message
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatDownloadRequest true "Download request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -295,38 +337,16 @@ func (h *ChatHandler) Edit(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/download/image [post]
 func (h *ChatHandler) DownloadImage(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
-		return
-	}
-
-	var req types.ChatDownloadRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
-		return
-	}
-
-	// TODO: Implement actual image download through Meow service
-	h.logger.Infof("Downloading image from message %s from session %s", req.MessageID, sessionID)
-
-	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
-		Success: true,
-		Message: "Image download initiated",
-		Data: map[string]interface{}{
-			"messageId": req.MessageID,
-			"type":      "image",
-		},
-	})
+	h.downloadMedia(c, "image")
 }
 
 // DownloadVideo godoc
-// @Summary Download a video from a message
-// @Description Download a video attachment from a WhatsApp message
+// @Summary Download video media
+// @Description Download video media from a message
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatDownloadRequest true "Download request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -334,38 +354,16 @@ func (h *ChatHandler) DownloadImage(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/download/video [post]
 func (h *ChatHandler) DownloadVideo(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
-		return
-	}
-
-	var req types.ChatDownloadRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
-		return
-	}
-
-	// TODO: Implement actual video download through Meow service
-	h.logger.Infof("Downloading video from message %s from session %s", req.MessageID, sessionID)
-
-	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
-		Success: true,
-		Message: "Video download initiated",
-		Data: map[string]interface{}{
-			"messageId": req.MessageID,
-			"type":      "video",
-		},
-	})
+	h.downloadMedia(c, "video")
 }
 
 // DownloadAudio godoc
-// @Summary Download an audio from a message
-// @Description Download an audio attachment from a WhatsApp message
+// @Summary Download audio media
+// @Description Download audio media from a message
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatDownloadRequest true "Download request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -373,38 +371,16 @@ func (h *ChatHandler) DownloadVideo(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/download/audio [post]
 func (h *ChatHandler) DownloadAudio(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
-		return
-	}
-
-	var req types.ChatDownloadRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
-		return
-	}
-
-	// TODO: Implement actual audio download through Meow service
-	h.logger.Infof("Downloading audio from message %s from session %s", req.MessageID, sessionID)
-
-	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
-		Success: true,
-		Message: "Audio download initiated",
-		Data: map[string]interface{}{
-			"messageId": req.MessageID,
-			"type":      "audio",
-		},
-	})
+	h.downloadMedia(c, "audio")
 }
 
 // DownloadDocument godoc
-// @Summary Download a document from a message
-// @Description Download a document attachment from a WhatsApp message
+// @Summary Download document media
+// @Description Download document media from a message
 // @Tags chat
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.ChatDownloadRequest true "Download request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -412,27 +388,42 @@ func (h *ChatHandler) DownloadAudio(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/download/document [post]
 func (h *ChatHandler) DownloadDocument(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	h.downloadMedia(c, "document")
+}
+
+// downloadMedia is a helper function to download media of any type
+func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
+	// Resolve session ID
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
+	// Parse request body
 	var req types.ChatDownloadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// TODO: Implement actual document download through Meow service
-	h.logger.Infof("Downloading document from message %s from session %s", req.MessageID, sessionID)
+	// Download media through Meow service
+	h.logger.Infof("Downloading %s media for message %s from session %s", mediaType, req.MessageID, sessionID)
+
+	mediaData, mimeType, err := h.meowService.DownloadMedia(c.Request.Context(), sessionID, req.MessageID)
+	if err != nil {
+		h.logger.Errorf("Failed to download %s media: %v", mediaType, err)
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to download media", err.Error())
+		return
+	}
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
 		Success: true,
-		Message: "Document download initiated",
+		Message: "Media downloaded successfully",
 		Data: map[string]interface{}{
-			"messageId": req.MessageID,
-			"type":      "document",
+			"mediaType": mediaType,
+			"mimeType":  mimeType,
+			"size":      len(mediaData),
+			"data":      mediaData, // Base64 encoded data
 		},
 	})
 }

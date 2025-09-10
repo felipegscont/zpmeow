@@ -199,10 +199,11 @@ func NewSendResponseFromWhatsmeow(resp *whatsmeow.SendResponse, requestID string
 
 // Chat operation types
 
-// ChatPresenceRequest represents a chat presence request
+// ChatPresenceRequest represents a chat presence request (WuzAPI format)
 type ChatPresenceRequest struct {
-	Phone string `json:"phone" binding:"required" example:"+5511999999999"`
-	State string `json:"state" binding:"required" example:"typing"` // typing, recording, paused
+	Phone string `json:"phone" binding:"required" example:"5511999999999"`
+	State string `json:"state" binding:"required" example:"composing"` // composing, paused
+	Media string `json:"media" example:"audio"`                        // text, audio (optional, only for composing)
 }
 
 // ChatMarkReadRequest represents a mark as read request

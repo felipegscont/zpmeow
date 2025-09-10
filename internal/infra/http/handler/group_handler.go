@@ -29,13 +29,35 @@ func NewGroupHandler(sessionService session.SessionService, meowService *meow.Me
 	}
 }
 
+// resolveSessionID resolves sessionID parameter to actual session ID (handles both ID and name)
+func (h *GroupHandler) resolveSessionID(c *gin.Context) (string, bool) {
+	sessionID := c.Param("sessionId")
+	if sessionID == "" {
+		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return "", false
+	}
+
+	// Resolve session to get the actual ID (in case sessionID is a name)
+	sess, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
+	if err != nil {
+		if err == session.ErrSessionNotFound {
+			utils.RespondWithError(c, http.StatusNotFound, "Session not found")
+		} else {
+			utils.RespondWithError(c, http.StatusInternalServerError, "Failed to resolve session", err.Error())
+		}
+		return "", false
+	}
+
+	return sess.ID, true
+}
+
 // CreateGroup godoc
 // @Summary Create a new WhatsApp group
 // @Description Create a new WhatsApp group with specified participants
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupCreateRequest true "Group creation request"
 // @Success 201 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -43,9 +65,9 @@ func NewGroupHandler(sessionService session.SessionService, meowService *meow.Me
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/create [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (same as SendHandler)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -94,7 +116,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // @Description Get a list of all groups the session is part of
 // @Tags group
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
 // @Failure 404 {object} utils.ErrorResponse
@@ -147,7 +169,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 // @Description Get detailed information about a specific group
 // @Tags group
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param groupJid query string true "Group JID"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -155,9 +177,9 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/info [get]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -213,7 +235,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupJoinRequest true "Group join request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -221,9 +243,9 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -259,7 +281,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupLeaveRequest true "Group leave request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -267,9 +289,9 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/leave [post]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -300,7 +322,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Description Get the invite link for a group
 // @Tags group
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param groupJid query string true "Group JID"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -308,9 +330,9 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/invitelink [get]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -355,7 +377,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupInviteInfoRequest true "Invite info request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -363,9 +385,9 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/inviteinfo [post]
 func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -400,7 +422,7 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupUpdateParticipantsRequest true "Update participants request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -408,9 +430,9 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/participants/update [post]
 func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -474,7 +496,7 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupSetNameRequest true "Set name request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -482,9 +504,9 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/name/set [post]
 func (h *GroupHandler) SetName(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -520,7 +542,7 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupSetTopicRequest true "Set topic request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -528,9 +550,9 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/topic/set [post]
 func (h *GroupHandler) SetTopic(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -566,7 +588,7 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupSetPhotoRequest true "Set photo request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -574,9 +596,9 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/photo/set [post]
 func (h *GroupHandler) SetPhoto(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -604,7 +626,7 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupRemovePhotoRequest true "Remove photo request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -612,9 +634,9 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/photo/remove [post]
 func (h *GroupHandler) RemovePhoto(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -642,7 +664,7 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupSetAnnounceRequest true "Set announce request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -650,9 +672,9 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/announce/set [post]
 func (h *GroupHandler) SetAnnounce(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -681,7 +703,7 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupSetLockedRequest true "Set locked request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -689,9 +711,9 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/locked/set [post]
 func (h *GroupHandler) SetLocked(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 
@@ -720,7 +742,7 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 // @Tags group
 // @Accept json
 // @Produce json
-// @Param sessionId path string true "Session ID"
+// @Param sessionId path string true "Session ID or Name"
 // @Param request body types.GroupSetEphemeralRequest true "Set ephemeral request"
 // @Success 200 {object} utils.SuccessResponse
 // @Failure 400 {object} utils.ErrorResponse
@@ -728,9 +750,9 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/ephemeral/set [post]
 func (h *GroupHandler) SetEphemeral(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-	if sessionID == "" {
-		utils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+	// Resolve session ID (handles both ID and name)
+	sessionID, ok := h.resolveSessionID(c)
+	if !ok {
 		return
 	}
 

@@ -128,6 +128,28 @@ func (r *PostgresSessionRepository) GetByID(ctx context.Context, id string) (*se
 	return model.toEntity(), nil
 }
 
+// GetByName retrieves a session by its exact name
+func (r *PostgresSessionRepository) GetByName(ctx context.Context, name string) (*session.Session, error) {
+	var model sessionModel
+
+	query := `
+		SELECT id, name, COALESCE(device_jid, '') as device_jid, status,
+			   COALESCE(qr_code, '') as qr_code, COALESCE(proxy_url, '') as proxy_url,
+			   created_at, updated_at
+		FROM sessions WHERE name = $1
+	`
+
+	err := r.db.GetContext(ctx, &model, query, name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, session.ErrSessionNotFound
+		}
+		return nil, err
+	}
+
+	return model.toEntity(), nil
+}
+
 // GetAll retrieves all sessions
 func (r *PostgresSessionRepository) GetAll(ctx context.Context) ([]*session.Session, error) {
 	var models []sessionModel

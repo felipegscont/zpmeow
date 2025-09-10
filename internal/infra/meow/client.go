@@ -519,14 +519,15 @@ func (mc *MeowClient) ReactToMessage(ctx context.Context, chatJID waTypes.JID, m
 }
 
 
-func (mc *MeowClient) SetChatPresence(ctx context.Context, chatJID waTypes.JID, presence waTypes.Presence) error {
+func (mc *MeowClient) SetChatPresence(ctx context.Context, chatJID waTypes.JID, chatPresence waTypes.ChatPresence, media waTypes.ChatPresenceMedia) error {
 	if !mc.IsConnected() {
 		return fmt.Errorf("client is not connected")
 	}
 
-	err := mc.client.SendPresence(presence)
+	// Send chat presence using whatsmeow
+	err := mc.client.SendChatPresence(chatJID, chatPresence, media)
 	if err != nil {
-		return fmt.Errorf("failed to set presence: %w", err)
+		return fmt.Errorf("failed to set chat presence: %w", err)
 	}
 
 	mc.updateActivity()
@@ -775,15 +776,25 @@ func (mc *MeowClient) onConnected() {
 	mc.setStatus(types.StatusConnected)
 	mc.clearQRCode()
 
-	
+
 	if mc.manager != nil {
 		go mc.manager.clearQRCodeInDatabase(mc.sessionID)
 	}
 
-	
+
 	mc.stopQRLoop()
 
 	mc.logger.Infof("Client connected for session %s", mc.sessionID)
+
+	// Send global presence to mark as available
+	// This is important for chat presence to work properly
+	go func() {
+		if err := mc.client.SendPresence(waTypes.PresenceAvailable); err != nil {
+			mc.logger.Warnf("Failed to send available presence for session %s: %v", mc.sessionID, err)
+		} else {
+			mc.logger.Infof("Marked session %s as available", mc.sessionID)
+		}
+	}()
 }
 
 
