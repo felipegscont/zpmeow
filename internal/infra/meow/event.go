@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infra/logger"
+	"zpmeow/internal/infra/webhook"
 
 	"go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
@@ -13,18 +15,20 @@ import (
 
 
 type EventHandler struct {
-	sessionID string
-	logger    logger.Logger
-	waLogger  waLog.Logger
-	client    *MeowClient
+	sessionID       string
+	logger          logger.Logger
+	waLogger        waLog.Logger
+	client          *MeowClient
+	webhookService  *webhook.WebhookService
+	sessionService  session.SessionService
 
-	
+
 	messageCount    int64
 	lastMessageTime time.Time
 }
 
 
-func NewEventHandler(sessionID string, waLogger waLog.Logger, client *MeowClient) *EventHandler {
+func NewEventHandler(sessionID string, waLogger waLog.Logger, client *MeowClient, webhookService *webhook.WebhookService, sessionService session.SessionService) *EventHandler {
 	if waLogger == nil {
 		waLogger = waLog.Noop
 	}
@@ -32,72 +36,127 @@ func NewEventHandler(sessionID string, waLogger waLog.Logger, client *MeowClient
 	appLogger := logger.GetLogger().Sub("event-handler").Sub(sessionID)
 
 	return &EventHandler{
-		sessionID: sessionID,
-		logger:    appLogger,
-		waLogger:  waLogger,
-		client:    client,
+		sessionID:      sessionID,
+		logger:         appLogger,
+		waLogger:       waLogger,
+		client:         client,
+		webhookService: webhookService,
+		sessionService: sessionService,
 	}
 }
 
+
+// sendWebhook sends an event to the configured webhook URL if the event is subscribed
+func (eh *EventHandler) sendWebhook(eventType string, data interface{}) {
+	if eh.webhookService == nil || eh.sessionService == nil {
+		return
+	}
+
+	// Get session configuration
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	sess, err := eh.sessionService.GetSession(ctx, eh.sessionID)
+	if err != nil {
+		eh.logger.Debugf("Failed to get session for webhook: %v", err)
+		return
+	}
+
+	// Check if webhook is configured and event is subscribed
+	if !sess.HasWebhook() || !sess.IsEventSubscribed(eventType) {
+		return
+	}
+
+	// Send webhook asynchronously
+	eh.webhookService.SendWebhookAsync(sess.WebhookURL, eventType, eh.sessionID, data)
+}
 
 func (eh *EventHandler) HandleEvent(evt interface{}) {
 	switch v := evt.(type) {
 	case *events.Message:
 		eh.handleMessage(v)
+		eh.sendWebhook("message", v)
 	case *events.Receipt:
 		eh.handleReceipt(v)
+		eh.sendWebhook("receipt", v)
 	case *events.Presence:
 		eh.handlePresence(v)
+		eh.sendWebhook("presence", v)
 	case *events.ChatPresence:
 		eh.handleChatPresence(v)
+		eh.sendWebhook("chat_presence", v)
 	case *events.Connected:
 		eh.handleConnected(v)
+		eh.sendWebhook("connected", v)
 	case *events.Disconnected:
 		eh.handleDisconnected(v)
+		eh.sendWebhook("disconnected", v)
 	case *events.LoggedOut:
 		eh.handleLoggedOut(v)
+		eh.sendWebhook("logged_out", v)
 	case *events.QR:
 		eh.handleQR(v)
+		eh.sendWebhook("qr", v)
 	case *events.PairSuccess:
 		eh.handlePairSuccess(v)
+		eh.sendWebhook("pair_success", v)
 	case *events.ConnectFailure:
 		eh.handleConnectFailure(v)
+		eh.sendWebhook("connect_failure", v)
 	case *events.StreamError:
 		eh.handleStreamError(v)
+		eh.sendWebhook("stream_error", v)
 	case *events.StreamReplaced:
 		eh.handleStreamReplaced(v)
+		eh.sendWebhook("stream_replaced", v)
 	case *events.TemporaryBan:
 		eh.handleTemporaryBan(v)
+		eh.sendWebhook("temporary_ban", v)
 	case *events.GroupInfo:
 		eh.handleGroupInfo(v)
+		eh.sendWebhook("group_info", v)
 	case *events.JoinedGroup:
 		eh.handleJoinedGroup(v)
+		eh.sendWebhook("joined_group", v)
 	case *events.Contact:
 		eh.handleContact(v)
+		eh.sendWebhook("contact", v)
 	case *events.PushName:
 		eh.handlePushName(v)
+		eh.sendWebhook("push_name", v)
 	case *events.BusinessName:
 		eh.handleBusinessName(v)
+		eh.sendWebhook("business_name", v)
 	case *events.IdentityChange:
 		eh.handleIdentityChange(v)
+		eh.sendWebhook("identity_change", v)
 	case *events.PrivacySettings:
 		eh.handlePrivacySettings(v)
+		eh.sendWebhook("privacy_settings", v)
 	case *events.OfflineSyncPreview:
 		eh.handleOfflineSyncPreview(v)
+		eh.sendWebhook("offline_sync_preview", v)
 	case *events.OfflineSyncCompleted:
 		eh.handleOfflineSyncCompleted(v)
+		eh.sendWebhook("offline_sync_completed", v)
 	case *events.AppStateSyncComplete:
 		eh.handleAppStateSyncComplete(v)
+		eh.sendWebhook("app_state_sync_complete", v)
 	case *events.HistorySync:
 		eh.handleHistorySync(v)
+		eh.sendWebhook("history_sync", v)
 	case *events.AppState:
 		eh.handleAppState(v)
+		eh.sendWebhook("app_state", v)
 	case *events.KeepAliveTimeout:
 		eh.handleKeepAliveTimeout(v)
+		eh.sendWebhook("keep_alive_timeout", v)
 	case *events.KeepAliveRestored:
 		eh.handleKeepAliveRestored(v)
+		eh.sendWebhook("keep_alive_restored", v)
 	case *events.Blocklist:
 		eh.handleBlocklist(v)
+		eh.sendWebhook("blocklist", v)
 	default:
 		eh.logger.Debugf("Session %s: Unhandled event type: %T", eh.sessionID, evt)
 	}
@@ -136,8 +195,8 @@ func (eh *EventHandler) processMessageWithTimeout(ctx context.Context, evt *even
 		eh.lastMessageTime = time.Now()
 
 		
-		eh.logger.Infof("Session %s: Received message from %s: %s",
-			eh.sessionID, evt.Info.Sender, evt.Message.GetConversation())
+		eh.logger.Infof("Session %s: Received message from %s (ID: %s): %s",
+			eh.sessionID, evt.Info.Sender, evt.Info.ID, evt.Message.GetConversation())
 
 		
 		if eh.client != nil {

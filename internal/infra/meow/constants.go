@@ -2,18 +2,18 @@ package meow
 
 import "time"
 
-// Application constants
+
 const (
-	// Application info
+
 	AppName    = "zpmeow"
 	AppVersion = "1.0.0"
 	
-	// Default values
+
 	DefaultUserAgent = "zpmeow/1.0.0"
 	DefaultPlatform  = "Chrome (Linux)"
 )
 
-// Timeout constants
+
 const (
 	DefaultTimeout        = 30 * time.Second
 	QRTimeout            = 2 * time.Minute
@@ -24,7 +24,7 @@ const (
 	ShutdownTimeout      = 10 * time.Second
 )
 
-// Retry constants
+
 const (
 	MaxRetries         = 3
 	RetryDelay         = 1 * time.Second
@@ -32,7 +32,7 @@ const (
 	RetryBackoffFactor = 2.0
 )
 
-// Buffer sizes
+
 const (
 	KillChannelBuffer     = 1
 	QRStopChannelBuffer   = 1
@@ -40,14 +40,14 @@ const (
 	MessageChannelBuffer  = 50
 )
 
-// Database constants
+
 const (
 	MaxDBConnections     = 25
 	MaxIdleDBConnections = 5
 	DBConnectionLifetime = 5 * time.Minute
 )
 
-// Media constants
+
 const (
 	MaxImageSize    = 16 * 1024 * 1024  // 16MB
 	MaxVideoSize    = 64 * 1024 * 1024  // 64MB
@@ -60,7 +60,7 @@ const (
 	DefaultDocumentMimeType = "application/octet-stream"
 )
 
-// Error messages
+
 const (
 	ErrClientNotConnected    = "client is not connected"
 	ErrClientNotFound        = "client not found for session"
@@ -81,7 +81,7 @@ const (
 	ErrOperationCancelled   = "operation was cancelled"
 )
 
-// Success messages
+
 const (
 	MsgClientStarted     = "client started successfully"
 	MsgClientStopped     = "client stopped successfully"
@@ -92,7 +92,7 @@ const (
 	MsgPairingSuccessful = "pairing completed successfully"
 )
 
-// Log messages
+
 const (
 	LogClientCreated    = "created new client for session"
 	LogClientRemoved    = "removed client for session"
@@ -104,7 +104,7 @@ const (
 	LogMessageSent      = "message sent for session"
 )
 
-// Event types
+
 const (
 	EventTypeMessage      = "message"
 	EventTypeReceipt      = "receipt"
@@ -117,7 +117,7 @@ const (
 	EventTypeError        = "error"
 )
 
-// Status values
+
 const (
 	StatusConnecting    = "connecting"
 	StatusConnected     = "connected"
@@ -127,7 +127,7 @@ const (
 	StatusReconnecting  = "reconnecting"
 )
 
-// WhatsApp specific constants
+
 const (
 	WhatsAppUserServer  = "s.whatsapp.net"
 	WhatsAppGroupServer = "g.us"
@@ -138,7 +138,7 @@ const (
 	QREventSuccess = "success"
 )
 
-// File extensions
+
 const (
 	ExtensionJPEG = ".jpg"
 	ExtensionPNG  = ".png"
@@ -149,14 +149,14 @@ const (
 	ExtensionTXT  = ".txt"
 )
 
-// Validation patterns
+
 const (
 	PhoneNumberPattern = `^\+?[1-9]\d{1,14}$`
 	SessionIDPattern   = `^[a-zA-Z0-9_-]+$`
 	JIDPattern         = `^[0-9]+@[a-z.]+$`
 )
 
-// Performance constants
+
 const (
 	MaxConcurrentConnections = 100
 	MaxMessageQueueSize      = 1000
@@ -165,7 +165,7 @@ const (
 	HealthCheckInterval      = 30 * time.Second
 )
 
-// Feature flags
+
 const (
 	EnableDebugLogging     = false
 	EnableMetrics          = true

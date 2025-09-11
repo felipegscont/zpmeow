@@ -3,10 +3,12 @@ package meow
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infra/logger"
+	"zpmeow/internal/infra/webhook"
 	"zpmeow/internal/types"
 
 	"github.com/jmoiron/sqlx"
@@ -17,7 +19,7 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
-// MediaDownloadInfo contains the information needed to download media
+
 type MediaDownloadInfo struct {
 	MediaType     string `json:"mediaType"`     // image, video, audio, document
 	URL           string `json:"url"`
@@ -30,14 +32,42 @@ type MediaDownloadInfo struct {
 }
 
 
-// parseJID parses a phone number or JID string into a WhatsApp JID
-// Deprecated: Use JID.ParseJID instead
+
+
 func parseJID(arg string) (waTypes.JID, bool) {
-	jid, err := JID.ParseJID(arg)
-	return jid, err == nil
+	// First try to parse as a complete JID (for groups like 120363313346913103@g.us)
+	if strings.Contains(arg, "@") {
+		jid, err := waTypes.ParseJID(arg)
+		if err == nil {
+			return jid, true
+		}
+	}
+
+	// If it's a phone number, convert to WhatsApp JID
+	// Remove any non-numeric characters except +
+	phone := strings.ReplaceAll(arg, " ", "")
+	phone = strings.ReplaceAll(phone, "-", "")
+	phone = strings.ReplaceAll(phone, "(", "")
+	phone = strings.ReplaceAll(phone, ")", "")
+
+	// Remove + prefix if present
+	if strings.HasPrefix(phone, "+") {
+		phone = phone[1:]
+	}
+
+	// Validate that it's all digits
+	for _, char := range phone {
+		if char < '0' || char > '9' {
+			return waTypes.JID{}, false
+		}
+	}
+
+	// Create WhatsApp user JID
+	jid := waTypes.NewJID(phone, waTypes.DefaultUserServer)
+	return jid, true
 }
 
-// validateAndGetClient validates session and returns client with parsed JID - eliminates code duplication
+
 func (m *MeowServiceImpl) validateAndGetClient(sessionID, to string) (*MeowClient, waTypes.JID, error) {
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
@@ -60,13 +90,17 @@ type MeowServiceImpl struct {
 }
 
 
-func NewMeowService(db *sqlx.DB, container *sqlstore.Container, waLogger waLog.Logger) session.WhatsAppService {
+func NewMeowService(db *sqlx.DB, container *sqlstore.Container, waLogger waLog.Logger, sessionService session.SessionService) session.WhatsAppService {
 	if waLogger == nil {
 		waLogger = waLog.Noop
 	}
 
 	appLogger := logger.GetLogger().Sub("meow-service")
-	clientManager := NewClientManager(db, container, waLogger)
+
+	// Create webhook service
+	webhookService := webhook.NewWebhookService()
+
+	clientManager := NewClientManager(db, container, waLogger, webhookService, sessionService)
 
 	service := &MeowServiceImpl{
 		clientManager: clientManager,
@@ -79,7 +113,7 @@ func NewMeowService(db *sqlx.DB, container *sqlstore.Container, waLogger waLog.L
 
 
 func (m *MeowServiceImpl) StartClient(sessionID string) error {
-	// Validate session ID
+
 	if err := Validation.ValidateSessionID(sessionID); err != nil {
 		return Error.WrapError(err, "start client validation failed")
 	}
@@ -101,7 +135,7 @@ func (m *MeowServiceImpl) StartClient(sessionID string) error {
 
 
 func (m *MeowServiceImpl) StopClient(sessionID string) error {
-	// Validate session ID
+
 	if err := Validation.ValidateSessionID(sessionID); err != nil {
 		return Error.WrapError(err, "stop client validation failed")
 	}
@@ -263,7 +297,7 @@ func (m *MeowServiceImpl) SendMessage(ctx context.Context, sessionID, to, messag
 func (m *MeowServiceImpl) SendTextMessage(ctx context.Context, sessionID, to, text string, contextInfo *waE2E.ContextInfo) (*whatsmeow.SendResponse, error) {
 	m.logger.Infof("DEBUG: SendTextMessage called - sessionID: %s, to: %s, text: %s", sessionID, to, text)
 
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		m.logger.Errorf("DEBUG: Validation failed: %v", err)
@@ -272,7 +306,7 @@ func (m *MeowServiceImpl) SendTextMessage(ctx context.Context, sessionID, to, te
 
 	m.logger.Infof("DEBUG: Client found and JID parsed successfully: %s -> %s", to, jid.String())
 
-	// Skip IsConnected() check to avoid deadlock
+
 	m.logger.Infof("DEBUG: Skipping IsConnected() check to avoid deadlock")
 
 	m.logger.Infof("DEBUG: Calling client.SendTextMessage...")
@@ -288,7 +322,7 @@ func (m *MeowServiceImpl) SendTextMessage(ctx context.Context, sessionID, to, te
 
 
 func (m *MeowServiceImpl) SendLocationMessage(ctx context.Context, sessionID, to string, latitude, longitude float64, name, address string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -299,7 +333,7 @@ func (m *MeowServiceImpl) SendLocationMessage(ctx context.Context, sessionID, to
 
 
 func (m *MeowServiceImpl) SendContactMessage(ctx context.Context, sessionID, to, displayName, vcard string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -317,22 +351,22 @@ func (m *MeowServiceImpl) SetChatPresence(ctx context.Context, sessionID, chatJI
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	// Parse chat JID - use our JID utility for better parsing
+
 	jid, err := JID.ParseJID(chatJID)
 	if err != nil {
 		return fmt.Errorf("invalid JID %s: %w", chatJID, err)
 	}
 
-	// Validate presence parameters
+
 	if err := m.validatePresenceParams(state, media); err != nil {
 		return err
 	}
 
-	// Convert to whatsmeow types
+
 	chatPresence := waTypes.ChatPresence(state)
 	mediaType := waTypes.ChatPresenceMedia(media)
 
-	// Send chat presence using whatsmeow client
+
 	err = client.client.SendChatPresence(jid, chatPresence, mediaType)
 	if err != nil {
 		return fmt.Errorf("failed to set chat presence: %w", err)
@@ -341,14 +375,14 @@ func (m *MeowServiceImpl) SetChatPresence(ctx context.Context, sessionID, chatJI
 	return nil
 }
 
-// validatePresenceParams validates chat presence parameters
+
 func (m *MeowServiceImpl) validatePresenceParams(state, media string) error {
-	// Validate state - only composing and paused are supported by whatsmeow
+
 	if state != "composing" && state != "paused" {
 		return fmt.Errorf("invalid state: %s (valid: composing, paused)", state)
 	}
 
-	// Validate media - empty string (ChatPresenceMediaText), "audio" are valid
+
 	if media != "" && media != "audio" {
 		return fmt.Errorf("invalid media: %s (valid: \"\", audio)", media)
 	}
@@ -358,38 +392,66 @@ func (m *MeowServiceImpl) validatePresenceParams(state, media string) error {
 
 
 func (m *MeowServiceImpl) MarkMessageRead(ctx context.Context, sessionID, chatJID string, messageIDs []string) error {
+	m.logger.Infof("MarkMessageRead service called with sessionID: %s, chatJID: %s, messageIDs: %v", sessionID, chatJID, messageIDs)
+
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	
-	jid, err := waTypes.ParseJID(chatJID)
-	if err != nil {
-		return fmt.Errorf("invalid JID %s: %w", chatJID, err)
+	// Parse chat JID using our utility function (handles phone numbers)
+	jid, ok := parseJID(chatJID)
+	if !ok {
+		m.logger.Errorf("Failed to parse chat JID: %s", chatJID)
+		return fmt.Errorf("invalid chat JID %s", chatJID)
 	}
 
-	return client.MarkMessageRead(ctx, jid, messageIDs)
+	m.logger.Infof("Parsed JID: %s -> %s", chatJID, jid.String())
+
+	err := client.MarkMessageRead(ctx, jid, messageIDs)
+	if err != nil {
+		m.logger.Errorf("MarkMessageRead failed: %v", err)
+		return err
+	}
+
+	m.logger.Infof("MarkMessageRead service completed successfully")
+	return nil
 }
 
 
 func (m *MeowServiceImpl) CreateGroup(ctx context.Context, sessionID, name string, participants []string) (*waTypes.GroupInfo, error) {
+	m.logger.Infof("CreateGroup service called with sessionID: %s, name: %s, participants: %v", sessionID, name, participants)
+
 	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
+		m.logger.Errorf("Client not found for session: %s", sessionID)
 		return nil, fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	
+	m.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+	// Convert participant phone numbers to JIDs using our utility function
 	participantJIDs := make([]waTypes.JID, len(participants))
 	for i, participant := range participants {
-		jid, err := waTypes.ParseJID(participant)
-		if err != nil {
-			return nil, fmt.Errorf("invalid participant JID %s: %w", participant, err)
+		jid, ok := parseJID(participant)
+		if !ok {
+			m.logger.Errorf("Failed to parse participant JID: %s", participant)
+			return nil, fmt.Errorf("invalid participant JID %s", participant)
 		}
+		m.logger.Infof("Parsed participant JID: %s -> %s", participant, jid.String())
 		participantJIDs[i] = jid
 	}
 
-	return client.CreateGroup(ctx, name, participantJIDs)
+	m.logger.Infof("Calling client.CreateGroup with name: %s, participants: %v", name, participantJIDs)
+	groupInfo, err := client.CreateGroup(ctx, name, participantJIDs)
+	if err != nil {
+		m.logger.Errorf("Failed to create group: %v", err)
+		return nil, err
+	}
+
+	m.logger.Infof("Successfully created group: %s (JID: %s)", name, groupInfo.JID.String())
+	m.logger.Infof("CreateGroup service completed successfully")
+	return groupInfo, nil
 }
 
 
@@ -452,30 +514,57 @@ func (m *MeowServiceImpl) GetGroupInviteLink(ctx context.Context, sessionID, gro
 
 
 func (m *MeowServiceImpl) UpdateGroupParticipants(ctx context.Context, sessionID, groupJID string, participants []string, action string) error {
-	_, exists := m.clientManager.GetClient(sessionID)
+	m.logger.Infof("UpdateGroupParticipants service called with sessionID: %s, groupJID: %s, participants: %v, action: %s", sessionID, groupJID, participants, action)
+
+	client, exists := m.clientManager.GetClient(sessionID)
 	if !exists {
+		m.logger.Errorf("Client not found for session: %s", sessionID)
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	
-	_, err := waTypes.ParseJID(groupJID)
+	// Parse group JID
+	groupJIDParsed, err := waTypes.ParseJID(groupJID)
 	if err != nil {
+		m.logger.Errorf("Failed to parse group JID: %s, error: %v", groupJID, err)
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
+	m.logger.Infof("Parsed group JID: %s -> %s", groupJID, groupJIDParsed.String())
 
-	
+	// Parse participant JIDs using our utility function
 	participantJIDs := make([]waTypes.JID, len(participants))
 	for i, participant := range participants {
-		pJid, err := waTypes.ParseJID(participant)
-		if err != nil {
-			return fmt.Errorf("invalid participant JID %s: %w", participant, err)
+		pJid, ok := parseJID(participant)
+		if !ok {
+			m.logger.Errorf("Failed to parse participant JID: %s", participant)
+			return fmt.Errorf("invalid participant JID %s", participant)
 		}
+		m.logger.Infof("Parsed participant JID: %s -> %s", participant, pJid.String())
 		participantJIDs[i] = pJid
 	}
 
-	
-	
-	return fmt.Errorf("group participant management not implemented for new whatsmeow version")
+	// Validate action
+	validActions := []string{"add", "remove", "promote", "demote"}
+	isValidAction := false
+	for _, validAction := range validActions {
+		if action == validAction {
+			isValidAction = true
+			break
+		}
+	}
+	if !isValidAction {
+		m.logger.Errorf("Invalid action: %s", action)
+		return fmt.Errorf("invalid action: %s. Must be one of: add, remove, promote, demote", action)
+	}
+
+	m.logger.Infof("Calling client.UpdateGroupParticipants")
+	err = client.UpdateGroupParticipants(ctx, groupJIDParsed, participantJIDs, action)
+	if err != nil {
+		m.logger.Errorf("Failed to update group participants: %v", err)
+		return err
+	}
+
+	m.logger.Infof("UpdateGroupParticipants service completed successfully")
+	return nil
 }
 
 
@@ -512,7 +601,7 @@ func (m *MeowServiceImpl) SetGroupTopic(ctx context.Context, sessionID, groupJID
 
 
 func (m *MeowServiceImpl) SendImageMessage(ctx context.Context, sessionID, to string, imageData []byte, caption, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -523,7 +612,7 @@ func (m *MeowServiceImpl) SendImageMessage(ctx context.Context, sessionID, to st
 
 
 func (m *MeowServiceImpl) SendAudioMessage(ctx context.Context, sessionID, to string, audioData []byte, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -534,7 +623,7 @@ func (m *MeowServiceImpl) SendAudioMessage(ctx context.Context, sessionID, to st
 
 
 func (m *MeowServiceImpl) SendDocumentMessage(ctx context.Context, sessionID, to string, documentData []byte, filename, caption, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -545,7 +634,7 @@ func (m *MeowServiceImpl) SendDocumentMessage(ctx context.Context, sessionID, to
 
 
 func (m *MeowServiceImpl) SendVideoMessage(ctx context.Context, sessionID, to string, videoData []byte, caption, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -556,7 +645,7 @@ func (m *MeowServiceImpl) SendVideoMessage(ctx context.Context, sessionID, to st
 
 
 func (m *MeowServiceImpl) SendStickerMessage(ctx context.Context, sessionID, to string, stickerData []byte, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -567,7 +656,7 @@ func (m *MeowServiceImpl) SendStickerMessage(ctx context.Context, sessionID, to 
 
 
 func (m *MeowServiceImpl) SendButtonsMessage(ctx context.Context, sessionID, to, text string, buttons []types.Button, footer string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -578,7 +667,7 @@ func (m *MeowServiceImpl) SendButtonsMessage(ctx context.Context, sessionID, to,
 
 
 func (m *MeowServiceImpl) SendListMessage(ctx context.Context, sessionID, to, text, buttonText string, sections []types.Section, footer string) (*whatsmeow.SendResponse, error) {
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		return nil, err
@@ -587,15 +676,15 @@ func (m *MeowServiceImpl) SendListMessage(ctx context.Context, sessionID, to, te
 	return client.SendListMessage(ctx, jid, text, buttonText, sections, footer)
 }
 
-// ============================================================================
-// Chat Operations Implementation
-// ============================================================================
 
-// DeleteMessage deletes a message from a chat
+
+
+
+
 func (m *MeowServiceImpl) DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string, forEveryone bool) error {
-	m.logger.Infof("Deleting message %s in chat %s for session %s (forEveryone: %v)", messageID, chatJID, sessionID, forEveryone)
+	m.logger.Infof("DeleteMessage service called with sessionID: %s, chatJID: %s, messageID: %s, forEveryone: %v", sessionID, chatJID, messageID, forEveryone)
 
-	// Validate inputs
+
 	if err := m.validateChatOperation(sessionID, chatJID, messageID); err != nil {
 		return err
 	}
@@ -605,31 +694,37 @@ func (m *MeowServiceImpl) DeleteMessage(ctx context.Context, sessionID, chatJID,
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	// Check if client is connected
-	if !client.IsConnected() {
-		return fmt.Errorf("client for session %s is not connected", sessionID)
+
+	m.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+
+	// Parse chat JID using our utility function (handles phone numbers)
+	jid, ok := parseJID(chatJID)
+	if !ok {
+		m.logger.Errorf("Failed to parse chat JID: %s", chatJID)
+		return fmt.Errorf("invalid chat JID %s", chatJID)
 	}
 
-	// Parse chat JID
-	jid, err := waTypes.ParseJID(chatJID)
-	if err != nil {
-		return fmt.Errorf("invalid chat JID %s: %w", chatJID, err)
-	}
+	m.logger.Infof("Parsed JID: %s -> %s", chatJID, jid.String())
 
-	// Use whatsmeow's BuildRevoke to create revoke message
+	// Build revoke message
+	m.logger.Infof("Building revoke message for messageID: %s", messageID)
 	revokeMsg := client.client.BuildRevoke(jid, waTypes.EmptyJID, waTypes.MessageID(messageID))
 
-	// Send the revoke message with timeout
-	_, err = client.client.SendMessage(ctx, jid, revokeMsg)
+	// Send revoke message
+	m.logger.Infof("Sending revoke message to WhatsApp API")
+	_, err := client.client.SendMessage(ctx, jid, revokeMsg)
 	if err != nil {
+		m.logger.Errorf("Failed to delete message: %v", err)
 		return fmt.Errorf("failed to delete message %s: %w", messageID, err)
 	}
 
 	m.logger.Infof("Successfully deleted message %s", messageID)
+	m.logger.Infof("DeleteMessage service completed successfully")
 	return nil
 }
 
-// validateChatOperation validates common parameters for chat operations
+
 func (m *MeowServiceImpl) validateChatOperation(sessionID, chatJID, messageID string) error {
 	if sessionID == "" {
 		return fmt.Errorf("session ID cannot be empty")
@@ -641,24 +736,30 @@ func (m *MeowServiceImpl) validateChatOperation(sessionID, chatJID, messageID st
 		return fmt.Errorf("message ID cannot be empty")
 	}
 
-	// Validate message ID format (basic check)
-	if len(messageID) < 10 {
+
+	actualMessageID := messageID
+	if strings.HasPrefix(messageID, "me:") {
+		actualMessageID = messageID[len("me:"):]
+	}
+
+
+	if len(actualMessageID) < 10 {
 		return fmt.Errorf("invalid message ID format")
 	}
 
 	return nil
 }
 
-// EditMessage edits a text message in a chat
-func (m *MeowServiceImpl) EditMessage(ctx context.Context, sessionID, chatJID, messageID, newText string) (*types.SendResponse, error) {
-	m.logger.Infof("Editing message %s in chat %s for session %s", messageID, chatJID, sessionID)
 
-	// Validate inputs
+func (m *MeowServiceImpl) EditMessage(ctx context.Context, sessionID, chatJID, messageID, newText string) (*types.SendResponse, error) {
+	m.logger.Infof("EditMessage service called with sessionID: %s, chatJID: %s, messageID: %s, newText: %s", sessionID, chatJID, messageID, newText)
+
+
 	if err := m.validateChatOperation(sessionID, chatJID, messageID); err != nil {
 		return nil, err
 	}
 
-	// Validate new text
+
 	if newText == "" {
 		return nil, fmt.Errorf("new text cannot be empty")
 	}
@@ -671,53 +772,61 @@ func (m *MeowServiceImpl) EditMessage(ctx context.Context, sessionID, chatJID, m
 		return nil, fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	// Check if client is connected
-	if !client.IsConnected() {
-		return nil, fmt.Errorf("client for session %s is not connected", sessionID)
+
+	m.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+
+	// Parse chat JID using our utility function (handles phone numbers)
+	jid, ok := parseJID(chatJID)
+	if !ok {
+		m.logger.Errorf("Failed to parse chat JID: %s", chatJID)
+		return nil, fmt.Errorf("invalid chat JID %s", chatJID)
 	}
 
-	// Parse chat JID
-	jid, err := waTypes.ParseJID(chatJID)
-	if err != nil {
-		return nil, fmt.Errorf("invalid chat JID %s: %w", chatJID, err)
-	}
+	m.logger.Infof("Parsed JID: %s -> %s", chatJID, jid.String())
 
-	// Create the new text message
+	// Create text message
+	m.logger.Infof("Creating text message with newText: %s", newText)
 	textMsg := &waE2E.Message{
 		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
 			Text: &newText,
 		},
 	}
 
-	// Use whatsmeow's BuildEdit to create edit message
+	// Build edit message
+	m.logger.Infof("Building edit message for messageID: %s", messageID)
 	editMsg := client.client.BuildEdit(jid, waTypes.MessageID(messageID), textMsg)
 
-	// Send the edit message
+	// Send edit message
+	m.logger.Infof("Sending edit message to WhatsApp API")
 	resp, err := client.client.SendMessage(ctx, jid, editMsg)
 	if err != nil {
+		m.logger.Errorf("Failed to edit message: %v", err)
 		return nil, fmt.Errorf("failed to edit message %s: %w", messageID, err)
 	}
 
 	m.logger.Infof("Successfully edited message %s", messageID)
 
-	// Convert whatsmeow response to our types.SendResponse
+	// Convert response
+	m.logger.Infof("Converting response from WhatsApp API")
 	response := types.NewSendResponseFromWhatsmeow(&resp, messageID)
+	m.logger.Infof("EditMessage service completed successfully")
 	return &response, nil
 }
 
-// DownloadMedia downloads media from a message and returns the data and mime type
+
 func (m *MeowServiceImpl) DownloadMedia(ctx context.Context, sessionID, messageID string) ([]byte, string, error) {
 	m.logger.Infof("Downloading media for message %s in session %s", messageID, sessionID)
 
-	// Note: This is a simplified implementation. In a real-world scenario,
-	// you would need to store message metadata (URL, DirectPath, MediaKey, etc.)
-	// when messages are received and retrieve them here using the messageID.
-	// For now, this returns an error indicating the limitation.
+
+
+
+
 
 	return nil, "", fmt.Errorf("media download requires message metadata storage - not implemented in this simplified version")
 }
 
-// DownloadMediaWithInfo downloads media using provided media information
+
 func (m *MeowServiceImpl) DownloadMediaWithInfo(ctx context.Context, sessionID string, mediaInfo MediaDownloadInfo) ([]byte, string, error) {
 	m.logger.Infof("Downloading media with info for session %s", sessionID)
 
@@ -730,7 +839,7 @@ func (m *MeowServiceImpl) DownloadMediaWithInfo(ctx context.Context, sessionID s
 	var err error
 	var mimeType string
 
-	// Create appropriate message based on media type
+
 	switch mediaInfo.MediaType {
 	case "image":
 		msg := &waE2E.Message{ImageMessage: &waE2E.ImageMessage{
@@ -796,16 +905,16 @@ func (m *MeowServiceImpl) DownloadMediaWithInfo(ctx context.Context, sessionID s
 	return mediaData, mimeType, nil
 }
 
-// ReactToMessage sends a reaction to a message
+
 func (m *MeowServiceImpl) ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, emoji string) error {
 	m.logger.Infof("Reacting to message %s in chat %s for session %s with emoji: %s", messageID, chatJID, sessionID, emoji)
 
-	// Validate inputs
+
 	if err := m.validateChatOperation(sessionID, chatJID, messageID); err != nil {
 		return err
 	}
 
-	// Validate emoji (basic check)
+
 	if emoji == "" {
 		return fmt.Errorf("emoji cannot be empty")
 	}
@@ -818,22 +927,37 @@ func (m *MeowServiceImpl) ReactToMessage(ctx context.Context, sessionID, chatJID
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	// Check if client is connected
-	if !client.IsConnected() {
-		return fmt.Errorf("client for session %s is not connected", sessionID)
+
+	m.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+
+	jid, ok := parseJID(chatJID)
+	if !ok {
+		return fmt.Errorf("invalid chat JID %s", chatJID)
 	}
 
-	// Parse chat JID
-	jid, err := waTypes.ParseJID(chatJID)
-	if err != nil {
-		return fmt.Errorf("invalid chat JID %s: %w", chatJID, err)
+
+	actualMessageID := messageID
+	fromMe := waTypes.EmptyJID
+	if strings.HasPrefix(messageID, "me:") {
+		actualMessageID = messageID[len("me:"):]
+
+		fromMe = client.client.Store.ID.ToNonAD()
+		m.logger.Infof("Detected 'me:' prefix, treating as own message. Original: %s, Actual: %s", messageID, actualMessageID)
 	}
 
-	// Use whatsmeow's BuildReaction to create reaction message
-	reactionMsg := client.client.BuildReaction(jid, waTypes.EmptyJID, waTypes.MessageID(messageID), emoji)
 
-	// Send the reaction message
-	_, err = client.client.SendMessage(ctx, jid, reactionMsg)
+	reaction := emoji
+	if reaction == "remove" {
+		reaction = ""
+		m.logger.Infof("Converting 'remove' to empty string for reaction removal")
+	}
+
+
+	reactionMsg := client.client.BuildReaction(jid, fromMe, waTypes.MessageID(actualMessageID), reaction)
+
+
+	_, err := client.client.SendMessage(ctx, jid, reactionMsg)
 	if err != nil {
 		return fmt.Errorf("failed to react to message %s: %w", messageID, err)
 	}
@@ -846,7 +970,7 @@ func (m *MeowServiceImpl) ReactToMessage(ctx context.Context, sessionID, chatJID
 func (m *MeowServiceImpl) SendPollMessage(ctx context.Context, sessionID, to, name string, options []string, selectableCount int) (*whatsmeow.SendResponse, error) {
 	m.logger.Infof("DEBUG: SendPollMessage called - sessionID: %s, to: %s, name: %s", sessionID, to, name)
 
-	// Use utility function to validate and get client - eliminates code duplication
+
 	client, jid, err := m.validateAndGetClient(sessionID, to)
 	if err != nil {
 		m.logger.Errorf("DEBUG: Validation failed: %v", err)
@@ -873,13 +997,135 @@ func (m *MeowServiceImpl) ListGroups(ctx context.Context, sessionID string) ([]*
 		return nil, fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	
+
 	groups, err := client.GetClient().GetJoinedGroups()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get groups: %w", err)
 	}
 
 	return groups, nil
+}
+
+// SetGlobalPresence sets the global presence status for the session
+func (m *MeowServiceImpl) SetGlobalPresence(ctx context.Context, sessionID string, presence waTypes.Presence) error {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	err := client.client.SendPresence(presence)
+	if err != nil {
+		return fmt.Errorf("failed to set global presence: %w", err)
+	}
+
+	return nil
+}
+
+// CheckUsersOnWhatsApp checks if phone numbers are registered on WhatsApp
+func (m *MeowServiceImpl) CheckUsersOnWhatsApp(ctx context.Context, sessionID string, phones []string) ([]waTypes.IsOnWhatsAppResponse, error) {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	resp, err := client.client.IsOnWhatsApp(phones)
+	if err != nil {
+		return nil, fmt.Errorf("failed to check users on WhatsApp: %w", err)
+	}
+
+	return resp, nil
+}
+
+// GetUserInfo gets detailed information about WhatsApp users
+func (m *MeowServiceImpl) GetUserInfo(ctx context.Context, sessionID string, phones []string) (map[waTypes.JID]waTypes.UserInfo, error) {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	// Convert phone numbers to JIDs
+	var jids []waTypes.JID
+	for _, phone := range phones {
+		jid, ok := parseJID(phone)
+		if !ok {
+			return nil, fmt.Errorf("invalid phone number: %s", phone)
+		}
+		jids = append(jids, jid)
+	}
+
+	resp, err := client.client.GetUserInfo(jids)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user info: %w", err)
+	}
+
+	return resp, nil
+}
+
+// AvatarInfo represents avatar information
+type AvatarInfo struct {
+	URL       string `json:"url,omitempty"`
+	ID        string `json:"id,omitempty"`
+	Type      string `json:"type,omitempty"`
+	DirectURL string `json:"directUrl,omitempty"`
+}
+
+// GetUserAvatar gets avatar information for a WhatsApp user
+func (m *MeowServiceImpl) GetUserAvatar(ctx context.Context, sessionID, phone string, preview bool) (*AvatarInfo, error) {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	// Parse phone number to JID
+	jid, ok := parseJID(phone)
+	if !ok {
+		return nil, fmt.Errorf("invalid phone number: %s", phone)
+	}
+
+	// Get avatar info
+	avatarInfo, err := client.client.GetProfilePictureInfo(jid, &whatsmeow.GetProfilePictureParams{
+		Preview: preview,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get avatar info: %w", err)
+	}
+
+	return &AvatarInfo{
+		URL:       avatarInfo.URL,
+		ID:        avatarInfo.ID,
+		Type:      avatarInfo.Type,
+		DirectURL: avatarInfo.DirectPath,
+	}, nil
+}
+
+// GetContacts gets all contacts from the WhatsApp session
+func (m *MeowServiceImpl) GetContacts(ctx context.Context, sessionID string) (map[waTypes.JID]waTypes.ContactInfo, error) {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	contacts, err := client.client.Store.Contacts.GetAllContacts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get contacts: %w", err)
+	}
+
+	return contacts, nil
+}
+
+// GetSubscribedNewsletters gets all newsletters that the session is subscribed to
+func (m *MeowServiceImpl) GetSubscribedNewsletters(ctx context.Context, sessionID string) ([]*waTypes.NewsletterMetadata, error) {
+	client, exists := m.clientManager.GetClient(sessionID)
+	if !exists {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	newsletters, err := client.client.GetSubscribedNewsletters()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subscribed newsletters: %w", err)
+	}
+
+	return newsletters, nil
 }
 
 
@@ -916,8 +1162,8 @@ func (m *MeowServiceImpl) ConnectOnStartup(ctx context.Context) error {
 	m.logger.Infof("Starting automatic reconnection for previously connected sessions...")
 
 	
-	// Query ALL sessions that have device_jid (indicating they were previously authenticated)
-	// We don't filter by status because sessions might be in various states after server restart
+
+
 	query := `
 		SELECT id, name, COALESCE(device_jid, '') as device_jid, status, COALESCE(proxy_url, '') as proxy_url
 		FROM sessions
@@ -947,11 +1193,11 @@ func (m *MeowServiceImpl) ConnectOnStartup(ctx context.Context) error {
 		m.logger.Infof("Attempting to reconnect session %s (name: %s, device_jid: %s, current_status: %s)", sessionID, name, deviceJID, status)
 
 		
-		// Check if session has valid device credentials in the store
+
 		hasDevice, err := m.hasDeviceCredentials(ctx, sessionID, deviceJID)
 		if err != nil {
 			m.logger.Errorf("Failed to check device credentials for session %s: %v", sessionID, err)
-			// Update status to error
+
 			m.updateSessionStatus(ctx, sessionID, "error")
 			errorCount++
 			continue
@@ -959,27 +1205,27 @@ func (m *MeowServiceImpl) ConnectOnStartup(ctx context.Context) error {
 
 		if !hasDevice {
 			m.logger.Warnf("No valid device credentials found for session %s, updating status to disconnected", sessionID)
-			// Update status to disconnected since no valid credentials
+
 			m.updateSessionStatus(ctx, sessionID, "disconnected")
 			skippedCount++
 			continue
 		}
 
-		// Check if client is already running (avoid duplicate connections)
+
 		if m.clientManager.IsClientConnected(sessionID) {
 			m.logger.Infof("Session %s is already connected, skipping", sessionID)
-			// Ensure status is correct
+
 			m.updateSessionStatus(ctx, sessionID, "connected")
 			reconnectedCount++
 			continue
 		}
 
-		// Start the client with proper error handling
+
 		m.logger.Infof("Starting client for session %s...", sessionID)
 		err = m.StartClient(sessionID)
 		if err != nil {
 			m.logger.Errorf("Failed to start client for session %s: %v", sessionID, err)
-			// Update status to error
+
 			m.updateSessionStatus(ctx, sessionID, "error")
 			errorCount++
 			continue
@@ -997,10 +1243,10 @@ func (m *MeowServiceImpl) ConnectOnStartup(ctx context.Context) error {
 	m.logger.Infof("Automatic reconnection completed. Attempted to reconnect %d sessions", reconnectedCount)
 	m.logger.Infof("Reconnection summary - Success: %d, Skipped: %d, Errors: %d", reconnectedCount, skippedCount, errorCount)
 
-	// Wait a bit for connections to establish
+
 	if reconnectedCount > 0 {
 		m.logger.Infof("Waiting for %d sessions to establish connections...", reconnectedCount)
-		// Give sessions time to connect (non-blocking)
+
 		go m.waitForConnectionsToEstablish(ctx, reconnectedCount)
 	}
 
@@ -1009,16 +1255,16 @@ func (m *MeowServiceImpl) ConnectOnStartup(ctx context.Context) error {
 
 
 func (m *MeowServiceImpl) hasDeviceCredentials(ctx context.Context, sessionID, deviceJID string) (bool, error) {
-	// First, try to get device by specific JID if provided
+
 	if deviceJID != "" {
 		jid, err := waTypes.ParseJID(deviceJID)
 		if err != nil {
 			m.logger.Warnf("Invalid device JID %s for session %s: %v", deviceJID, sessionID, err)
 		} else {
-			// Try to get the specific device
+
 			device, err := m.clientManager.container.GetDevice(ctx, jid)
 			if err == nil && device != nil && device.ID != nil && !device.ID.IsEmpty() {
-				// Check if device has identity key pair (indicates it's authenticated)
+
 				identityKeyPair := device.GetIdentityKeyPair()
 				if identityKeyPair != nil && identityKeyPair.PrivateKey() != nil {
 					m.logger.Debugf("Found valid device credentials for session %s with JID %s", sessionID, deviceJID)
@@ -1034,19 +1280,19 @@ func (m *MeowServiceImpl) hasDeviceCredentials(ctx context.Context, sessionID, d
 		}
 	}
 
-	// If specific JID didn't work, check if there are any valid devices in the store
-	// This is a fallback for cases where device_jid might be outdated
+
+
 	devices, err := m.clientManager.container.GetAllDevices(ctx)
 	if err != nil {
 		m.logger.Errorf("Failed to get all devices for session %s: %v", sessionID, err)
 		return false, fmt.Errorf("failed to get devices: %w", err)
 	}
 
-	// Look for any device with valid credentials
+
 	validDeviceCount := 0
 	for _, device := range devices {
 		if device != nil && device.ID != nil && !device.ID.IsEmpty() {
-			// Check if device has identity key pair (indicates it's authenticated)
+
 			identityKeyPair := device.GetIdentityKeyPair()
 			if identityKeyPair != nil && identityKeyPair.PrivateKey() != nil {
 				validDeviceCount++
@@ -1064,16 +1310,16 @@ func (m *MeowServiceImpl) hasDeviceCredentials(ctx context.Context, sessionID, d
 	return false, nil
 }
 
-// waitForConnectionsToEstablish waits for sessions to establish connections and updates their status
+
 func (m *MeowServiceImpl) waitForConnectionsToEstablish(ctx context.Context, expectedConnections int) {
-	// Wait up to 30 seconds for connections to establish
+
 	maxWaitTime := 30
 	checkInterval := 2
 
 	for i := 0; i < maxWaitTime; i += checkInterval {
 		time.Sleep(time.Duration(checkInterval) * time.Second)
 
-		// Check how many sessions are actually connected
+
 		connectedCount := 0
 		query := `SELECT id FROM sessions WHERE status = 'connecting' OR status = 'connected'`
 		rows, err := m.clientManager.db.QueryxContext(ctx, query)
@@ -1088,10 +1334,10 @@ func (m *MeowServiceImpl) waitForConnectionsToEstablish(ctx context.Context, exp
 				continue
 			}
 
-			// Check if this session is actually connected
+
 			if m.clientManager.IsClientConnected(sessionID) {
 				connectedCount++
-				// Update status to connected if it's not already
+
 				m.updateSessionStatus(ctx, sessionID, "connected")
 			}
 		}
@@ -1099,7 +1345,7 @@ func (m *MeowServiceImpl) waitForConnectionsToEstablish(ctx context.Context, exp
 
 		m.logger.Infof("Connection progress: %d/%d sessions connected after %d seconds", connectedCount, expectedConnections, i+checkInterval)
 
-		// If all expected connections are established, we're done
+
 		if connectedCount >= expectedConnections {
 			m.logger.Infof("All %d sessions successfully connected!", connectedCount)
 			return

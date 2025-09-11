@@ -8,8 +8,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds the application configuration
-// We are using struct tags to map environment variables to the struct fields.
+
+
 type Config struct {
 	DBUser     string `env:"DB_USER"`
 	DBPassword string `env:"DB_PASSWORD"`
@@ -21,7 +21,7 @@ type Config struct {
 	ServerPort string `env:"SERVER_PORT"`
 	DBUrl      string
 
-	// Logger configuration
+
 	LogLevel           string `env:"LOG_LEVEL"`
 	LogFormat          string `env:"LOG_FORMAT"`
 	LogConsoleColor    bool   `env:"LOG_CONSOLE_COLOR"`
@@ -34,9 +34,9 @@ type Config struct {
 	LogFileFormat      string `env:"LOG_FILE_FORMAT"`
 }
 
-// LoadConfig loads the configuration from a .env file and environment variables
+
 func LoadConfig() (*Config, error) {
-	// Load .env file. It's okay if it doesn't exist.
+
 	_ = godotenv.Load()
 
 	cfg := &Config{
@@ -49,7 +49,7 @@ func LoadConfig() (*Config, error) {
 		GinMode:    os.Getenv("GIN_MODE"),
 		ServerPort: os.Getenv("SERVER_PORT"),
 
-		// Logger configuration
+
 		LogLevel:           os.Getenv("LOG_LEVEL"),
 		LogFormat:          os.Getenv("LOG_FORMAT"),
 		LogConsoleColor:    getBoolEnv("LOG_CONSOLE_COLOR", true),
@@ -62,7 +62,7 @@ func LoadConfig() (*Config, error) {
 		LogFileFormat:      os.Getenv("LOG_FILE_FORMAT"),
 	}
 
-	// Set defaults if not provided
+
 	if cfg.GinMode == "" {
 		cfg.GinMode = "debug"
 	}
@@ -70,7 +70,7 @@ func LoadConfig() (*Config, error) {
 		cfg.ServerPort = "8080"
 	}
 
-	// Set logger defaults
+
 	if cfg.LogLevel == "" {
 		cfg.LogLevel = "info"
 	}
@@ -90,7 +90,7 @@ func LoadConfig() (*Config, error) {
 	return cfg, nil
 }
 
-// Helper functions for environment variable parsing
+
 func getBoolEnv(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := strconv.ParseBool(value); err == nil {
@@ -109,7 +109,7 @@ func getIntEnv(key string, defaultValue int) int {
 	return defaultValue
 }
 
-// LoggerConfig represents logger configuration and implements logger.Config interface
+
 type LoggerConfig struct {
 	Level           string
 	Format          string
@@ -123,57 +123,57 @@ type LoggerConfig struct {
 	FileFormat      string
 }
 
-// GetLevel implements logger.Config interface
+
 func (c *LoggerConfig) GetLevel() string {
 	return c.Level
 }
 
-// GetFormat implements logger.Config interface
+
 func (c *LoggerConfig) GetFormat() string {
 	return c.Format
 }
 
-// GetConsoleColor implements logger.Config interface
+
 func (c *LoggerConfig) GetConsoleColor() bool {
 	return c.ConsoleColor
 }
 
-// GetFileEnabled implements logger.Config interface
+
 func (c *LoggerConfig) GetFileEnabled() bool {
 	return c.FileEnabled
 }
 
-// GetFilePath implements logger.Config interface
+
 func (c *LoggerConfig) GetFilePath() string {
 	return c.FilePath
 }
 
-// GetFileMaxSize implements logger.Config interface
+
 func (c *LoggerConfig) GetFileMaxSize() int {
 	return c.FileMaxSize
 }
 
-// GetFileMaxBackups implements logger.Config interface
+
 func (c *LoggerConfig) GetFileMaxBackups() int {
 	return c.FileMaxBackups
 }
 
-// GetFileMaxAge implements logger.Config interface
+
 func (c *LoggerConfig) GetFileMaxAge() int {
 	return c.FileMaxAge
 }
 
-// GetFileCompress implements logger.Config interface
+
 func (c *LoggerConfig) GetFileCompress() bool {
 	return c.FileCompress
 }
 
-// GetFileFormat implements logger.Config interface
+
 func (c *LoggerConfig) GetFileFormat() string {
 	return c.FileFormat
 }
 
-// GetLoggerConfig creates logger configuration from app config
+
 func (c *Config) GetLoggerConfig() *LoggerConfig {
 	return &LoggerConfig{
 		Level:           c.LogLevel,
@@ -189,7 +189,7 @@ func (c *Config) GetLoggerConfig() *LoggerConfig {
 	}
 }
 
-// DefaultLoggerConfig returns default logger configuration
+
 func DefaultLoggerConfig() *LoggerConfig {
 	return &LoggerConfig{
 		Level:           "info",

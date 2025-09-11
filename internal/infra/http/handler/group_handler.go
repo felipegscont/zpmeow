@@ -13,14 +13,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GroupHandler handles HTTP requests for group operations
+
 type GroupHandler struct {
 	sessionService session.SessionService
 	meowService    *meow.MeowServiceImpl
 	logger         logger.Logger
 }
 
-// NewGroupHandler creates a new group handler
+
 func NewGroupHandler(sessionService session.SessionService, meowService *meow.MeowServiceImpl) *GroupHandler {
 	return &GroupHandler{
 		sessionService: sessionService,
@@ -29,7 +29,7 @@ func NewGroupHandler(sessionService session.SessionService, meowService *meow.Me
 	}
 }
 
-// resolveSessionID resolves sessionID parameter to actual session ID (handles both ID and name)
+
 func (h *GroupHandler) resolveSessionID(c *gin.Context) (string, bool) {
 	sessionID := c.Param("sessionId")
 	if sessionID == "" {
@@ -37,7 +37,7 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context) (string, bool) {
 		return "", false
 	}
 
-	// Resolve session to get the actual ID (in case sessionID is a name)
+
 	sess, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		if err == session.ErrSessionNotFound {
@@ -51,7 +51,7 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context) (string, bool) {
 	return sess.ID, true
 }
 
-// CreateGroup godoc
+
 // @Summary Create a new WhatsApp group
 // @Description Create a new WhatsApp group with specified participants
 // @Tags group
@@ -65,7 +65,7 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context) (string, bool) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/create [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
-	// Resolve session ID (same as SendHandler)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -77,13 +77,13 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Validate participants
+
 	if len(req.Participants) == 0 {
 		utils.RespondWithError(c, http.StatusBadRequest, "At least one participant is required")
 		return
 	}
 
-	// Validate phone numbers
+
 	for _, phone := range req.Participants {
 		if !utils.IsValidPhoneNumber(phone) {
 			utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format: "+phone)
@@ -91,7 +91,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		}
 	}
 
-	// Create group through Meow service
+
 	h.logger.Infof("Creating group '%s' with %d participants from session %s", req.Name, len(req.Participants), sessionID)
 
 	groupInfo, err := h.meowService.CreateGroup(c.Request.Context(), sessionID, req.Name, req.Participants)
@@ -111,7 +111,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	})
 }
 
-// ListGroups godoc
+
 // @Summary List all groups
 // @Description Get a list of all groups the session is part of
 // @Tags group
@@ -129,7 +129,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	// List groups through Meow service
+
 	h.logger.Infof("Listing groups for session %s", sessionID)
 
 	groups, err := h.meowService.ListGroups(c.Request.Context(), sessionID)
@@ -139,7 +139,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	// Convert to response format
+
 	groupList := make([]map[string]interface{}, len(groups))
 	for i, group := range groups {
 		groupList[i] = map[string]interface{}{
@@ -164,7 +164,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 	})
 }
 
-// GetGroupInfo godoc
+
 // @Summary Get group information
 // @Description Get detailed information about a specific group
 // @Tags group
@@ -177,7 +177,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/info [get]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -189,7 +189,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		return
 	}
 
-	// Get group info through Meow service
+
 	h.logger.Infof("Getting info for group %s from session %s", groupJID, sessionID)
 
 	groupInfo, err := h.meowService.GetGroupInfo(c.Request.Context(), sessionID, groupJID)
@@ -199,7 +199,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert participants to response format
+
 	participants := make([]map[string]interface{}, len(groupInfo.Participants))
 	for i, participant := range groupInfo.Participants {
 		participants[i] = map[string]interface{}{
@@ -209,7 +209,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		}
 	}
 
-	// Convert to response format
+
 	responseData := map[string]interface{}{
 		"jid":          groupInfo.JID.String(),
 		"name":         groupInfo.Name,
@@ -229,7 +229,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	})
 }
 
-// JoinGroup godoc
+
 // @Summary Join a group via invite link
 // @Description Join a WhatsApp group using an invite code
 // @Tags group
@@ -243,7 +243,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -255,7 +255,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Join group through Meow service
+
 	h.logger.Infof("Joining group with invite code %s from session %s", req.InviteCode, sessionID)
 
 	groupInfo, err := h.meowService.JoinGroupWithLink(c.Request.Context(), sessionID, req.InviteCode)
@@ -275,7 +275,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	})
 }
 
-// LeaveGroup godoc
+
 // @Summary Leave a group
 // @Description Leave a WhatsApp group
 // @Tags group
@@ -289,7 +289,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/leave [post]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -301,7 +301,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 		return
 	}
 
-	// Leave group through Meow service
+
 	h.logger.Infof("Leaving group %s from session %s", req.GroupJID, sessionID)
 
 	err := h.meowService.LeaveGroup(c.Request.Context(), sessionID, req.GroupJID)
@@ -317,7 +317,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	})
 }
 
-// GetInviteLink godoc
+
 // @Summary Get group invite link
 // @Description Get the invite link for a group
 // @Tags group
@@ -330,7 +330,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/invitelink [get]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -342,7 +342,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 		return
 	}
 
-	// Get invite link through Meow service
+
 	h.logger.Infof("Getting invite link for group %s from session %s", groupJID, sessionID)
 
 	inviteLink, err := h.meowService.GetGroupInviteLink(c.Request.Context(), sessionID, groupJID, false)
@@ -352,7 +352,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 		return
 	}
 
-	// Extract invite code from link
+
 	inviteCode := ""
 	if strings.Contains(inviteLink, "chat.whatsapp.com/") {
 		parts := strings.Split(inviteLink, "/")
@@ -371,7 +371,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	})
 }
 
-// GetInviteInfo godoc
+
 // @Summary Get invite information
 // @Description Get information about a group invite without joining
 // @Tags group
@@ -385,7 +385,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/inviteinfo [post]
 func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -397,10 +397,10 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual invite info retrieval through Meow service
+
 	h.logger.Infof("Getting invite info for code %s from session %s", req.InviteCode, sessionID)
 
-	// Mock response
+
 	inviteInfo := map[string]interface{}{
 		"groupJid":     "120363025246125486@g.us",
 		"groupName":    "Test Group",
@@ -416,7 +416,7 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 	})
 }
 
-// UpdateParticipants godoc
+
 // @Summary Update group participants
 // @Description Add, remove, promote, or demote group participants
 // @Tags group
@@ -430,7 +430,7 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/participants/update [post]
 func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -442,7 +442,7 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 		return
 	}
 
-	// Validate action
+
 	validActions := []string{"add", "remove", "promote", "demote"}
 	isValid := false
 	for _, action := range validActions {
@@ -456,13 +456,13 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 		return
 	}
 
-	// Validate participants
+
 	if len(req.Participants) == 0 {
 		utils.RespondWithError(c, http.StatusBadRequest, "At least one participant is required")
 		return
 	}
 
-	// Validate phone numbers
+
 	for _, phone := range req.Participants {
 		if !utils.IsValidPhoneNumber(phone) {
 			utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format: "+phone)
@@ -470,7 +470,7 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 		}
 	}
 
-	// Update participants through Meow service
+
 	h.logger.Infof("Updating participants in group %s with action %s from session %s", req.GroupJID, req.Action, sessionID)
 
 	err := h.meowService.UpdateGroupParticipants(c.Request.Context(), sessionID, req.GroupJID, req.Participants, req.Action)
@@ -490,7 +490,7 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 	})
 }
 
-// SetName godoc
+
 // @Summary Set group name
 // @Description Update the name of a group
 // @Tags group
@@ -504,7 +504,7 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/name/set [post]
 func (h *GroupHandler) SetName(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -516,7 +516,7 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 		return
 	}
 
-	// Set group name through Meow service
+
 	h.logger.Infof("Setting name '%s' for group %s from session %s", req.Name, req.GroupJID, sessionID)
 
 	err := h.meowService.SetGroupName(c.Request.Context(), sessionID, req.GroupJID, req.Name)
@@ -536,7 +536,7 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 	})
 }
 
-// SetTopic godoc
+
 // @Summary Set group topic/description
 // @Description Update the topic/description of a group
 // @Tags group
@@ -550,7 +550,7 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/topic/set [post]
 func (h *GroupHandler) SetTopic(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -562,7 +562,7 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 		return
 	}
 
-	// Set group topic through Meow service
+
 	h.logger.Infof("Setting topic for group %s from session %s", req.GroupJID, sessionID)
 
 	err := h.meowService.SetGroupTopic(c.Request.Context(), sessionID, req.GroupJID, req.Topic)
@@ -582,7 +582,7 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 	})
 }
 
-// SetPhoto godoc
+
 // @Summary Set group photo
 // @Description Update the photo of a group
 // @Tags group
@@ -596,7 +596,7 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/photo/set [post]
 func (h *GroupHandler) SetPhoto(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -608,7 +608,7 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual group photo setting through Meow service
+
 	h.logger.Infof("Setting photo for group %s from session %s", req.GroupJID, sessionID)
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
@@ -620,7 +620,7 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 	})
 }
 
-// RemovePhoto godoc
+
 // @Summary Remove group photo
 // @Description Remove the photo of a group
 // @Tags group
@@ -634,7 +634,7 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/photo/remove [post]
 func (h *GroupHandler) RemovePhoto(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -646,7 +646,7 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual group photo removal through Meow service
+
 	h.logger.Infof("Removing photo for group %s from session %s", req.GroupJID, sessionID)
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
@@ -658,7 +658,7 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 	})
 }
 
-// SetAnnounce godoc
+
 // @Summary Set group announce mode
 // @Description Set whether only admins can send messages
 // @Tags group
@@ -672,7 +672,7 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/announce/set [post]
 func (h *GroupHandler) SetAnnounce(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -684,7 +684,7 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual group announce setting through Meow service
+
 	h.logger.Infof("Setting announce mode %v for group %s from session %s", req.Announce, req.GroupJID, sessionID)
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
@@ -697,7 +697,7 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 	})
 }
 
-// SetLocked godoc
+
 // @Summary Set group locked mode
 // @Description Set whether only admins can edit group info
 // @Tags group
@@ -711,7 +711,7 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/locked/set [post]
 func (h *GroupHandler) SetLocked(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -723,7 +723,7 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual group locked setting through Meow service
+
 	h.logger.Infof("Setting locked mode %v for group %s from session %s", req.Locked, req.GroupJID, sessionID)
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{
@@ -736,7 +736,7 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 	})
 }
 
-// SetEphemeral godoc
+
 // @Summary Set group ephemeral messages
 // @Description Set the duration for disappearing messages in a group
 // @Tags group
@@ -750,7 +750,7 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/group/ephemeral/set [post]
 func (h *GroupHandler) SetEphemeral(c *gin.Context) {
-	// Resolve session ID (handles both ID and name)
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
@@ -762,7 +762,7 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 		return
 	}
 
-	// Validate duration (0 = disabled, common values: 86400 = 1 day, 604800 = 7 days, 7776000 = 90 days)
+
 	validDurations := []int64{0, 86400, 604800, 7776000}
 	isValid := false
 	for _, duration := range validDurations {
@@ -776,7 +776,7 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 		return
 	}
 
-	// TODO: Implement actual group ephemeral setting through Meow service
+
 	h.logger.Infof("Setting ephemeral duration %d for group %s from session %s", req.Duration, req.GroupJID, sessionID)
 
 	utils.RespondWithJSON(c, http.StatusOK, utils.SuccessResponse{

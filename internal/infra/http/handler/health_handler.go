@@ -6,20 +6,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// HealthHandler handles health check requests
+
 type HealthHandler struct{}
 
-// NewHealthHandler creates a new health handler
+
 func NewHealthHandler() *HealthHandler {
 	return &HealthHandler{}
 }
 
-// PingResponse represents the response for ping endpoint
+
 type PingResponse struct {
 	Message string `json:"message" example:"pong"`
 }
 
-// Ping godoc
+
 // @Summary Health check endpoint
 // @Description Returns a simple pong message to verify the API is running
 // @Tags health

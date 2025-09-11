@@ -98,7 +98,7 @@ func TestNewSendResponseFromWhatsmeow(t *testing.T) {
 }
 
 func TestServerIDNullCharacterIssue(t *testing.T) {
-	// This test specifically checks that we don't get the null character issue
+
 	resp := &whatsmeow.SendResponse{
 		Timestamp: time.Unix(1640995200, 0),
 		ID:        "3EB0F488858A97C62C5E9B",
@@ -108,12 +108,12 @@ func TestServerIDNullCharacterIssue(t *testing.T) {
 
 	result := NewSendResponseFromWhatsmeow(resp, "")
 
-	// Check that ServerID is not the null character
+
 	if result.ServerID == "\u0000" {
 		t.Error("ServerID should not be null character \\u0000")
 	}
 
-	// Check that ServerID is empty string when ServerID is 0
+
 	if result.ServerID != "" {
 		t.Errorf("ServerID should be empty string when input is 0, got %q", result.ServerID)
 	}

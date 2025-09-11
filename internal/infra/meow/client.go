@@ -8,7 +8,9 @@ import (
 	"sync"
 	"time"
 
+	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infra/logger"
+	"zpmeow/internal/infra/webhook"
 	"zpmeow/internal/types"
 
 	"github.com/mdp/qrterminal/v3"
@@ -51,7 +53,7 @@ type MeowClient struct {
 }
 
 
-func NewMeowClient(sessionID string, deviceStore *store.Device, waLogger waLog.Logger, manager *ClientManager) (*MeowClient, error) {
+func NewMeowClient(sessionID string, deviceStore *store.Device, waLogger waLog.Logger, manager *ClientManager, webhookService *webhook.WebhookService, sessionService session.SessionService) (*MeowClient, error) {
 	if waLogger == nil {
 		waLogger = waLog.Noop
 	}
@@ -80,7 +82,7 @@ func NewMeowClient(sessionID string, deviceStore *store.Device, waLogger waLog.L
 	}
 
 	
-	eventHandler := NewEventHandler(sessionID, waLogger, meowClient)
+	eventHandler := NewEventHandler(sessionID, waLogger, meowClient, webhookService, sessionService)
 	meowClient.eventHandler = eventHandler
 
 	
@@ -94,7 +96,7 @@ func (mc *MeowClient) Connect(ctx context.Context) error {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 
-	// Early return if already connected
+
 	if mc.client.IsConnected() {
 		return nil
 	}
@@ -106,7 +108,7 @@ func (mc *MeowClient) Connect(ctx context.Context) error {
 	mc.setStatus(types.StatusConnecting)
 	mc.logger.Infof("Connecting client for session %s", mc.sessionID)
 
-	// Start the client loop in a goroutine
+
 	go mc.startClientLoop()
 
 	return nil
@@ -350,27 +352,27 @@ func (mc *MeowClient) GetQRCode(ctx context.Context) (string, error) {
 	mc.mu.RLock()
 	defer mc.mu.RUnlock()
 
-	// Early return if already authenticated
+
 	if mc.client.IsConnected() && mc.client.Store.ID != nil {
 		return "", errors.New(ErrClientAlreadyAuth)
 	}
 
-	// Early return if session is already connected
+
 	if Status.IsConnectedStatus(mc.status) {
 		return "", errors.New(ErrSessionNotConnected)
 	}
 
-	// Return existing QR code if available
+
 	if mc.qrCode != "" {
 		return mc.qrCode, nil
 	}
 
-	// Check if client is connected
+
 	if !mc.client.IsConnected() {
 		return "", fmt.Errorf(ErrClientNotConnected + ", call Connect() first")
 	}
 
-	// QR code not yet available
+
 	return "", errors.New(ErrQRNotAvailable)
 }
 
@@ -453,7 +455,7 @@ func (mc *MeowClient) GetClient() *whatsmeow.Client {
 func (mc *MeowClient) SendTextMessage(ctx context.Context, to waTypes.JID, text string, contextInfo *waE2E.ContextInfo) (*whatsmeow.SendResponse, error) {
 	mc.logger.Infof("DEBUG: MeowClient.SendTextMessage called - to: %s, text: %s", to.String(), text)
 
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
 	mc.logger.Infof("DEBUG: Creating message...")
@@ -468,14 +470,14 @@ func (mc *MeowClient) SendTextMessage(ctx context.Context, to waTypes.JID, text 
 	}
 
 	mc.logger.Infof("DEBUG: whatsmeow client.SendMessage succeeded")
-	// Skip updateActivity() to avoid potential deadlock
+
 	mc.logger.Infof("DEBUG: SendTextMessage completed successfully")
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendLocationMessage(ctx context.Context, to waTypes.JID, latitude, longitude float64, name, address string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
 	msg := MsgBuilder.BuildLocationMessage(latitude, longitude, name, address)
@@ -486,13 +488,13 @@ func (mc *MeowClient) SendLocationMessage(ctx context.Context, to waTypes.JID, l
 		return nil, Error.WrapError(err, "failed to send location message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendContactMessage(ctx context.Context, to waTypes.JID, displayName, vcard string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
 	msg := MsgBuilder.BuildContactMessage(displayName, vcard)
@@ -503,28 +505,26 @@ func (mc *MeowClient) SendContactMessage(ctx context.Context, to waTypes.JID, di
 		return nil, Error.WrapError(err, "failed to send contact message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) ReactToMessage(ctx context.Context, chatJID waTypes.JID, messageID string, emoji string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
 
-	
-	
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+
+
 	return fmt.Errorf("message reactions not implemented for new whatsmeow version")
 }
 
 
 func (mc *MeowClient) SetChatPresence(ctx context.Context, chatJID waTypes.JID, chatPresence waTypes.ChatPresence, media waTypes.ChatPresenceMedia) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
 
-	// Send chat presence using whatsmeow
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+
 	err := mc.client.SendChatPresence(chatJID, chatPresence, media)
 	if err != nil {
 		return fmt.Errorf("failed to set chat presence: %w", err)
@@ -536,30 +536,34 @@ func (mc *MeowClient) SetChatPresence(ctx context.Context, chatJID waTypes.JID, 
 
 
 func (mc *MeowClient) MarkMessageRead(ctx context.Context, chatJID waTypes.JID, messageIDs []string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
 
-	
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+	mc.logger.Infof("MarkMessageRead called with chatJID: %s, messageIDs: %v", chatJID.String(), messageIDs)
+
 	msgIDList := make([]waTypes.MessageID, len(messageIDs))
 	for i, msgID := range messageIDs {
 		msgIDList[i] = waTypes.MessageID(msgID)
+		mc.logger.Infof("Converting messageID[%d]: %s -> %s", i, msgID, string(msgIDList[i]))
 	}
 
+	mc.logger.Infof("Calling client.MarkRead with msgIDList: %v, chatJID: %s", msgIDList, chatJID.String())
 	err := mc.client.MarkRead(msgIDList, time.Now(), chatJID, chatJID)
 	if err != nil {
+		mc.logger.Errorf("Failed to mark messages as read: %v", err)
 		return fmt.Errorf("failed to mark messages as read: %w", err)
 	}
 
+	mc.logger.Infof("Successfully called client.MarkRead")
 	mc.updateActivity()
+	mc.logger.Infof("MarkMessageRead completed successfully")
 	return nil
 }
 
 
 func (mc *MeowClient) CreateGroup(ctx context.Context, name string, participants []waTypes.JID) (*waTypes.GroupInfo, error) {
-	if !mc.IsConnected() {
-		return nil, fmt.Errorf("client is not connected")
-	}
+
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
 
 	req := whatsmeow.ReqCreateGroup{
 		Name:         name,
@@ -577,9 +581,8 @@ func (mc *MeowClient) CreateGroup(ctx context.Context, name string, participants
 
 
 func (mc *MeowClient) GetGroupInfo(ctx context.Context, groupJID waTypes.JID) (*waTypes.GroupInfo, error) {
-	if !mc.IsConnected() {
-		return nil, fmt.Errorf("client is not connected")
-	}
+	// Skip IsConnected() check to avoid deadlock
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
 
 	groupInfo, err := mc.client.GetGroupInfo(groupJID)
 	if err != nil {
@@ -592,9 +595,8 @@ func (mc *MeowClient) GetGroupInfo(ctx context.Context, groupJID waTypes.JID) (*
 
 
 func (mc *MeowClient) JoinGroupWithLink(ctx context.Context, inviteCode string) (*waTypes.GroupInfo, error) {
-	if !mc.IsConnected() {
-		return nil, fmt.Errorf("client is not connected")
-	}
+
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
 
 	groupJID, err := mc.client.JoinGroupWithLink(inviteCode)
 	if err != nil {
@@ -613,9 +615,8 @@ func (mc *MeowClient) JoinGroupWithLink(ctx context.Context, inviteCode string) 
 
 
 func (mc *MeowClient) LeaveGroup(ctx context.Context, groupJID waTypes.JID) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
 
 	err := mc.client.LeaveGroup(groupJID)
 	if err != nil {
@@ -628,9 +629,8 @@ func (mc *MeowClient) LeaveGroup(ctx context.Context, groupJID waTypes.JID) erro
 
 
 func (mc *MeowClient) GetGroupInviteLink(ctx context.Context, groupJID waTypes.JID, reset bool) (string, error) {
-	if !mc.IsConnected() {
-		return "", fmt.Errorf("client is not connected")
-	}
+
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
 
 	link, err := mc.client.GetGroupInviteLink(groupJID, reset)
 	if err != nil {
@@ -644,14 +644,44 @@ func (mc *MeowClient) GetGroupInviteLink(ctx context.Context, groupJID waTypes.J
 
 
 func (mc *MeowClient) UpdateGroupParticipants(ctx context.Context, groupJID waTypes.JID, participants []waTypes.JID, action string) error {
-	return fmt.Errorf("group participant management not implemented for new whatsmeow version")
+	mc.logger.Infof("UpdateGroupParticipants called with groupJID: %s, participants: %v, action: %s", groupJID.String(), participants, action)
+
+	// Skip connection check to avoid deadlock
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
+
+	// Convert string action to whatsmeow.ParticipantChange
+	var participantAction whatsmeow.ParticipantChange
+	switch action {
+	case "add":
+		participantAction = whatsmeow.ParticipantChangeAdd
+	case "remove":
+		participantAction = whatsmeow.ParticipantChangeRemove
+	case "promote":
+		participantAction = whatsmeow.ParticipantChangePromote
+	case "demote":
+		participantAction = whatsmeow.ParticipantChangeDemote
+	default:
+		return fmt.Errorf("invalid action: %s. Must be one of: add, remove, promote, demote", action)
+	}
+
+	mc.logger.Infof("Calling whatsmeow UpdateGroupParticipants with action: %v", participantAction)
+
+	// Call whatsmeow UpdateGroupParticipants
+	result, err := mc.client.UpdateGroupParticipants(groupJID, participants, participantAction)
+	if err != nil {
+		mc.logger.Errorf("Failed to update group participants: %v", err)
+		return fmt.Errorf("failed to update group participants: %w", err)
+	}
+
+	mc.logger.Infof("Successfully updated group participants. Result: %v", result)
+	mc.updateActivity()
+	return nil
 }
 
 
 func (mc *MeowClient) SetGroupName(ctx context.Context, groupJID waTypes.JID, name string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
 
 	err := mc.client.SetGroupName(groupJID, name)
 	if err != nil {
@@ -664,9 +694,8 @@ func (mc *MeowClient) SetGroupName(ctx context.Context, groupJID waTypes.JID, na
 
 
 func (mc *MeowClient) SetGroupTopic(ctx context.Context, groupJID waTypes.JID, topic string) error {
-	if !mc.IsConnected() {
-		return fmt.Errorf("client is not connected")
-	}
+
+	mc.logger.Infof("Skipping IsConnected() check to avoid deadlock")
 
 	err := mc.client.SetGroupTopic(groupJID, "", topic, "")
 	if err != nil {
@@ -708,7 +737,7 @@ func (mc *MeowClient) setStatus(status types.Status) {
 
 
 func (mc *MeowClient) updateActivity() {
-	// Try to acquire lock with timeout to avoid deadlock
+
 	done := make(chan bool, 1)
 	go func() {
 		mc.mu.Lock()
@@ -719,10 +748,10 @@ func (mc *MeowClient) updateActivity() {
 
 	select {
 	case <-done:
-		// Successfully updated activity
+
 		return
 	case <-time.After(100 * time.Millisecond):
-		// Timeout - log warning but don't block
+
 		mc.logger.Warnf("updateActivity timeout for session %s - potential deadlock avoided", mc.sessionID)
 		return
 	}
@@ -748,20 +777,20 @@ func (mc *MeowClient) stopQRLoop() {
 	mc.mu.Lock()
 	defer mc.mu.Unlock()
 
-	// Early return if already stopped
+
 	if !mc.qrLoopActive {
 		mc.logger.Debugf("QR loop already stopped for session %s", mc.sessionID)
 		return
 	}
 
-	// Try to send stop signal with timeout
+
 	if Channel.SafeChannelSend(mc.qrStopChannel, true, 1*time.Second) {
 		mc.logger.Infof("QR loop stop signal sent for session %s", mc.sessionID)
 		mc.qrLoopActive = false
 		return
 	}
 
-	// Fallback to context cancellation
+
 	mc.logger.Warnf("QR loop stop signal timeout for session %s, using context cancellation", mc.sessionID)
 	if mc.qrLoopCancel != nil {
 		mc.qrLoopCancel()
@@ -786,8 +815,8 @@ func (mc *MeowClient) onConnected() {
 
 	mc.logger.Infof("Client connected for session %s", mc.sessionID)
 
-	// Send global presence to mark as available
-	// This is important for chat presence to work properly
+
+
 	go func() {
 		if err := mc.client.SendPresence(waTypes.PresenceAvailable); err != nil {
 			mc.logger.Warnf("Failed to send available presence for session %s: %v", mc.sessionID, err)
@@ -820,17 +849,17 @@ func (mc *MeowClient) GetSessionID() string {
 
 
 func (mc *MeowClient) SendImageMessage(ctx context.Context, to waTypes.JID, imageData []byte, caption string, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
-	// Upload image
+
 	uploader := NewMediaUploader(mc.client)
 	uploaded, err := uploader.UploadMedia(ctx, imageData, whatsmeow.MediaImage)
 	if err != nil {
 		return nil, Error.WrapError(err, "failed to upload image")
 	}
 
-	// Build and send message
+
 	params := MediaMessageParams{
 		UploadResponse: uploaded,
 		Caption:        caption,
@@ -844,23 +873,23 @@ func (mc *MeowClient) SendImageMessage(ctx context.Context, to waTypes.JID, imag
 		return nil, Error.WrapError(err, "failed to send image message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendAudioMessage(ctx context.Context, to waTypes.JID, audioData []byte, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
-	// Upload audio using MediaUploader utility
+
 	uploader := NewMediaUploader(mc.client)
 	uploaded, err := uploader.UploadMedia(ctx, audioData, whatsmeow.MediaAudio)
 	if err != nil {
 		return nil, Error.WrapError(err, "failed to upload audio")
 	}
 
-	// Build and send message using MessageBuilder
+
 	params := MediaMessageParams{
 		UploadResponse: uploaded,
 		MimeType:       func() string {
@@ -879,23 +908,23 @@ func (mc *MeowClient) SendAudioMessage(ctx context.Context, to waTypes.JID, audi
 		return nil, Error.WrapError(err, "failed to send audio message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendDocumentMessage(ctx context.Context, to waTypes.JID, documentData []byte, filename, caption, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
-	// Upload document using MediaUploader utility
+
 	uploader := NewMediaUploader(mc.client)
 	uploaded, err := uploader.UploadMedia(ctx, documentData, whatsmeow.MediaDocument)
 	if err != nil {
 		return nil, Error.WrapError(err, "failed to upload document")
 	}
 
-	// Build and send message using MessageBuilder
+
 	params := MediaMessageParams{
 		UploadResponse: uploaded,
 		Caption:        caption,
@@ -910,23 +939,23 @@ func (mc *MeowClient) SendDocumentMessage(ctx context.Context, to waTypes.JID, d
 		return nil, Error.WrapError(err, "failed to send document message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendVideoMessage(ctx context.Context, to waTypes.JID, videoData []byte, caption, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
-	// Upload video using MediaUploader utility
+
 	uploader := NewMediaUploader(mc.client)
 	uploaded, err := uploader.UploadMedia(ctx, videoData, whatsmeow.MediaVideo)
 	if err != nil {
 		return nil, Error.WrapError(err, "failed to upload video")
 	}
 
-	// Build and send message using MessageBuilder
+
 	params := MediaMessageParams{
 		UploadResponse: uploaded,
 		Caption:        caption,
@@ -940,23 +969,23 @@ func (mc *MeowClient) SendVideoMessage(ctx context.Context, to waTypes.JID, vide
 		return nil, Error.WrapError(err, "failed to send video message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendStickerMessage(ctx context.Context, to waTypes.JID, stickerData []byte, mimeType string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
-	// Upload sticker using MediaUploader utility
+
 	uploader := NewMediaUploader(mc.client)
 	uploaded, err := uploader.UploadMedia(ctx, stickerData, whatsmeow.MediaImage)
 	if err != nil {
 		return nil, Error.WrapError(err, "failed to upload sticker")
 	}
 
-	// Build and send message using MessageBuilder
+
 	params := MediaMessageParams{
 		UploadResponse: uploaded,
 		MimeType:       mimeType,
@@ -969,16 +998,16 @@ func (mc *MeowClient) SendStickerMessage(ctx context.Context, to waTypes.JID, st
 		return nil, Error.WrapError(err, "failed to send sticker message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendButtonsMessage(ctx context.Context, to waTypes.JID, text string, buttons []types.Button, footer string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
-	// Build buttons message using MessageBuilder
+
 	msg := MsgBuilder.BuildButtonsMessage(text, buttons, footer)
 
 	sender := NewMessageSender(mc.client)
@@ -987,16 +1016,16 @@ func (mc *MeowClient) SendButtonsMessage(ctx context.Context, to waTypes.JID, te
 		return nil, Error.WrapError(err, "failed to send buttons message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
 
 func (mc *MeowClient) SendListMessage(ctx context.Context, to waTypes.JID, text, buttonText string, sections []types.Section, footer string) (*whatsmeow.SendResponse, error) {
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
-	// Build list message using MessageBuilder
+
 	msg := MsgBuilder.BuildListMessage(text, buttonText, sections, footer)
 
 	sender := NewMessageSender(mc.client)
@@ -1005,7 +1034,7 @@ func (mc *MeowClient) SendListMessage(ctx context.Context, to waTypes.JID, text,
 		return nil, Error.WrapError(err, "failed to send list message")
 	}
 
-	// Skip updateActivity() to avoid potential deadlock
+
 	return resp, nil
 }
 
@@ -1013,7 +1042,7 @@ func (mc *MeowClient) SendListMessage(ctx context.Context, to waTypes.JID, text,
 func (mc *MeowClient) SendPollMessage(ctx context.Context, to waTypes.JID, name string, options []string, selectableCount int) (*whatsmeow.SendResponse, error) {
 	mc.logger.Infof("DEBUG: MeowClient.SendPollMessage called - to: %s, name: %s", to.String(), name)
 
-	// Skip connection validation to avoid deadlock - validation is done at service level
+
 	mc.logger.Infof("DEBUG: Skipping connection validation to avoid deadlock")
 
 	mc.logger.Infof("DEBUG: Building poll message...")
@@ -1028,7 +1057,7 @@ func (mc *MeowClient) SendPollMessage(ctx context.Context, to waTypes.JID, name 
 	}
 
 	mc.logger.Infof("DEBUG: whatsmeow client.SendMessage succeeded")
-	// Skip updateActivity() to avoid potential deadlock
+
 	mc.logger.Infof("DEBUG: SendPollMessage completed successfully")
 	return resp, nil
 }

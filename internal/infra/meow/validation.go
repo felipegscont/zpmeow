@@ -9,14 +9,14 @@ import (
 	waTypes "go.mau.fi/whatsmeow/types"
 )
 
-// Validator provides comprehensive validation utilities
+
 type Validator struct {
 	phoneRegex   *regexp.Regexp
 	sessionRegex *regexp.Regexp
 	jidRegex     *regexp.Regexp
 }
 
-// NewValidator creates a new validator instance
+
 func NewValidator() *Validator {
 	return &Validator{
 		phoneRegex:   regexp.MustCompile(PhoneNumberPattern),
@@ -25,7 +25,7 @@ func NewValidator() *Validator {
 	}
 }
 
-// ValidateSessionID validates a session ID
+
 func (v *Validator) ValidateSessionID(sessionID string) error {
 	if sessionID == "" {
 		return errors.New(ErrEmptySessionID)
@@ -42,7 +42,7 @@ func (v *Validator) ValidateSessionID(sessionID string) error {
 	return nil
 }
 
-// ValidateDeviceJID validates a device JID
+
 func (v *Validator) ValidateDeviceJID(deviceJID string) error {
 	if deviceJID == "" {
 		return errors.New(ErrEmptyDeviceJID)
@@ -52,7 +52,7 @@ func (v *Validator) ValidateDeviceJID(deviceJID string) error {
 		return fmt.Errorf("device JID too long (max 200 characters)")
 	}
 	
-	// Try to parse as WhatsApp JID
+
 	_, err := waTypes.ParseJID(deviceJID)
 	if err != nil {
 		return fmt.Errorf("invalid device JID format: %w", err)
@@ -61,13 +61,13 @@ func (v *Validator) ValidateDeviceJID(deviceJID string) error {
 	return nil
 }
 
-// ValidatePhoneNumber validates a phone number
+
 func (v *Validator) ValidatePhoneNumber(phoneNumber string) error {
 	if phoneNumber == "" {
 		return fmt.Errorf("phone number cannot be empty")
 	}
 	
-	// Remove common formatting
+
 	cleaned := strings.ReplaceAll(phoneNumber, " ", "")
 	cleaned = strings.ReplaceAll(cleaned, "-", "")
 	cleaned = strings.ReplaceAll(cleaned, "(", "")
@@ -80,7 +80,7 @@ func (v *Validator) ValidatePhoneNumber(phoneNumber string) error {
 	return nil
 }
 
-// ValidateJID validates a WhatsApp JID string
+
 func (v *Validator) ValidateJID(jidStr string) error {
 	if jidStr == "" {
 		return fmt.Errorf("JID cannot be empty")
@@ -94,20 +94,21 @@ func (v *Validator) ValidateJID(jidStr string) error {
 	return nil
 }
 
-// ValidateClientConnection checks if client exists and is connected
+
 func (v *Validator) ValidateClientConnection(client *MeowClient) error {
 	if client == nil {
 		return errors.New(ErrClientNotFound)
 	}
-	
-	if !client.IsConnected() {
-		return errors.New(ErrClientNotConnected)
-	}
-	
+
+
+
+
+
+
 	return nil
 }
 
-// ValidateMessageContent validates message content
+
 func (v *Validator) ValidateMessageContent(content string) error {
 	if content == "" {
 		return fmt.Errorf("message content cannot be empty")
@@ -120,7 +121,7 @@ func (v *Validator) ValidateMessageContent(content string) error {
 	return nil
 }
 
-// ValidateMediaSize validates media file size
+
 func (v *Validator) ValidateMediaSize(data []byte, mediaType string) error {
 	if len(data) == 0 {
 		return fmt.Errorf("media data cannot be empty")
@@ -152,7 +153,7 @@ func (v *Validator) ValidateMediaSize(data []byte, mediaType string) error {
 	return nil
 }
 
-// ValidateMimeType validates MIME type
+
 func (v *Validator) ValidateMimeType(mimeType, expectedType string) error {
 	if mimeType == "" {
 		return fmt.Errorf("MIME type cannot be empty")
@@ -165,7 +166,7 @@ func (v *Validator) ValidateMimeType(mimeType, expectedType string) error {
 	return nil
 }
 
-// ValidateFileName validates file name
+
 func (v *Validator) ValidateFileName(fileName string) error {
 	if fileName == "" {
 		return fmt.Errorf("file name cannot be empty")
@@ -175,7 +176,7 @@ func (v *Validator) ValidateFileName(fileName string) error {
 		return fmt.Errorf("file name too long (max 255 characters)")
 	}
 	
-	// Check for invalid characters
+
 	invalidChars := []string{"/", "\\", ":", "*", "?", "\"", "<", ">", "|"}
 	for _, char := range invalidChars {
 		if strings.Contains(fileName, char) {
@@ -186,7 +187,7 @@ func (v *Validator) ValidateFileName(fileName string) error {
 	return nil
 }
 
-// ValidateCoordinates validates latitude and longitude
+
 func (v *Validator) ValidateCoordinates(latitude, longitude float64) error {
 	if latitude < -90 || latitude > 90 {
 		return fmt.Errorf("invalid latitude: %f (must be between -90 and 90)", latitude)
@@ -199,7 +200,7 @@ func (v *Validator) ValidateCoordinates(latitude, longitude float64) error {
 	return nil
 }
 
-// ValidatePollOptions validates poll options
+
 func (v *Validator) ValidatePollOptions(options []string) error {
 	if len(options) < 2 {
 		return fmt.Errorf("poll must have at least 2 options")
@@ -222,7 +223,7 @@ func (v *Validator) ValidatePollOptions(options []string) error {
 	return nil
 }
 
-// ValidateVCard validates vCard format
+
 func (v *Validator) ValidateVCard(vcard string) error {
 	if vcard == "" {
 		return fmt.Errorf("vCard cannot be empty")
@@ -239,10 +240,10 @@ func (v *Validator) ValidateVCard(vcard string) error {
 	return nil
 }
 
-// Global validator instance
+
 var DefaultValidator = NewValidator()
 
-// Convenience functions using the default validator
+
 func ValidateSessionID(sessionID string) error {
 	return DefaultValidator.ValidateSessionID(sessionID)
 }

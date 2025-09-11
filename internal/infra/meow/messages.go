@@ -12,10 +12,10 @@ import (
 	waTypes "go.mau.fi/whatsmeow/types"
 )
 
-// MessageBuilder provides utilities for building WhatsApp messages
+
 type MessageBuilder struct{}
 
-// BuildTextMessage creates a text message
+
 func (mb *MessageBuilder) BuildTextMessage(text string, contextInfo *waE2E.ContextInfo) *waE2E.Message {
 	msg := &waE2E.Message{
 		ExtendedTextMessage: &waE2E.ExtendedTextMessage{
@@ -30,7 +30,7 @@ func (mb *MessageBuilder) BuildTextMessage(text string, contextInfo *waE2E.Conte
 	return msg
 }
 
-// BuildLocationMessage creates a location message
+
 func (mb *MessageBuilder) BuildLocationMessage(latitude, longitude float64, name, address string) *waE2E.Message {
 	msg := &waE2E.Message{
 		LocationMessage: &waE2E.LocationMessage{
@@ -49,7 +49,7 @@ func (mb *MessageBuilder) BuildLocationMessage(latitude, longitude float64, name
 	return msg
 }
 
-// BuildContactMessage creates a contact message
+
 func (mb *MessageBuilder) BuildContactMessage(displayName, vcard string) *waE2E.Message {
 	return &waE2E.Message{
 		ContactMessage: &waE2E.ContactMessage{
@@ -59,7 +59,7 @@ func (mb *MessageBuilder) BuildContactMessage(displayName, vcard string) *waE2E.
 	}
 }
 
-// MediaMessageParams holds parameters for media messages
+
 type MediaMessageParams struct {
 	UploadResponse whatsmeow.UploadResponse
 	Caption        string
@@ -67,7 +67,7 @@ type MediaMessageParams struct {
 	FileName       string
 }
 
-// BuildImageMessage creates an image message
+
 func (mb *MessageBuilder) BuildImageMessage(params MediaMessageParams) *waE2E.Message {
 	msg := &waE2E.Message{
 		ImageMessage: &waE2E.ImageMessage{
@@ -88,7 +88,7 @@ func (mb *MessageBuilder) BuildImageMessage(params MediaMessageParams) *waE2E.Me
 	return msg
 }
 
-// BuildAudioMessage creates an audio message
+
 func (mb *MessageBuilder) BuildAudioMessage(params MediaMessageParams, isPTT bool) *waE2E.Message {
 	mimeType := params.MimeType
 	if mimeType == "" {
@@ -109,7 +109,7 @@ func (mb *MessageBuilder) BuildAudioMessage(params MediaMessageParams, isPTT boo
 	}
 }
 
-// BuildDocumentMessage creates a document message
+
 func (mb *MessageBuilder) BuildDocumentMessage(params MediaMessageParams) *waE2E.Message {
 	msg := &waE2E.Message{
 		DocumentMessage: &waE2E.DocumentMessage{
@@ -131,7 +131,7 @@ func (mb *MessageBuilder) BuildDocumentMessage(params MediaMessageParams) *waE2E
 	return msg
 }
 
-// BuildVideoMessage creates a video message
+
 func (mb *MessageBuilder) BuildVideoMessage(params MediaMessageParams) *waE2E.Message {
 	msg := &waE2E.Message{
 		VideoMessage: &waE2E.VideoMessage{
@@ -152,7 +152,7 @@ func (mb *MessageBuilder) BuildVideoMessage(params MediaMessageParams) *waE2E.Me
 	return msg
 }
 
-// BuildStickerMessage creates a sticker message
+
 func (mb *MessageBuilder) BuildStickerMessage(params MediaMessageParams) *waE2E.Message {
 	return &waE2E.Message{
 		StickerMessage: &waE2E.StickerMessage{
@@ -167,7 +167,7 @@ func (mb *MessageBuilder) BuildStickerMessage(params MediaMessageParams) *waE2E.
 	}
 }
 
-// BuildPollMessage creates a poll message
+
 func (mb *MessageBuilder) BuildPollMessage(name string, options []string, selectableCount int) *waE2E.Message {
 	pollOptions := make([]*waE2E.PollCreationMessage_Option, len(options))
 	for i, option := range options {
@@ -190,9 +190,9 @@ func (mb *MessageBuilder) BuildPollMessage(name string, options []string, select
 
 
 
-// BuildButtonsMessage creates a buttons message (fallback to text with numbered options)
+
 func (mb *MessageBuilder) BuildButtonsMessage(text string, buttons []types.Button, footer string) *waE2E.Message {
-	// WhatsApp deprecated interactive buttons, so we fallback to text with numbered options
+
 	buttonText := text + "\n\n"
 	for i, button := range buttons {
 		buttonText += fmt.Sprintf("%d. %s\n", i+1, button.ButtonText.DisplayText)
@@ -208,9 +208,9 @@ func (mb *MessageBuilder) BuildButtonsMessage(text string, buttons []types.Butto
 	}
 }
 
-// BuildListMessage creates a list message (fallback to text with sections)
+
 func (mb *MessageBuilder) BuildListMessage(text, buttonText string, sections []types.Section, footer string) *waE2E.Message {
-	// WhatsApp deprecated interactive lists, so we fallback to text with sections
+
 	listText := text + "\n\n"
 	for _, section := range sections {
 		if section.Title != "" {
@@ -236,17 +236,17 @@ func (mb *MessageBuilder) BuildListMessage(text, buttonText string, sections []t
 	}
 }
 
-// MediaUploader handles media upload operations
+
 type MediaUploader struct {
 	client *whatsmeow.Client
 }
 
-// NewMediaUploader creates a new media uploader
+
 func NewMediaUploader(client *whatsmeow.Client) *MediaUploader {
 	return &MediaUploader{client: client}
 }
 
-// UploadMedia uploads media data and returns upload response
+
 func (mu *MediaUploader) UploadMedia(ctx context.Context, data []byte, mediaType whatsmeow.MediaType) (whatsmeow.UploadResponse, error) {
 	if mu.client == nil {
 		return whatsmeow.UploadResponse{}, errors.New(ErrClientNotFound)
@@ -260,23 +260,23 @@ func (mu *MediaUploader) UploadMedia(ctx context.Context, data []byte, mediaType
 	return uploaded, nil
 }
 
-// MessageSender handles message sending operations
+
 type MessageSender struct {
 	client *whatsmeow.Client
 }
 
-// NewMessageSender creates a new message sender
+
 func NewMessageSender(client *whatsmeow.Client) *MessageSender {
 	return &MessageSender{client: client}
 }
 
-// SendMessage sends a message to the specified recipient and returns the whatsmeow SendResponse
+
 func (ms *MessageSender) SendMessage(ctx context.Context, to waTypes.JID, message *waE2E.Message) (*whatsmeow.SendResponse, error) {
 	if ms.client == nil {
 		return nil, errors.New(ErrClientNotFound)
 	}
 
-	// Skip connection check to avoid potential deadlock - validation is done at service level
+
 
 	resp, err := ms.client.SendMessage(ctx, to, message)
 	if err != nil {
@@ -286,7 +286,7 @@ func (ms *MessageSender) SendMessage(ctx context.Context, to waTypes.JID, messag
 	return &resp, nil
 }
 
-// Global message utilities
+
 var (
 	MsgBuilder = &MessageBuilder{}
 )

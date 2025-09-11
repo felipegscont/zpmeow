@@ -9,7 +9,7 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// SetupRoutes configures the application routes
+
 func SetupRoutes(
 	router *gin.Engine,
 	sessionHandler *handler.SessionHandler,
@@ -17,16 +17,19 @@ func SetupRoutes(
 	sendHandler *handler.SendHandler,
 	chatHandler *handler.ChatHandler,
 	groupHandler *handler.GroupHandler,
+	webhookHandler *handler.WebhookHandler,
+	userHandler *handler.UserHandler,
+	newsletterHandler *handler.NewsletterHandler,
 ) {
-	// Add middlewares
+
 	router.Use(middleware.CORS())
 	router.Use(middleware.Logger())
 	router.Use(gin.Recovery())
 
-	// Health check route
+
 	router.GET("/ping", healthHandler.Ping)
 
-	// Session routes
+
 	sessionGroup := router.Group("/sessions")
 	{
 		sessionGroup.POST("/create", sessionHandler.CreateSession)
@@ -34,17 +37,20 @@ func SetupRoutes(
 		sessionGroup.GET("/:id/info", sessionHandler.GetSessionInfo)
 		sessionGroup.DELETE("/:id/delete", sessionHandler.DeleteSession)
 		sessionGroup.POST("/:id/connect", sessionHandler.ConnectSession)
+		sessionGroup.POST("/:id/disconnect", sessionHandler.DisconnectSession)
 		sessionGroup.POST("/:id/logout", sessionHandler.LogoutSession)
 		sessionGroup.GET("/:id/qr", sessionHandler.GetSessionQR)
 		sessionGroup.POST("/:id/pair", sessionHandler.PairSession)
+		sessionGroup.GET("/:id/status", sessionHandler.GetSessionStatus)
+		sessionGroup.GET("/:id/history", sessionHandler.RequestHistorySync)
 		sessionGroup.POST("/:id/proxy/set", sessionHandler.SetProxy)
 		sessionGroup.GET("/:id/proxy/find", sessionHandler.GetProxy)
 	}
 
-	// WuzAPI-style routes for session-based operations
+
 	sessionAPIGroup := router.Group("/session/:sessionId")
 	{
-		// Send routes
+
 		sendGroup := sessionAPIGroup.Group("/send")
 		{
 			sendGroup.POST("/text", sendHandler.SendText)
@@ -61,7 +67,7 @@ func SetupRoutes(
 			sendGroup.POST("/poll", sendHandler.SendPoll)
 		}
 
-		// Chat routes
+
 		chatGroup := sessionAPIGroup.Group("/chat")
 		{
 			chatGroup.POST("/presence", chatHandler.SetPresence)
@@ -75,7 +81,7 @@ func SetupRoutes(
 			chatGroup.POST("/download/document", chatHandler.DownloadDocument)
 		}
 
-		// Group routes
+
 		groupGroup := sessionAPIGroup.Group("/group")
 		{
 			groupGroup.POST("/create", groupHandler.CreateGroup)
@@ -94,9 +100,34 @@ func SetupRoutes(
 			groupGroup.POST("/locked/set", groupHandler.SetLocked)
 			groupGroup.POST("/ephemeral/set", groupHandler.SetEphemeral)
 		}
+
+		// User routes
+		userGroup := sessionAPIGroup.Group("/user")
+		{
+			userGroup.POST("/presence", userHandler.SetPresence)
+			userGroup.POST("/check", userHandler.CheckUser)
+			userGroup.POST("/info", userHandler.GetUserInfo)
+			userGroup.POST("/avatar", userHandler.GetAvatar)
+			userGroup.GET("/contacts", userHandler.GetContacts)
+		}
+
+		// Newsletter routes
+		newsletterGroup := sessionAPIGroup.Group("/newsletter")
+		{
+			newsletterGroup.GET("/list", newsletterHandler.ListNewsletters)
+		}
+
+		// Webhook routes (session-specific)
+		webhookGroup := sessionAPIGroup.Group("/webhook")
+		{
+			webhookGroup.POST("", webhookHandler.SetWebhook)
+			webhookGroup.GET("", webhookHandler.GetWebhook)
+			webhookGroup.PUT("", webhookHandler.UpdateWebhook)
+			webhookGroup.DELETE("", webhookHandler.DeleteWebhook)
+		}
 	}
 
-	// Swagger documentation route
+
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 

@@ -1,20 +1,20 @@
-// Package main provides the entry point for the zpmeow WhatsApp API server
-//
+
+
 //	@title			zpmeow WhatsApp API
 //	@version		1.0
 //	@description	A WhatsApp API server built with Go, inspired by wuzapi
 //	@termsOfService	http://swagger.io/terms/
-//
+
 //	@contact.name	zpmeow API Support
 //	@contact.url	https://github.com/your-username/zpmeow
 //	@contact.email	support@zpmeow.com
-//
+
 //	@license.name	MIT
 //	@license.url	https://opensource.org/licenses/MIT
-//
+
 //	@host		localhost:8080
 //	@BasePath	/
-//
+
 //	@schemes	http https
 package main
 
@@ -38,62 +38,72 @@ import (
 func main() {
 	cfg, err := config.LoadConfig()
 	if err != nil {
-		// Use basic logging before logger is initialized
+
 		fmt.Printf("Failed to load config: %v\n", err)
 		return
 	}
 
-	// Initialize logger
+
 	loggerConfig := cfg.GetLoggerConfig()
 	log := logger.Initialize(loggerConfig)
 	logger.SetLogger(log)
 	log.Info("Starting zpmeow server")
 
-	// Connect to database
+
 	db, err := database.Connect(cfg)
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer db.Close()
 
-	// Run migrations
+
 	if err := database.RunMigrations(db); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
-	// Create WhatsApp store
+
 	dbLog := logger.GetWALogger("Database")
 	container, err := sqlstore.New(context.Background(), "postgres", cfg.DBUrl, dbLog)
 	if err != nil {
 		log.Fatalf("Failed to create whatsmeow container: %v", err)
 	}
 
-	// Initialize repositories
+
 	sessionRepo := database.NewPostgresSessionRepository(db)
 
-	// Initialize services
-	waLogger := logger.GetWALogger("MeowService")
-	whatsappService := meow.NewMeowService(db, container, waLogger)
-	sessionService := session.NewSessionService(sessionRepo, whatsappService)
 
-	// Connect previously connected sessions on startup (like wuzapi)
+	waLogger := logger.GetWALogger("MeowService")
+
+	// Create session service first (without whatsapp service)
+	sessionService := session.NewSessionService(sessionRepo, nil)
+
+	// Create whatsapp service with session service
+	whatsappService := meow.NewMeowService(db, container, waLogger, sessionService)
+
+	// Update session service with whatsapp service
+	sessionService = session.NewSessionService(sessionRepo, whatsappService)
+
+
 	ctx := context.Background()
 	if err := sessionService.ConnectOnStartup(ctx); err != nil {
 		log.Warnf("Failed to connect sessions on startup: %v", err)
 	}
 
-	// Initialize handlers
+
 	sessionHandler := handler.NewSessionHandler(sessionService)
 	healthHandler := handler.NewHealthHandler()
 	sendHandler := handler.NewSendHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
 	chatHandler := handler.NewChatHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
 	groupHandler := handler.NewGroupHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
+	webhookHandler := handler.NewWebhookHandler(sessionService)
+	userHandler := handler.NewUserHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
+	newsletterHandler := handler.NewNewsletterHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
 
 	gin.SetMode(cfg.GinMode)
 
-	// Use gin.New() instead of gin.Default() to avoid default logging middleware
+
 	ginRouter := gin.New()
-	router.SetupRoutes(ginRouter, sessionHandler, healthHandler, sendHandler, chatHandler, groupHandler)
+	router.SetupRoutes(ginRouter, sessionHandler, healthHandler, sendHandler, chatHandler, groupHandler, webhookHandler, userHandler, newsletterHandler)
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)
 	log.Infof("Server listening on %s", addr)

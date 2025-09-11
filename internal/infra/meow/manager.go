@@ -6,7 +6,9 @@ import (
 	"sync"
 	"time"
 
+	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infra/logger"
+	"zpmeow/internal/infra/webhook"
 	"zpmeow/internal/types"
 
 	"github.com/jmoiron/sqlx"
@@ -18,16 +20,18 @@ import (
 
 
 type ClientManager struct {
-	mu        sync.RWMutex
-	clients   map[string]*MeowClient
-	db        *sqlx.DB
-	container *sqlstore.Container
-	logger    logger.Logger
-	waLogger  waLog.Logger
+	mu             sync.RWMutex
+	clients        map[string]*MeowClient
+	db             *sqlx.DB
+	container      *sqlstore.Container
+	logger         logger.Logger
+	waLogger       waLog.Logger
+	webhookService *webhook.WebhookService
+	sessionService session.SessionService
 }
 
 
-func NewClientManager(db *sqlx.DB, container *sqlstore.Container, waLogger waLog.Logger) *ClientManager {
+func NewClientManager(db *sqlx.DB, container *sqlstore.Container, waLogger waLog.Logger, webhookService *webhook.WebhookService, sessionService session.SessionService) *ClientManager {
 	if waLogger == nil {
 		waLogger = waLog.Noop
 	}
@@ -35,11 +39,13 @@ func NewClientManager(db *sqlx.DB, container *sqlstore.Container, waLogger waLog
 	appLogger := logger.GetLogger().Sub("client-manager")
 
 	return &ClientManager{
-		clients:   make(map[string]*MeowClient),
-		db:        db,
-		container: container,
-		logger:    appLogger,
-		waLogger:  waLogger,
+		clients:        make(map[string]*MeowClient),
+		db:             db,
+		container:      container,
+		logger:         appLogger,
+		waLogger:       waLogger,
+		webhookService: webhookService,
+		sessionService: sessionService,
 	}
 }
 
@@ -57,29 +63,29 @@ func (cm *ClientManager) CreateClient(ctx context.Context, sessionID string) (*M
 	cm.mu.Lock()
 	defer cm.mu.Unlock()
 
-	// Validate session ID
+
 	if err := Validation.ValidateSessionID(sessionID); err != nil {
 		return nil, Error.WrapError(err, "create client validation failed")
 	}
 
-	// Return existing client if found
+
 	if client, exists := cm.clients[sessionID]; exists {
 		return client, nil
 	}
 
-	// Get or create device store
+
 	deviceStore, err := cm.getOrCreateDeviceStore(ctx, sessionID)
 	if err != nil {
 		return nil, Error.WrapError(err, "failed to get device store")
 	}
 
-	// Create new client
-	client, err := NewMeowClient(sessionID, deviceStore, cm.waLogger, cm)
+
+	client, err := NewMeowClient(sessionID, deviceStore, cm.waLogger, cm, cm.webhookService, cm.sessionService)
 	if err != nil {
 		return nil, Error.WrapError(err, "failed to create meow client")
 	}
 
-	// Store client
+
 	cm.clients[sessionID] = client
 
 	cm.logger.Infof("Created new client for session %s", sessionID)
@@ -339,19 +345,19 @@ func (cm *ClientManager) clearQRCodeInDatabase(sessionID string) {
 func (cm *ClientManager) OnPairSuccess(sessionID string, deviceJID string) {
 	cm.logger.Infof("OnPairSuccess called for session %s with device JID %s", sessionID, deviceJID)
 
-	// Validate session ID
+
 	if err := Validation.ValidateSessionID(sessionID); err != nil {
 		cm.logger.Errorf("OnPairSuccess validation failed: %v", err)
 		return
 	}
 
-	// Validate device JID
+
 	if err := Validation.ValidateDeviceJID(deviceJID); err != nil {
 		cm.logger.Errorf("OnPairSuccess validation failed for session %s: %v", sessionID, err)
 		return
 	}
 
-	// Update device JID asynchronously
+
 	go cm.updateSessionDeviceJID(sessionID, deviceJID)
 }
 

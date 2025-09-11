@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockSessionRepository is a mock implementation of SessionRepository
+
 type MockSessionRepository struct {
 	mock.Mock
 }
@@ -61,7 +61,7 @@ func (m *MockSessionRepository) GetByStatus(ctx context.Context, status types.St
 	return args.Get(0).([]*Session), args.Error(1)
 }
 
-// MockWhatsAppService is a mock implementation of WhatsAppService
+
 type MockWhatsAppService struct {
 	mock.Mock
 }
@@ -106,7 +106,7 @@ func (m *MockWhatsAppService) ConnectOnStartup(ctx context.Context) error {
 	return args.Error(0)
 }
 
-// Chat operations mock methods
+
 func (m *MockWhatsAppService) DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string, forEveryone bool) error {
 	args := m.Called(ctx, sessionID, chatJID, messageID, forEveryone)
 	return args.Error(0)
@@ -143,13 +143,13 @@ func TestGetSession_ByID(t *testing.T) {
 		Status: types.StatusDisconnected,
 	}
 
-	// Mock successful ID lookup
+
 	mockRepo.On("GetByID", ctx, sessionID).Return(expectedSession, nil)
 
-	// Test
+
 	result, err := service.GetSession(ctx, sessionID)
 
-	// Assertions
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSession, result)
 	mockRepo.AssertExpectations(t)
@@ -168,14 +168,14 @@ func TestGetSession_ByName(t *testing.T) {
 		Status: types.StatusDisconnected,
 	}
 
-	// Mock ID lookup failure and successful name lookup
+
 	mockRepo.On("GetByID", ctx, sessionName).Return(nil, ErrSessionNotFound)
 	mockRepo.On("GetByName", ctx, sessionName).Return(expectedSession, nil)
 
-	// Test
+
 	result, err := service.GetSession(ctx, sessionName)
 
-	// Assertions
+
 	assert.NoError(t, err)
 	assert.Equal(t, expectedSession, result)
 	mockRepo.AssertExpectations(t)
@@ -189,14 +189,14 @@ func TestGetSession_NotFound(t *testing.T) {
 	ctx := context.Background()
 	sessionIDOrName := "non-existent"
 
-	// Mock both ID and name lookup failures
+
 	mockRepo.On("GetByID", ctx, sessionIDOrName).Return(nil, ErrSessionNotFound)
 	mockRepo.On("GetByName", ctx, sessionIDOrName).Return(nil, ErrSessionNotFound)
 
-	// Test
+
 	result, err := service.GetSession(ctx, sessionIDOrName)
 
-	// Assertions
+
 	assert.Error(t, err)
 	assert.Equal(t, ErrSessionNotFound, err)
 	assert.Nil(t, result)
@@ -211,14 +211,14 @@ func TestCreateSession_ValidName(t *testing.T) {
 	ctx := context.Background()
 	validName := "MySession123"
 
-	// Mock name uniqueness check
+
 	mockRepo.On("GetByName", ctx, validName).Return(nil, ErrSessionNotFound)
 	mockRepo.On("Create", ctx, mock.AnythingOfType("*session.Session")).Return(nil)
 
-	// Test
+
 	result, err := service.CreateSession(ctx, validName)
 
-	// Assertions
+
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, validName, result.Name)
@@ -250,10 +250,10 @@ func TestCreateSession_InvalidNames(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			// Test
+
 			result, err := service.CreateSession(ctx, tc.sessionName)
 
-			// Assertions
+
 			assert.Error(t, err)
 			assert.Equal(t, tc.expectedErr, err)
 			assert.Nil(t, result)

@@ -12,14 +12,14 @@ import (
 "github.com/gin-gonic/gin"
 )
 
-// ChatHandler handles HTTP requests for chat operations
+
 type ChatHandler struct {
 	sessionService session.SessionService
 	meowService    *meow.MeowServiceImpl
 	logger         logger.Logger
 }
 
-// NewChatHandler creates a new chat handler
+
 func NewChatHandler(sessionService session.SessionService, meowService *meow.MeowServiceImpl) *ChatHandler {
 	return &ChatHandler{
 		sessionService: sessionService,
@@ -28,7 +28,7 @@ func NewChatHandler(sessionService session.SessionService, meowService *meow.Meo
 	}
 }
 
-// resolveSessionID resolves session ID from path parameter (handles both ID and name)
+
 func (h *ChatHandler) resolveSessionID(c *gin.Context) (string, bool) {
 	sessionID := c.Param("sessionId")
 	if sessionID == "" {
@@ -36,7 +36,7 @@ func (h *ChatHandler) resolveSessionID(c *gin.Context) (string, bool) {
 		return "", false
 	}
 
-	// Resolve session to get the actual ID (in case sessionID is a name)
+
 	sess, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		if err == session.ErrSessionNotFound {
@@ -50,7 +50,7 @@ func (h *ChatHandler) resolveSessionID(c *gin.Context) (string, bool) {
 	return sess.ID, true
 }
 
-// SetPresence godoc
+
 // @Summary Set chat presence (typing/recording/paused)
 // @Description Set chat presence status for a specific chat
 // @Tags chat
@@ -64,33 +64,33 @@ func (h *ChatHandler) resolveSessionID(c *gin.Context) (string, bool) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/presence [post]
 func (h *ChatHandler) SetPresence(c *gin.Context) {
-	// Resolve session ID
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
 	}
 
-	// Parse request body
+
 	var req types.ChatPresenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number
+
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// Map user-friendly states to whatsmeow ChatPresence values
+
 	state, media := h.mapPresenceState(req.State, req.Media)
 	if state == "" {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid state. Allowed values: typing, recording, paused")
 		return
 	}
 
-	// Set chat presence through Meow service
+
 	h.logger.Infof("Setting chat presence for %s to %s from session %s", req.Phone, state, sessionID)
 
 	err := h.meowService.SetChatPresence(c.Request.Context(), sessionID, req.Phone, state, media)
@@ -106,7 +106,7 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 	})
 }
 
-// mapPresenceState maps user-friendly presence states to whatsmeow values
+
 func (h *ChatHandler) mapPresenceState(inputState, inputMedia string) (state, media string) {
 	switch inputState {
 	case "typing":
@@ -120,7 +120,7 @@ func (h *ChatHandler) mapPresenceState(inputState, inputMedia string) (state, me
 	}
 }
 
-// MarkRead godoc
+
 // @Summary Mark messages as read
 // @Description Mark one or more messages as read in a chat
 // @Tags chat
@@ -134,32 +134,37 @@ func (h *ChatHandler) mapPresenceState(inputState, inputMedia string) (state, me
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/markread [post]
 func (h *ChatHandler) MarkRead(c *gin.Context) {
-	// Resolve session ID
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
 	}
 
-	// Parse request body
+
 	var req types.ChatMarkReadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		h.logger.Errorf("Failed to bind JSON request: %v", err)
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number
+	// Log the raw request data
+	h.logger.Infof("MarkRead handler received request: phone=%s, messageIDs=%v", req.Phone, req.MessageIDs)
+
 	if !utils.IsValidPhoneNumber(req.Phone) {
+		h.logger.Errorf("Invalid phone number format: %s", req.Phone)
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// Validate message IDs
+
 	if len(req.MessageIDs) == 0 {
+		h.logger.Errorf("No message IDs provided")
 		utils.RespondWithError(c, http.StatusBadRequest, "At least one message ID is required")
 		return
 	}
 
-	// Mark messages as read through Meow service
+
 	h.logger.Infof("Marking %d messages as read for %s from session %s", len(req.MessageIDs), req.Phone, sessionID)
 
 	err := h.meowService.MarkMessageRead(c.Request.Context(), sessionID, req.Phone, req.MessageIDs)
@@ -175,7 +180,7 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 	})
 }
 
-// React godoc
+
 // @Summary React to a message
 // @Description Send a reaction emoji to a message
 // @Tags chat
@@ -189,26 +194,26 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/react [post]
 func (h *ChatHandler) React(c *gin.Context) {
-	// Resolve session ID
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
 	}
 
-	// Parse request body
+
 	var req types.ChatReactRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number
+
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// React to message through Meow service
+
 	h.logger.Infof("Reacting to message %s with emoji %s for %s from session %s", req.MessageID, req.Emoji, req.Phone, sessionID)
 
 	err := h.meowService.ReactToMessage(c.Request.Context(), sessionID, req.Phone, req.MessageID, req.Emoji)
@@ -224,7 +229,7 @@ func (h *ChatHandler) React(c *gin.Context) {
 	})
 }
 
-// Delete godoc
+
 // @Summary Delete a message
 // @Description Delete a message from a chat
 // @Tags chat
@@ -238,26 +243,26 @@ func (h *ChatHandler) React(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/delete [post]
 func (h *ChatHandler) Delete(c *gin.Context) {
-	// Resolve session ID
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
 	}
 
-	// Parse request body
+
 	var req types.ChatDeleteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number
+
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// Delete message through Meow service
+
 	h.logger.Infof("Deleting message %s for %s (forEveryone: %v) from session %s", req.MessageID, req.Phone, req.ForEveryone, sessionID)
 
 	err := h.meowService.DeleteMessage(c.Request.Context(), sessionID, req.Phone, req.MessageID, req.ForEveryone)
@@ -273,7 +278,7 @@ func (h *ChatHandler) Delete(c *gin.Context) {
 	})
 }
 
-// Edit godoc
+
 // @Summary Edit a message
 // @Description Edit a text message in a chat
 // @Tags chat
@@ -287,26 +292,26 @@ func (h *ChatHandler) Delete(c *gin.Context) {
 // @Failure 500 {object} utils.ErrorResponse
 // @Router /session/{sessionId}/chat/edit [post]
 func (h *ChatHandler) Edit(c *gin.Context) {
-	// Resolve session ID
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
 	}
 
-	// Parse request body
+
 	var req types.ChatEditRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Validate phone number
+
 	if !utils.IsValidPhoneNumber(req.Phone) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid phone number format")
 		return
 	}
 
-	// Edit message through Meow service
+
 	h.logger.Infof("Editing message %s with new text for %s from session %s", req.MessageID, req.Phone, sessionID)
 
 	sendResp, err := h.meowService.EditMessage(c.Request.Context(), sessionID, req.Phone, req.MessageID, req.NewText)
@@ -323,7 +328,7 @@ func (h *ChatHandler) Edit(c *gin.Context) {
 	})
 }
 
-// DownloadImage godoc
+
 // @Summary Download image media
 // @Description Download image media from a message
 // @Tags chat
@@ -340,7 +345,7 @@ func (h *ChatHandler) DownloadImage(c *gin.Context) {
 	h.downloadMedia(c, "image")
 }
 
-// DownloadVideo godoc
+
 // @Summary Download video media
 // @Description Download video media from a message
 // @Tags chat
@@ -357,7 +362,7 @@ func (h *ChatHandler) DownloadVideo(c *gin.Context) {
 	h.downloadMedia(c, "video")
 }
 
-// DownloadAudio godoc
+
 // @Summary Download audio media
 // @Description Download audio media from a message
 // @Tags chat
@@ -374,7 +379,7 @@ func (h *ChatHandler) DownloadAudio(c *gin.Context) {
 	h.downloadMedia(c, "audio")
 }
 
-// DownloadDocument godoc
+
 // @Summary Download document media
 // @Description Download document media from a message
 // @Tags chat
@@ -391,22 +396,22 @@ func (h *ChatHandler) DownloadDocument(c *gin.Context) {
 	h.downloadMedia(c, "document")
 }
 
-// downloadMedia is a helper function to download media of any type
+
 func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
-	// Resolve session ID
+
 	sessionID, ok := h.resolveSessionID(c)
 	if !ok {
 		return
 	}
 
-	// Parse request body
+
 	var req types.ChatDownloadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
 		return
 	}
 
-	// Download media through Meow service
+
 	h.logger.Infof("Downloading %s media for message %s from session %s", mediaType, req.MessageID, sessionID)
 
 	mediaData, mimeType, err := h.meowService.DownloadMedia(c.Request.Context(), sessionID, req.MessageID)

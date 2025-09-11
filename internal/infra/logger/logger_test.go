@@ -7,7 +7,7 @@ import (
 )
 
 func TestLoggerWithConfig(t *testing.T) {
-	// Test with default config
+
 	defaultConfig := config.DefaultLoggerConfig()
 	log := Initialize(defaultConfig)
 	
@@ -15,7 +15,7 @@ func TestLoggerWithConfig(t *testing.T) {
 		t.Fatal("Logger should not be nil")
 	}
 	
-	// Test basic logging
+
 	log.Info("Test info message")
 	log.Debug("Test debug message")
 	log.Warn("Test warning message")
@@ -23,7 +23,7 @@ func TestLoggerWithConfig(t *testing.T) {
 }
 
 func TestLoggerWithCustomConfig(t *testing.T) {
-	// Test with custom config
+
 	customConfig := &config.LoggerConfig{
 		Level:           "debug",
 		Format:          "console",
@@ -43,7 +43,7 @@ func TestLoggerWithCustomConfig(t *testing.T) {
 		t.Fatal("Logger should not be nil")
 	}
 	
-	// Test structured logging
+
 	log.With().
 		Str("test_key", "test_value").
 		Int("test_number", 42).
@@ -55,14 +55,14 @@ func TestSubLoggers(t *testing.T) {
 	config := config.DefaultLoggerConfig()
 	log := Initialize(config)
 	
-	// Create sub-loggers
+
 	httpLogger := log.Sub("http")
 	dbLogger := log.Sub("database")
 	
 	httpLogger.Info("HTTP request received")
 	dbLogger.Error("Database connection failed")
 	
-	// Nested sub-loggers
+
 	userLogger := httpLogger.Sub("user")
 	userLogger.Info("User authenticated")
 }
@@ -71,7 +71,7 @@ func TestWALogAdapter(t *testing.T) {
 	config := config.DefaultLoggerConfig()
 	Initialize(config)
 
-	// Test waLog adapter
+
 	waLogger := GetWALogger("whatsapp")
 	
 	waLogger.Infof("WhatsApp client initialized")
@@ -79,16 +79,16 @@ func TestWALogAdapter(t *testing.T) {
 	waLogger.Warnf("Warning message")
 	waLogger.Errorf("Error message")
 	
-	// Test sub-logger
+
 	subLogger := waLogger.Sub("session")
 	subLogger.Infof("Session created")
 }
 
 func TestConfigInterface(t *testing.T) {
-	// Test that LoggerConfig implements Config interface
+
 	var _ Config = (*config.LoggerConfig)(nil)
 	
-	// Test config methods
+
 	cfg := config.DefaultLoggerConfig()
 	
 	if cfg.GetLevel() != "info" {
