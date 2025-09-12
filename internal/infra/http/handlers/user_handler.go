@@ -33,3 +33,11 @@ func (h *UserHandler) CheckUser(c *gin.Context) {
 func (h *UserHandler) SetPresence(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "SetPresence - stub implementation"})
 }
+
+func (h *UserHandler) GetAvatar(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "GetAvatar - stub implementation"})
+}
+
+func (h *UserHandler) GetContacts(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"message": "GetContacts - stub implementation"})
+}

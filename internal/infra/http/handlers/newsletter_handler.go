@@ -33,3 +33,8 @@ func (h *NewsletterHandler) SubscribeNewsletter(c *gin.Context) {
 func (h *NewsletterHandler) UnsubscribeNewsletter(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "UnsubscribeNewsletter - stub implementation"})
 }
+
+// Alias for router compatibility
+func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
+	h.GetNewsletters(c)
+}
