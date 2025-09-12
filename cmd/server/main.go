@@ -28,7 +28,7 @@ import (
 	"zpmeow/internal/domain"
 	"zpmeow/internal/infra"
 	"zpmeow/internal/infra/database"
-		handlers "zpmeow/internal/infra/http/handlers"
+	handlers "zpmeow/internal/infra/http/handlers"
 	"zpmeow/internal/infra/http/router"
 	"zpmeow/internal/infra/logger"
 
@@ -58,7 +58,7 @@ func main() {
 	defer db.Close()
 
 
-	if err := database.RunMigrations(db); err != nil {
+	if err := database.RunMigrations(cfg); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
 	}
 
@@ -70,7 +70,7 @@ func main() {
 	}
 
 
-	sessionRepo := infra.NewPostgresSessionRepository()
+	sessionRepo := database.NewPostgresSessionRepository(db)
 
 	waLogger := logger.GetWALogger("MeowService")
 
@@ -90,14 +90,14 @@ func main() {
 	}
 
 
-	sessionHandler := handler.NewSessionHandler(sessionService)
-	healthHandler := handler.NewHealthHandler()
-	sendHandler := handler.NewSendHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
-	chatHandler := handler.NewChatHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
-	groupHandler := handler.NewGroupHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
-	webhookHandler := handler.NewWebhookHandler(sessionService)
-	userHandler := handler.NewUserHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
-	newsletterHandler := handler.NewNewsletterHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
+	sessionHandler := handlers.NewSessionHandler(sessionService)
+	healthHandler := handlers.NewHealthHandler()
+	sendHandler := handlers.NewSendHandler(sessionService, whatsappService.(*infra.MeowServiceImpl))
+	chatHandler := handlers.NewChatHandler(sessionService, whatsappService.(*infra.MeowServiceImpl))
+	groupHandler := handlers.NewGroupHandler(sessionService, whatsappService.(*infra.MeowServiceImpl))
+	webhookHandler := handlers.NewWebhookHandler(sessionService)
+	userHandler := handlers.NewUserHandler(sessionService, whatsappService.(*infra.MeowServiceImpl))
+	newsletterHandler := handlers.NewNewsletterHandler(sessionService, whatsappService.(*infra.MeowServiceImpl))
 
 	gin.SetMode(cfg.GinMode)
 
