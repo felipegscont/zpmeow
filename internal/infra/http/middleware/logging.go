@@ -4,30 +4,13 @@ import (
 	"strings"
 
 	"zpmeow/internal/infra/logger"
+	"zpmeow/internal/shared/types"
 
 	"github.com/gin-gonic/gin"
 )
 
 
-type LogLevel string
 
-const (
-	LogLevelInfo  LogLevel = "info"
-	LogLevelWarn  LogLevel = "warn"
-	LogLevelError LogLevel = "error"
-)
-
-
-type HTTPLogEntry struct {
-	Method    string
-	Path      string
-	Status    int
-	Latency   string
-	ClientIP  string
-	UserAgent string
-	Error     string
-	Level     LogLevel
-}
 
 
 func Logger() gin.HandlerFunc {
@@ -49,8 +32,8 @@ func Logger() gin.HandlerFunc {
 }
 
 
-func createHTTPLogEntry(params gin.LogFormatterParams) HTTPLogEntry {
-	entry := HTTPLogEntry{
+func createHTTPLogEntry(params gin.LogFormatterParams) types.HTTPLogEntry {
+	entry := types.HTTPLogEntry{
 		Method:   params.Method,
 		Path:     params.Path,
 		Status:   params.StatusCode,
@@ -73,7 +56,7 @@ func createHTTPLogEntry(params gin.LogFormatterParams) HTTPLogEntry {
 }
 
 
-func logHTTPRequest(httpLogger logger.Logger, entry HTTPLogEntry) {
+func logHTTPRequest(httpLogger logger.Logger, entry types.HTTPLogEntry) {
 	logEntry := httpLogger.With().
 		Str("method", entry.Method).
 		Str("path", entry.Path).
@@ -91,9 +74,9 @@ func logHTTPRequest(httpLogger logger.Logger, entry HTTPLogEntry) {
 
 
 	switch entry.Level {
-	case LogLevelError:
+	case types.LogLevelError:
 		logEntry.Logger().Error("HTTP Request")
-	case LogLevelWarn:
+	case types.LogLevelWarn:
 		logEntry.Logger().Warn("HTTP Request")
 	default:
 		logEntry.Logger().Info("HTTP Request")
@@ -113,14 +96,14 @@ func shouldSkipLogging(path string) bool {
 }
 
 
-func determineLogLevel(statusCode int) LogLevel {
+func determineLogLevel(statusCode int) types.LogLevel {
 	switch {
 	case statusCode >= 500:
-		return LogLevelError
+		return types.LogLevelError
 	case statusCode >= 400:
-		return LogLevelWarn
+		return types.LogLevelWarn
 	default:
-		return LogLevelInfo
+		return types.LogLevelInfo
 	}
 }
 

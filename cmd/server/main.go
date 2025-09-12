@@ -22,14 +22,15 @@ import (
 	"context"
 	"fmt"
 
-	_ "zpmeow/docs" // Import for swagger docs
+	// _ "zpmeow/docs" // Import for swagger docs - temporarily disabled
+	"zpmeow/internal/application"
 	"zpmeow/internal/config"
-	"zpmeow/internal/domain/session"
+	"zpmeow/internal/domain"
+	"zpmeow/internal/infra"
 	"zpmeow/internal/infra/database"
-	"zpmeow/internal/infra/http/handler"
+		handlers "zpmeow/internal/infra/http/handlers"
 	"zpmeow/internal/infra/http/router"
 	"zpmeow/internal/infra/logger"
-	"zpmeow/internal/infra/meow"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -69,19 +70,18 @@ func main() {
 	}
 
 
-	sessionRepo := database.NewPostgresSessionRepository(db)
-
+	sessionRepo := infra.NewPostgresSessionRepository()
 
 	waLogger := logger.GetWALogger("MeowService")
 
 	// Create session service first (without whatsapp service)
-	sessionService := session.NewSessionService(sessionRepo, nil)
+	sessionService := application.NewSessionService(sessionRepo, nil)
 
 	// Create whatsapp service with session service
-	whatsappService := meow.NewMeowService(db, container, waLogger, sessionService)
+	whatsappService := infra.NewMeowService(db, container, waLogger, sessionService)
 
 	// Update session service with whatsapp service
-	sessionService = session.NewSessionService(sessionRepo, whatsappService)
+	sessionService = application.NewSessionService(sessionRepo, whatsappService)
 
 
 	ctx := context.Background()
@@ -92,12 +92,12 @@ func main() {
 
 	sessionHandler := handler.NewSessionHandler(sessionService)
 	healthHandler := handler.NewHealthHandler()
-	sendHandler := handler.NewSendHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
-	chatHandler := handler.NewChatHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
-	groupHandler := handler.NewGroupHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
+	sendHandler := handler.NewSendHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
+	chatHandler := handler.NewChatHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
+	groupHandler := handler.NewGroupHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
 	webhookHandler := handler.NewWebhookHandler(sessionService)
-	userHandler := handler.NewUserHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
-	newsletterHandler := handler.NewNewsletterHandler(sessionService, whatsappService.(*meow.MeowServiceImpl))
+	userHandler := handler.NewUserHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
+	newsletterHandler := handler.NewNewsletterHandler(sessionService, whatsappService.(*service.MeowServiceImpl))
 
 	gin.SetMode(cfg.GinMode)
 

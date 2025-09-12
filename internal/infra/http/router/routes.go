@@ -1,7 +1,7 @@
 package router
 
 import (
-	"zpmeow/internal/infra/http/handler"
+	handler "zpmeow/internal/infra/http/handlers"
 	"zpmeow/internal/infra/http/middleware"
 
 	"github.com/gin-gonic/gin"

@@ -3,7 +3,7 @@ package session
 import (
 	"strings"
 	"time"
-	"zpmeow/internal/types"
+	"zpmeow/internal/shared/types"
 )
 
 
@@ -167,18 +167,12 @@ func (s *Session) Validate() error {
 
 
 func (s *Session) validateID() error {
-	if strings.TrimSpace(s.ID) == "" {
-		return ErrInvalidSessionID
-	}
-	return nil
+	return ValidateSessionID(s.ID)
 }
 
 
 func (s *Session) validateName() error {
-	if strings.TrimSpace(s.Name) == "" {
-		return ErrInvalidSessionName
-	}
-	return nil
+	return ValidateSessionName(s.Name)
 }
 
 
@@ -190,31 +184,4 @@ func (s *Session) validateStatus() error {
 }
 
 
-var (
-	ErrInvalidSessionID          = NewDomainError("session ID cannot be empty")
-	ErrInvalidSessionName        = NewDomainError("session name cannot be empty")
-	ErrSessionNameTooShort       = NewDomainError("session name must be at least 3 characters long")
-	ErrSessionNameTooLong        = NewDomainError("session name cannot exceed 50 characters")
-	ErrInvalidSessionNameChar    = NewDomainError("session name can only contain letters, numbers, hyphens, and underscores")
-	ErrInvalidSessionNameFormat  = NewDomainError("session name cannot start or end with hyphen or underscore")
-	ErrReservedSessionName       = NewDomainError("session name is reserved and cannot be used")
-	ErrInvalidSessionStatus      = NewDomainError("session status is invalid")
-	ErrSessionNotFound           = NewDomainError("session not found")
-	ErrSessionAlreadyExists      = NewDomainError("session already exists")
-	ErrSessionAlreadyConnected   = NewDomainError("session is already connected")
-	ErrSessionCannotConnect      = NewDomainError("session cannot be connected in current state")
-)
 
-
-type DomainError struct {
-	Message string
-}
-
-func (e DomainError) Error() string {
-	return e.Message
-}
-
-
-func NewDomainError(message string) DomainError {
-	return DomainError{Message: message}
-}

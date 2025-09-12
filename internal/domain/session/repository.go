@@ -2,7 +2,7 @@ package session
 
 import (
 	"context"
-	"zpmeow/internal/types"
+	"zpmeow/internal/shared/types"
 )
 
 
