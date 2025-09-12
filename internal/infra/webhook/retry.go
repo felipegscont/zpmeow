@@ -10,9 +10,9 @@ import (
 
 // RetryConfig defines retry configuration
 type RetryConfig struct {
-	MaxRetries      int
-	InitialBackoff  time.Duration
-	MaxBackoff      time.Duration
+	MaxRetries        int
+	InitialBackoff    time.Duration
+	MaxBackoff        time.Duration
 	BackoffMultiplier float64
 }
 
@@ -37,7 +37,7 @@ func NewRetryStrategy(config *RetryConfig) *RetryStrategy {
 	if config == nil {
 		config = DefaultRetryConfig()
 	}
-	
+
 	return &RetryStrategy{
 		config: config,
 		logger: logger.GetLogger().Sub("webhook-retry"),
@@ -52,7 +52,7 @@ func (r *RetryStrategy) ExecuteWithRetry(ctx context.Context, operation func() e
 		if attempt > 0 {
 			backoff := r.calculateBackoff(attempt)
 			r.logger.Infof("Retrying %s in %v (attempt %d/%d)", operationName, backoff, attempt, r.config.MaxRetries)
-			
+
 			select {
 			case <-ctx.Done():
 				return ctx.Err()
@@ -70,7 +70,7 @@ func (r *RetryStrategy) ExecuteWithRetry(ctx context.Context, operation func() e
 
 		lastErr = err
 		r.logger.Warnf("%s attempt %d failed: %v", operationName, attempt+1, err)
-		
+
 		// Check if error is retryable
 		if !r.isRetryableError(err) {
 			r.logger.Infof("%s failed with non-retryable error: %v", operationName, err)
@@ -84,13 +84,13 @@ func (r *RetryStrategy) ExecuteWithRetry(ctx context.Context, operation func() e
 
 // calculateBackoff calculates the backoff duration for a given attempt
 func (r *RetryStrategy) calculateBackoff(attempt int) time.Duration {
-	backoff := time.Duration(float64(r.config.InitialBackoff) * 
+	backoff := time.Duration(float64(r.config.InitialBackoff) *
 		pow(r.config.BackoffMultiplier, float64(attempt-1)))
-	
+
 	if backoff > r.config.MaxBackoff {
 		backoff = r.config.MaxBackoff
 	}
-	
+
 	return backoff
 }
 
@@ -99,7 +99,7 @@ func (r *RetryStrategy) isRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	// Check for common retryable error patterns
 	errStr := err.Error()
 	retryablePatterns := []string{
@@ -112,13 +112,13 @@ func (r *RetryStrategy) isRetryableError(err error) bool {
 		"no such host",
 		"connection reset",
 	}
-	
+
 	for _, pattern := range retryablePatterns {
 		if contains(errStr, pattern) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -130,7 +130,7 @@ func pow(base, exp float64) float64 {
 	if exp == 1 {
 		return base
 	}
-	
+
 	result := base
 	for i := 1; i < int(exp); i++ {
 		result *= base

@@ -9,10 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
-
-
-
 func Logger() gin.HandlerFunc {
 	httpLogger := logger.GetLogger().Sub("http")
 
@@ -22,15 +18,12 @@ func Logger() gin.HandlerFunc {
 			return ""
 		}
 
-
 		entry := createHTTPLogEntry(params)
 		logHTTPRequest(httpLogger, entry)
-
 
 		return ""
 	})
 }
-
 
 func createHTTPLogEntry(params gin.LogFormatterParams) types.HTTPLogEntry {
 	entry := types.HTTPLogEntry{
@@ -42,11 +35,9 @@ func createHTTPLogEntry(params gin.LogFormatterParams) types.HTTPLogEntry {
 		Level:    determineLogLevel(params.StatusCode),
 	}
 
-
 	if params.ErrorMessage != "" {
 		entry.Error = params.ErrorMessage
 	}
-
 
 	if !isStaticResource(params.Path) && params.Request != nil {
 		entry.UserAgent = params.Request.UserAgent()
@@ -54,7 +45,6 @@ func createHTTPLogEntry(params gin.LogFormatterParams) types.HTTPLogEntry {
 
 	return entry
 }
-
 
 func logHTTPRequest(httpLogger logger.Logger, entry types.HTTPLogEntry) {
 	logEntry := httpLogger.With().
@@ -64,14 +54,12 @@ func logHTTPRequest(httpLogger logger.Logger, entry types.HTTPLogEntry) {
 		Str("latency", entry.Latency).
 		Str("client_ip", entry.ClientIP)
 
-
 	if entry.Error != "" {
 		logEntry = logEntry.Str("error", entry.Error)
 	}
 	if entry.UserAgent != "" {
 		logEntry = logEntry.Str("user_agent", entry.UserAgent)
 	}
-
 
 	switch entry.Level {
 	case types.LogLevelError:
@@ -83,18 +71,15 @@ func logHTTPRequest(httpLogger logger.Logger, entry types.HTTPLogEntry) {
 	}
 }
 
-
 var skipLogPaths = map[string]bool{
 	"/ping":        true,
 	"/health":      true,
 	"/favicon.ico": true,
 }
 
-
 func shouldSkipLogging(path string) bool {
 	return skipLogPaths[path]
 }
-
 
 func determineLogLevel(statusCode int) types.LogLevel {
 	switch {
@@ -106,7 +91,6 @@ func determineLogLevel(statusCode int) types.LogLevel {
 		return types.LogLevelInfo
 	}
 }
-
 
 var (
 	staticPrefixes = []string{
@@ -131,7 +115,6 @@ var (
 	}
 )
 
-
 func isStaticResource(path string) bool {
 
 	for _, prefix := range staticPrefixes {
@@ -139,7 +122,6 @@ func isStaticResource(path string) bool {
 			return true
 		}
 	}
-
 
 	for ext := range staticExtensions {
 		if strings.HasSuffix(path, ext) {

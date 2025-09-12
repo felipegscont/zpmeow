@@ -10,10 +10,10 @@ import (
 type MediaStrategy interface {
 	// ValidateMedia validates the media data for this specific type
 	ValidateMedia(data []byte) error
-	
+
 	// ProcessMedia processes the media data and returns the processed data and mime type
 	ProcessMedia(ctx context.Context, data []byte, filename string) ([]byte, string, error)
-	
+
 	// SendMessage sends the media message using the WhatsApp service
 	SendMessage(ctx context.Context, service MediaSender, sessionID, phone string, data []byte, caption, filename, mimeType string) (*whatsmeow.SendResponse, error)
 }

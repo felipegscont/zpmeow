@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"net/http"
-	"github.com/gin-gonic/gin"
+	"zpmeow/internal/application/dto/request"
+	"zpmeow/internal/application/dto/response"
 	"zpmeow/internal/domain"
 	"zpmeow/internal/infra/logger"
+
+	"github.com/gin-gonic/gin"
 )
 
 type SessionHandler struct {
@@ -20,73 +23,87 @@ func NewSessionHandler(sessionService domain.SessionService) *SessionHandler {
 }
 
 func (h *SessionHandler) CreateSession(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "CreateSession - stub implementation"})
+	var req request.CreateSessionRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: err.Error()})
+		return
+	}
+
+	session, err := h.sessionService.CreateSession(c.Request.Context(), req.Name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to create session"})
+		return
+	}
+
+	resp := response.CreateSessionResponse{
+		ID:     session.ID,
+		Name:   session.Name,
+		Status: string(session.Status),
+	}
+	c.JSON(http.StatusCreated, resp)
 }
 
 func (h *SessionHandler) GetSession(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "GetSession - stub implementation"})
+	sessionID := c.Param("id")
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Session ID is required"})
+		return
+	}
+
+	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, response.ErrorResponse{Error: "Session not found"})
+		return
+	}
+
+	resp := response.SessionInfoResponse{
+		BaseSessionInfo: response.BaseSessionInfo{
+			ID:     session.ID,
+			Name:   session.Name,
+			Status: string(session.Status),
+		},
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *SessionHandler) GetAllSessions(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "GetAllSessions - stub implementation"})
+	sessions, err := h.sessionService.GetAllSessions(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to get sessions"})
+		return
+	}
+
+	var sessionResponses []response.SessionInfoResponse
+	for _, session := range sessions {
+		sessionResponses = append(sessionResponses, response.SessionInfoResponse{
+			BaseSessionInfo: response.BaseSessionInfo{
+				ID:     session.ID,
+				Name:   session.Name,
+				Status: string(session.Status),
+			},
+		})
+	}
+
+	resp := response.SessionListResponse{
+		Sessions: sessionResponses,
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func (h *SessionHandler) DeleteSession(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "DeleteSession - stub implementation"})
-}
+	sessionID := c.Param("id")
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, response.ErrorResponse{Error: "Session ID is required"})
+		return
+	}
 
-func (h *SessionHandler) ConnectSession(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "ConnectSession - stub implementation"})
-}
+	err := h.sessionService.DeleteSession(c.Request.Context(), sessionID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, response.ErrorResponse{Error: "Failed to delete session"})
+		return
+	}
 
-func (h *SessionHandler) DisconnectSession(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "DisconnectSession - stub implementation"})
-}
-
-func (h *SessionHandler) GetQRCode(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "GetQRCode - stub implementation"})
-}
-
-func (h *SessionHandler) PairWithPhone(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "PairWithPhone - stub implementation"})
-}
-
-func (h *SessionHandler) SetProxy(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "SetProxy - stub implementation"})
-}
-
-func (h *SessionHandler) ClearProxy(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "ClearProxy - stub implementation"})
-}
-
-func (h *SessionHandler) ListSessions(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "ListSessions - stub implementation"})
-}
-
-func (h *SessionHandler) GetSessionInfo(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "GetSessionInfo - stub implementation"})
-}
-
-func (h *SessionHandler) LogoutSession(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "LogoutSession - stub implementation"})
-}
-
-func (h *SessionHandler) GetSessionQR(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "GetSessionQR - stub implementation"})
-}
-
-func (h *SessionHandler) PairSession(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "PairSession - stub implementation"})
-}
-
-func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "GetSessionStatus - stub implementation"})
-}
-
-func (h *SessionHandler) RequestHistorySync(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "RequestHistorySync - stub implementation"})
-}
-
-func (h *SessionHandler) GetProxy(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "GetProxy - stub implementation"})
+	c.JSON(http.StatusOK, response.SuccessResponse{
+		Message: "Session deleted successfully",
+	})
 }

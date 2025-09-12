@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-
 func IsValidPhoneNumber(phone string) bool {
 	// Check if it's a group JID (ends with @g.us)
 	if strings.HasSuffix(phone, "@g.us") {
@@ -20,7 +19,6 @@ func IsValidPhoneNumber(phone string) bool {
 	// Remove all non-digit characters for phone number validation
 	cleaned := regexp.MustCompile(`\D`).ReplaceAllString(phone, "")
 
-
 	if len(cleaned) < 10 || len(cleaned) > 15 {
 		return false
 	}
@@ -28,22 +26,18 @@ func IsValidPhoneNumber(phone string) bool {
 	return true
 }
 
-
 func IsValidSessionName(name string) bool {
 	name = strings.TrimSpace(name)
 	return len(name) >= 1 && len(name) <= 100
 }
 
-
 func IsValidProxyURL(url string) bool {
 	if url == "" {
 		return true // Empty is valid (no proxy)
 	}
-	
 
 	return strings.HasPrefix(url, "http://") || strings.HasPrefix(url, "https://") || strings.HasPrefix(url, "socks5://")
 }
-
 
 func SanitizeString(input string) string {
 

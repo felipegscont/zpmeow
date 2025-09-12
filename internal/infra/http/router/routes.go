@@ -9,7 +9,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-
 func SetupRoutes(
 	router *gin.Engine,
 	sessionHandler *handler.SessionHandler,
@@ -26,27 +25,16 @@ func SetupRoutes(
 	router.Use(middleware.Logger())
 	router.Use(gin.Recovery())
 
-
 	router.GET("/ping", healthHandler.Ping)
-
 
 	sessionGroup := router.Group("/sessions")
 	{
 		sessionGroup.POST("/create", sessionHandler.CreateSession)
-		sessionGroup.GET("/list", sessionHandler.ListSessions)
-		sessionGroup.GET("/:id/info", sessionHandler.GetSessionInfo)
+		sessionGroup.GET("/list", sessionHandler.GetAllSessions)
+		sessionGroup.GET("/:id/info", sessionHandler.GetSession)
 		sessionGroup.DELETE("/:id/delete", sessionHandler.DeleteSession)
-		sessionGroup.POST("/:id/connect", sessionHandler.ConnectSession)
-		sessionGroup.POST("/:id/disconnect", sessionHandler.DisconnectSession)
-		sessionGroup.POST("/:id/logout", sessionHandler.LogoutSession)
-		sessionGroup.GET("/:id/qr", sessionHandler.GetSessionQR)
-		sessionGroup.POST("/:id/pair", sessionHandler.PairSession)
-		sessionGroup.GET("/:id/status", sessionHandler.GetSessionStatus)
-		sessionGroup.GET("/:id/history", sessionHandler.RequestHistorySync)
-		sessionGroup.POST("/:id/proxy/set", sessionHandler.SetProxy)
-		sessionGroup.GET("/:id/proxy/find", sessionHandler.GetProxy)
+		// TODO: Implement other session endpoints
 	}
-
 
 	sessionAPIGroup := router.Group("/session/:sessionId")
 	{
@@ -62,11 +50,10 @@ func SetupRoutes(
 			sendGroup.POST("/sticker", sendHandler.SendSticker)
 			sendGroup.POST("/location", sendHandler.SendLocation)
 			sendGroup.POST("/contact", sendHandler.SendContact)
-			sendGroup.POST("/buttons", sendHandler.SendButtons)
+			sendGroup.POST("/buttons", sendHandler.SendButton)
 			sendGroup.POST("/list", sendHandler.SendList)
 			sendGroup.POST("/poll", sendHandler.SendPoll)
 		}
-
 
 		chatGroup := sessionAPIGroup.Group("/chat")
 		{
@@ -80,7 +67,6 @@ func SetupRoutes(
 			chatGroup.POST("/download/audio", chatHandler.DownloadAudio)
 			chatGroup.POST("/download/document", chatHandler.DownloadDocument)
 		}
-
 
 		groupGroup := sessionAPIGroup.Group("/group")
 		{
@@ -127,7 +113,5 @@ func SetupRoutes(
 		}
 	}
 
-
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
-

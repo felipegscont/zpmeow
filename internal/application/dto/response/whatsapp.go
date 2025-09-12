@@ -1,4 +1,4 @@
-package whatsapp
+package response
 
 import (
 	"fmt"
@@ -99,4 +99,49 @@ type ChatEditRequest struct {
 // ChatDownloadRequest represents a request to download media
 type ChatDownloadRequest struct {
 	MessageID string `json:"messageId" binding:"required" example:"3EB0C431C26A1916E07A"`
+	Phone     string `json:"phone,omitempty" example:"+5511999999999"`
+}
+
+// GetAvatarRequest represents a request to get user avatar
+type GetAvatarRequest struct {
+	Phone   string `json:"phone" binding:"required" example:"+5511999999999"`
+	Preview bool   `json:"preview,omitempty" example:"false"`
+}
+
+// UserCheckResult represents the result of checking if a user is on WhatsApp
+type UserCheckResult struct {
+	Query        string `json:"query" example:"+5511999999999"`
+	IsInWhatsapp bool   `json:"isInWhatsapp" example:"true"`
+	JID          string `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	VerifiedName string `json:"verifiedName,omitempty" example:"John Doe"`
+}
+
+// UserCheckResponse represents the response from checking users
+type UserCheckResponse struct {
+	Users []UserCheckResult `json:"users"`
+}
+
+// AvatarResponse represents an avatar response
+type AvatarResponse struct {
+	URL       string `json:"url,omitempty" example:"https://example.com/avatar.jpg"`
+	ID        string `json:"id,omitempty" example:"avatar_id_123"`
+	Type      string `json:"type,omitempty" example:"image"`
+	DirectURL string `json:"directUrl,omitempty" example:"https://example.com/direct_avatar.jpg"`
+}
+
+// NewsletterResponse represents a newsletter response
+type NewsletterResponse struct {
+	Newsletter []NewsletterMetadata `json:"newsletter"`
+}
+
+// NewsletterMetadata represents newsletter metadata
+type NewsletterMetadata struct {
+	ID          string `json:"id" example:"newsletter_123"`
+	Name        string `json:"name" example:"Tech News"`
+	Description string `json:"description,omitempty" example:"Latest technology updates"`
+	Handle      string `json:"handle,omitempty" example:"@technews"`
+	Picture     string `json:"picture,omitempty" example:"https://example.com/newsletter.jpg"`
+	Preview     string `json:"preview,omitempty" example:"https://example.com/preview.jpg"`
+	Reaction    string `json:"reaction,omitempty" example:"👍"`
+	Verified    bool   `json:"verified,omitempty" example:"true"`
 }

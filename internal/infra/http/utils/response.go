@@ -6,13 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-
 type ErrorResponse struct {
 	Error   string `json:"error"`
 	Code    int    `json:"code,omitempty"`
 	Details string `json:"details,omitempty"`
 }
-
 
 type SuccessResponse struct {
 	Success bool        `json:"success"`
@@ -20,20 +18,18 @@ type SuccessResponse struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-
 func RespondWithError(c *gin.Context, statusCode int, message string, details ...string) {
 	response := ErrorResponse{
 		Error: message,
 		Code:  statusCode,
 	}
-	
+
 	if len(details) > 0 {
 		response.Details = details[0]
 	}
-	
+
 	c.JSON(statusCode, response)
 }
-
 
 func RespondWithSuccess(c *gin.Context, message string, data ...interface{}) {
 	response := SuccessResponse{
@@ -48,22 +44,36 @@ func RespondWithSuccess(c *gin.Context, message string, data ...interface{}) {
 	c.JSON(http.StatusOK, response)
 }
 
-
 func RespondWithData(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, data)
 }
-
 
 func RespondCreated(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusCreated, data)
 }
 
-
 func RespondNoContent(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-
 func RespondWithJSON(c *gin.Context, statusCode int, data interface{}) {
 	c.JSON(statusCode, data)
+}
+
+// Validation utilities
+func ValidateSessionIDParam(c *gin.Context) (string, bool) {
+	id := c.Param("id")
+	if id == "" {
+		RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return "", false
+	}
+	return id, true
+}
+
+func ValidateAndBindJSON(c *gin.Context, obj interface{}) bool {
+	if err := c.ShouldBindJSON(obj); err != nil {
+		RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return false
+	}
+	return true
 }

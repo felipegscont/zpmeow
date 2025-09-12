@@ -1,4 +1,4 @@
-package webhook
+package request
 
 // SetWebhookRequest represents a request to set webhook configuration
 type SetWebhookRequest struct {

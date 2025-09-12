@@ -6,7 +6,6 @@ import (
 	"zpmeow/internal/shared/types"
 )
 
-
 type Session struct {
 	ID          string
 	Name        string
@@ -20,7 +19,6 @@ type Session struct {
 	UpdatedAt   time.Time
 }
 
-
 func NewSession(id, name string) *Session {
 	now := time.Now()
 	return &Session{
@@ -32,50 +30,37 @@ func NewSession(id, name string) *Session {
 	}
 }
 
-
-
-
 func (s *Session) IsConnected() bool {
 	return s.Status == types.StatusConnected
 }
-
 
 func (s *Session) IsDisconnected() bool {
 	return s.Status == types.StatusDisconnected
 }
 
-
 func (s *Session) IsConnecting() bool {
 	return s.Status == types.StatusConnecting
 }
-
 
 func (s *Session) HasError() bool {
 	return s.Status == types.StatusError
 }
 
-
 func (s *Session) CanConnect() bool {
 	return s.IsDisconnected() || s.HasError() || s.IsConnecting()
 }
-
 
 func (s *Session) HasQRCode() bool {
 	return strings.TrimSpace(s.QRCode) != ""
 }
 
-
 func (s *Session) HasProxy() bool {
 	return strings.TrimSpace(s.ProxyURL) != ""
 }
 
-
 func (s *Session) IsAuthenticated() bool {
 	return strings.TrimSpace(s.WhatsAppJID) != ""
 }
-
-
-
 
 func (s *Session) SetStatus(status types.Status) {
 	if !status.IsValid() {
@@ -85,30 +70,25 @@ func (s *Session) SetStatus(status types.Status) {
 	s.updateTimestamp()
 }
 
-
 func (s *Session) SetQRCode(qrCode string) {
 	s.QRCode = strings.TrimSpace(qrCode)
 	s.updateTimestamp()
 }
-
 
 func (s *Session) SetWhatsAppJID(jid string) {
 	s.WhatsAppJID = strings.TrimSpace(jid)
 	s.updateTimestamp()
 }
 
-
 func (s *Session) SetProxyURL(proxyURL string) {
 	s.ProxyURL = strings.TrimSpace(proxyURL)
 	s.updateTimestamp()
 }
 
-
 func (s *Session) ClearQRCode() {
 	s.QRCode = ""
 	s.updateTimestamp()
 }
-
 
 func (s *Session) ClearProxy() {
 	s.ProxyURL = ""
@@ -144,13 +124,9 @@ func (s *Session) IsEventSubscribed(event string) bool {
 	return false
 }
 
-
 func (s *Session) updateTimestamp() {
 	s.UpdatedAt = time.Now()
 }
-
-
-
 
 func (s *Session) Validate() error {
 	if err := s.validateID(); err != nil {
@@ -165,16 +141,13 @@ func (s *Session) Validate() error {
 	return nil
 }
 
-
 func (s *Session) validateID() error {
 	return ValidateSessionID(s.ID)
 }
 
-
 func (s *Session) validateName() error {
 	return ValidateSessionName(s.Name)
 }
-
 
 func (s *Session) validateStatus() error {
 	if !s.Status.IsValid() {
@@ -182,6 +155,3 @@ func (s *Session) validateStatus() error {
 	}
 	return nil
 }
-
-
-

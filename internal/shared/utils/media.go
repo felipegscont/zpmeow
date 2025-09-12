@@ -16,34 +16,26 @@ import (
 	"github.com/vincent-petithory/dataurl"
 )
 
-
-
 func DecodeBase64Media(dataURI string) ([]byte, string, error) {
 	if !strings.HasPrefix(dataURI, "data:") {
 		return nil, "", fmt.Errorf("invalid data URI format")
 	}
 
-
 	dataURI = dataURI[5:]
-
 
 	commaIndex := strings.Index(dataURI, ",")
 	if commaIndex == -1 {
 		return nil, "", fmt.Errorf("invalid data URI format: missing comma")
 	}
 
-
 	metadata := dataURI[:commaIndex]
 	encodedData := dataURI[commaIndex+1:]
-
 
 	var mimeType string
 	parts := strings.Split(metadata, ";")
 	if len(parts) > 0 {
 		mimeType = parts[0]
 	}
-
-
 
 	hasBase64 := false
 	for i := 1; i < len(parts); i++ {
@@ -56,7 +48,6 @@ func DecodeBase64Media(dataURI string) ([]byte, string, error) {
 		return nil, "", fmt.Errorf("only base64 encoding is supported")
 	}
 
-
 	data, err := base64.StdEncoding.DecodeString(encodedData)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to decode base64 data: %w", err)
@@ -65,14 +56,11 @@ func DecodeBase64Media(dataURI string) ([]byte, string, error) {
 	return data, mimeType, nil
 }
 
-
-
 func DecodeAudioDataURL(dataURI string) ([]byte, error) {
 
 	if len(dataURI) < 14 || dataURI[0:14] != "data:audio/ogg" {
 		return nil, fmt.Errorf("audio data should start with \"data:audio/ogg\"")
 	}
-
 
 	dataURL, err := dataurl.DecodeString(dataURI)
 	if err != nil {
@@ -81,8 +69,6 @@ func DecodeAudioDataURL(dataURI string) ([]byte, error) {
 
 	return dataURL.Data, nil
 }
-
-
 
 func NormalizeMimeType(mimeType, mediaType string) string {
 
@@ -130,7 +116,6 @@ func NormalizeMimeType(mimeType, mediaType string) string {
 
 	case "document":
 
-
 		return baseMimeType
 
 	case "sticker":
@@ -146,23 +131,18 @@ func NormalizeMimeType(mimeType, mediaType string) string {
 	}
 }
 
-
-
 func ValidateAndNormalizeMimeType(mimeType, mediaType string) (string, error) {
 
 	if mimeType == "" {
 		return "", fmt.Errorf("MIME type cannot be empty")
 	}
 
-
 	if !strings.Contains(mimeType, "/") {
 		return "", fmt.Errorf("invalid MIME type format: %s", mimeType)
 	}
 
-
 	baseMimeType := strings.Split(mimeType, ";")[0]
 	baseMimeType = strings.TrimSpace(strings.ToLower(baseMimeType))
-
 
 	switch mediaType {
 	case "image":
@@ -183,27 +163,22 @@ func ValidateAndNormalizeMimeType(mimeType, mediaType string) (string, error) {
 		}
 	case "document":
 
-
 		if strings.HasPrefix(baseMimeType, "image/") ||
-		   strings.HasPrefix(baseMimeType, "audio/") ||
-		   strings.HasPrefix(baseMimeType, "video/") {
+			strings.HasPrefix(baseMimeType, "audio/") ||
+			strings.HasPrefix(baseMimeType, "video/") {
 			return "", fmt.Errorf("MIME type %s should not be classified as document", mimeType)
 		}
 	}
 
-
 	normalizedMimeType := NormalizeMimeType(mimeType, mediaType)
 	return normalizedMimeType, nil
 }
-
-
 
 func DecodeUniversalMedia(dataURI, mediaType string) ([]byte, string, error) {
 
 	if !strings.HasPrefix(dataURI, "data:") {
 		return nil, "", fmt.Errorf("invalid data URI format: must start with 'data:'")
 	}
-
 
 	if mediaType == "audio" {
 
@@ -224,7 +199,6 @@ func DecodeUniversalMedia(dataURI, mediaType string) ([]byte, string, error) {
 		}
 	}
 
-
 	dataURL, err := dataurl.DecodeString(dataURI)
 	if err != nil {
 
@@ -232,7 +206,6 @@ func DecodeUniversalMedia(dataURI, mediaType string) ([]byte, string, error) {
 		if err != nil {
 			return nil, "", fmt.Errorf("could not decode data URL: %w", err)
 		}
-
 
 		normalizedMimeType, err := ValidateAndNormalizeMimeType(mimeType, mediaType)
 		if err != nil {
@@ -242,7 +215,6 @@ func DecodeUniversalMedia(dataURI, mediaType string) ([]byte, string, error) {
 		return data, normalizedMimeType, nil
 	}
 
-
 	normalizedMimeType, err := ValidateAndNormalizeMimeType(dataURL.ContentType(), mediaType)
 	if err != nil {
 		return nil, "", fmt.Errorf("MIME type validation failed: %w", err)
@@ -250,8 +222,6 @@ func DecodeUniversalMedia(dataURI, mediaType string) ([]byte, string, error) {
 
 	return dataURL.Data, normalizedMimeType, nil
 }
-
-
 
 func DecodeDataURLFallback(dataURI string) ([]byte, string, error) {
 
@@ -261,7 +231,6 @@ func DecodeDataURLFallback(dataURI string) ([]byte, string, error) {
 
 	content := dataURI[5:] // Remove "data:"
 
-
 	commaIndex := strings.Index(content, ",")
 	if commaIndex == -1 {
 		return nil, "", fmt.Errorf("invalid data URI: missing comma separator")
@@ -270,10 +239,8 @@ func DecodeDataURLFallback(dataURI string) ([]byte, string, error) {
 	metadata := content[:commaIndex]
 	encodedData := content[commaIndex+1:]
 
-
 	var mimeType string
 	var encoding string
-
 
 	parts := strings.Split(metadata, ";")
 	if len(parts) > 0 && parts[0] != "" {
@@ -282,7 +249,6 @@ func DecodeDataURLFallback(dataURI string) ([]byte, string, error) {
 	} else {
 		mimeType = "text/plain" // Default MIME type
 	}
-
 
 	encoding = "base64" // Default to base64
 	for _, part := range parts[1:] {
@@ -295,7 +261,6 @@ func DecodeDataURLFallback(dataURI string) ([]byte, string, error) {
 			continue
 		}
 	}
-
 
 	var data []byte
 	var err error
@@ -319,12 +284,9 @@ func DecodeDataURLFallback(dataURI string) ([]byte, string, error) {
 	return data, mimeType, nil
 }
 
-
-
 func NormalizeMimeTypeFromRaw(rawMimeType string) string {
 
 	lower := strings.ToLower(strings.TrimSpace(rawMimeType))
-
 
 	if strings.HasPrefix(lower, "@file/") {
 		fileType := lower[6:] // Remove "@file/"
@@ -395,17 +357,14 @@ func NormalizeMimeTypeFromRaw(rawMimeType string) string {
 		}
 	}
 
-
 	if strings.HasPrefix(lower, "file/") {
 
 		return NormalizeMimeTypeFromRaw("@" + lower)
 	}
 
-
 	if strings.Contains(lower, "/") {
 		return lower
 	}
-
 
 	switch lower {
 	case "png":
@@ -428,7 +387,6 @@ func NormalizeMimeTypeFromRaw(rawMimeType string) string {
 		return "application/octet-stream"
 	}
 }
-
 
 func GetFileExtension(mimeType string) string {
 	extensions, err := mime.ExtensionsByType(mimeType)
@@ -462,10 +420,9 @@ func GetFileExtension(mimeType string) string {
 	return extensions[0]
 }
 
-
 func ValidateMediaSize(data []byte, mediaType string) error {
 	size := len(data)
-	
+
 	switch mediaType {
 	case "image":
 		if size > 16*1024*1024 { // 16MB
@@ -496,28 +453,22 @@ func ValidateMediaSize(data []byte, mediaType string) error {
 	return nil
 }
 
-
-
 func ProcessUnifiedMedia(ctx context.Context, media string, file *multipart.FileHeader, mediaType string) ([]byte, string, error) {
 
 	if file != nil {
 		return processFormDataMedia(file, mediaType)
 	}
 
-
 	if media == "" {
 		return nil, "", fmt.Errorf("media parameter is required")
 	}
-
 
 	if isValidURL(media) {
 		return downloadMediaFromURL(ctx, media, mediaType)
 	}
 
-
 	return DecodeUniversalMedia(media, mediaType)
 }
-
 
 func processFormDataMedia(fileHeader *multipart.FileHeader, mediaType string) ([]byte, string, error) {
 
@@ -527,15 +478,12 @@ func processFormDataMedia(fileHeader *multipart.FileHeader, mediaType string) ([
 	}
 	defer file.Close()
 
-
 	data, err := io.ReadAll(file)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read uploaded file: %w", err)
 	}
 
-
 	mimeType := http.DetectContentType(data)
-
 
 	if mimeType == "application/octet-stream" {
 		ext := filepath.Ext(fileHeader.Filename)
@@ -547,7 +495,6 @@ func processFormDataMedia(fileHeader *multipart.FileHeader, mediaType string) ([
 		}
 	}
 
-
 	normalizedMimeType, err := ValidateAndNormalizeMimeType(mimeType, mediaType)
 	if err != nil {
 		return nil, "", fmt.Errorf("MIME type validation failed: %w", err)
@@ -555,7 +502,6 @@ func processFormDataMedia(fileHeader *multipart.FileHeader, mediaType string) ([
 
 	return data, normalizedMimeType, nil
 }
-
 
 func downloadMediaFromURL(ctx context.Context, mediaURL string, mediaType string) ([]byte, string, error) {
 
@@ -563,15 +509,12 @@ func downloadMediaFromURL(ctx context.Context, mediaURL string, mediaType string
 		Timeout: 30 * time.Second,
 	}
 
-
 	req, err := http.NewRequestWithContext(ctx, "GET", mediaURL, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-
 	req.Header.Set("User-Agent", "ZpMeow/1.0")
-
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -579,34 +522,28 @@ func downloadMediaFromURL(ctx context.Context, mediaURL string, mediaType string
 	}
 	defer resp.Body.Close()
 
-
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", fmt.Errorf("failed to download media: HTTP %d", resp.StatusCode)
 	}
 
-
 	if resp.ContentLength > 100*1024*1024 {
 		return nil, "", fmt.Errorf("file too large: %d bytes (max 100MB)", resp.ContentLength)
 	}
-
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to read response body: %w", err)
 	}
 
-
 	mimeType := resp.Header.Get("Content-Type")
 	if mimeType == "" {
 		mimeType = http.DetectContentType(data)
 	}
 
-
 	if strings.Contains(mimeType, ";") {
 		mimeType = strings.Split(mimeType, ";")[0]
 	}
 	mimeType = strings.TrimSpace(mimeType)
-
 
 	normalizedMimeType, err := ValidateAndNormalizeMimeType(mimeType, mediaType)
 	if err != nil {
@@ -616,12 +553,10 @@ func downloadMediaFromURL(ctx context.Context, mediaURL string, mediaType string
 	return data, normalizedMimeType, nil
 }
 
-
 func isValidURL(str string) bool {
 	u, err := url.Parse(str)
 	return err == nil && (u.Scheme == "http" || u.Scheme == "https") && u.Host != ""
 }
-
 
 func ValidateMediaType(mediaType string) error {
 	validTypes := map[string]bool{

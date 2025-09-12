@@ -5,24 +5,24 @@ import "errors"
 // Domain errors - business rule violations
 var (
 	// Session validation errors
-	ErrInvalidSessionID          = errors.New("invalid session ID")
-	ErrInvalidSessionName        = errors.New("invalid session name")
-	ErrSessionNameTooShort       = errors.New("session name too short")
-	ErrSessionNameTooLong        = errors.New("session name too long")
-	ErrInvalidSessionNameChar    = errors.New("session name contains invalid characters")
-	ErrInvalidSessionNameFormat  = errors.New("invalid session name format")
-	ErrReservedSessionName       = errors.New("session name is reserved")
-	ErrInvalidSessionStatus      = errors.New("invalid session status")
-	ErrInvalidProxyURL           = errors.New("invalid proxy URL")
-	
+	ErrInvalidSessionID         = errors.New("invalid session ID")
+	ErrInvalidSessionName       = errors.New("invalid session name")
+	ErrSessionNameTooShort      = errors.New("session name too short")
+	ErrSessionNameTooLong       = errors.New("session name too long")
+	ErrInvalidSessionNameChar   = errors.New("session name contains invalid characters")
+	ErrInvalidSessionNameFormat = errors.New("invalid session name format")
+	ErrReservedSessionName      = errors.New("session name is reserved")
+	ErrInvalidSessionStatus     = errors.New("invalid session status")
+	ErrInvalidProxyURL          = errors.New("invalid proxy URL")
+
 	// Session business rule errors
-	ErrSessionAlreadyExists      = errors.New("session already exists")
-	ErrSessionNotFound           = errors.New("session not found")
-	ErrSessionAlreadyConnected   = errors.New("session is already connected")
-	ErrSessionCannotConnect      = errors.New("session cannot be connected in current state")
-	ErrSessionCannotDisconnect   = errors.New("session cannot be disconnected in current state")
-	ErrSessionCannotDelete       = errors.New("session cannot be deleted in current state")
-	
+	ErrSessionAlreadyExists    = errors.New("session already exists")
+	ErrSessionNotFound         = errors.New("session not found")
+	ErrSessionAlreadyConnected = errors.New("session is already connected")
+	ErrSessionCannotConnect    = errors.New("session cannot be connected in current state")
+	ErrSessionCannotDisconnect = errors.New("session cannot be disconnected in current state")
+	ErrSessionCannotDelete     = errors.New("session cannot be deleted in current state")
+
 	// WhatsApp service errors
 	ErrWhatsAppServiceUnavailable = errors.New("WhatsApp service unavailable")
 	ErrQRCodeGenerationFailed     = errors.New("QR code generation failed")

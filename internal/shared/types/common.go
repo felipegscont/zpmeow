@@ -2,17 +2,11 @@ package types
 
 import "time"
 
-
-
-
 type ID string
-
 
 type Timestamp time.Time
 
-
 type Status string
-
 
 const (
 	StatusDisconnected Status = "disconnected"
@@ -22,11 +16,9 @@ const (
 	StatusDeleted      Status = "deleted"
 )
 
-
 func (s Status) String() string {
 	return string(s)
 }
-
 
 func (s Status) IsValid() bool {
 	switch s {

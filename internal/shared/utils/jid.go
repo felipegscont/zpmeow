@@ -33,7 +33,7 @@ func (ju *JIDUtils) ParseJID(arg string) (waTypes.JID, error) {
 	// Parse as full JID
 	recipient, err := waTypes.ParseJID(arg)
 	if err != nil {
-		return waTypes.JID{}, fmt.Errorf(ErrInvalidJID + ": %w", err)
+		return waTypes.JID{}, fmt.Errorf(ErrInvalidJID+": %w", err)
 	}
 
 	if recipient.User == "" {

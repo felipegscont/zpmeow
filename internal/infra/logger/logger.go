@@ -12,10 +12,9 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gopkg.in/natefinch/lumberjack.v2"
 	waLog "go.mau.fi/whatsmeow/util/log"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
-
 
 type Logger interface {
 	Debug(msg string)
@@ -34,7 +33,6 @@ type Logger interface {
 	Sub(module string) Logger
 }
 
-
 type LoggerContext interface {
 	Str(key, val string) LoggerContext
 	Int(key string, i int) LoggerContext
@@ -45,7 +43,6 @@ type LoggerContext interface {
 	Interface(key string, i interface{}) LoggerContext
 	Logger() Logger
 }
-
 
 type Config interface {
 	GetLevel() string
@@ -60,17 +57,14 @@ type Config interface {
 	GetFileFormat() string
 }
 
-
 type zerologLogger struct {
 	logger zerolog.Logger
 	module string
 }
 
-
 type zerologContext struct {
 	ctx zerolog.Context
 }
-
 
 func Initialize(config Config) Logger {
 
@@ -80,9 +74,7 @@ func Initialize(config Config) Logger {
 	}
 	zerolog.SetGlobalLevel(level)
 
-
 	var writers []io.Writer
-
 
 	if config.GetFormat() == "console" {
 		consoleWriter := zerolog.ConsoleWriter{
@@ -90,7 +82,6 @@ func Initialize(config Config) Logger {
 			TimeFormat: "2006-01-02 15:04:05",
 			NoColor:    !config.GetConsoleColor(),
 		}
-
 
 		consoleWriter.FormatLevel = func(i interface{}) string {
 			if i == nil {
@@ -100,7 +91,7 @@ func Initialize(config Config) Logger {
 			if !config.GetConsoleColor() {
 				return level
 			}
-			
+
 			switch level {
 			case "DEBUG":
 				return "\x1b[36m" + level + "\x1b[0m" // Cyan
@@ -122,7 +113,6 @@ func Initialize(config Config) Logger {
 
 		writers = append(writers, os.Stdout)
 	}
-
 
 	if config.GetFileEnabled() {
 
@@ -153,7 +143,6 @@ func Initialize(config Config) Logger {
 		}
 	}
 
-
 	var writer io.Writer
 	if len(writers) == 1 {
 		writer = writers[0]
@@ -161,12 +150,10 @@ func Initialize(config Config) Logger {
 		writer = zerolog.MultiLevelWriter(writers...)
 	}
 
-
 	logger := zerolog.New(writer).With().
 		Timestamp().
 		Caller().
 		Logger()
-
 
 	log.Logger = logger
 
@@ -176,56 +163,45 @@ func Initialize(config Config) Logger {
 	}
 }
 
-
 func (l *zerologLogger) Debug(msg string) {
 	l.logger.Debug().Str("module", l.module).Msg(msg)
 }
-
 
 func (l *zerologLogger) Debugf(format string, args ...interface{}) {
 	l.logger.Debug().Str("module", l.module).Msgf(format, args...)
 }
 
-
 func (l *zerologLogger) Info(msg string) {
 	l.logger.Info().Str("module", l.module).Msg(msg)
 }
-
 
 func (l *zerologLogger) Infof(format string, args ...interface{}) {
 	l.logger.Info().Str("module", l.module).Msgf(format, args...)
 }
 
-
 func (l *zerologLogger) Warn(msg string) {
 	l.logger.Warn().Str("module", l.module).Msg(msg)
 }
-
 
 func (l *zerologLogger) Warnf(format string, args ...interface{}) {
 	l.logger.Warn().Str("module", l.module).Msgf(format, args...)
 }
 
-
 func (l *zerologLogger) Error(msg string) {
 	l.logger.Error().Str("module", l.module).Msg(msg)
 }
-
 
 func (l *zerologLogger) Errorf(format string, args ...interface{}) {
 	l.logger.Error().Str("module", l.module).Msgf(format, args...)
 }
 
-
 func (l *zerologLogger) Fatal(msg string) {
 	l.logger.Fatal().Str("module", l.module).Msg(msg)
 }
 
-
 func (l *zerologLogger) Fatalf(format string, args ...interface{}) {
 	l.logger.Fatal().Str("module", l.module).Msgf(format, args...)
 }
-
 
 func (l *zerologLogger) With() LoggerContext {
 	return &zerologContext{
@@ -233,14 +209,12 @@ func (l *zerologLogger) With() LoggerContext {
 	}
 }
 
-
 func (l *zerologLogger) WithField(key string, value interface{}) Logger {
 	return &zerologLogger{
 		logger: l.logger.With().Str("module", l.module).Interface(key, value).Logger(),
 		module: l.module,
 	}
 }
-
 
 func (l *zerologLogger) WithFields(fields map[string]interface{}) Logger {
 	ctx := l.logger.With().Str("module", l.module)
@@ -253,7 +227,6 @@ func (l *zerologLogger) WithFields(fields map[string]interface{}) Logger {
 	}
 }
 
-
 func (l *zerologLogger) Sub(module string) Logger {
 	var fullModule string
 	if l.module != "" {
@@ -261,13 +234,12 @@ func (l *zerologLogger) Sub(module string) Logger {
 	} else {
 		fullModule = module
 	}
-	
+
 	return &zerologLogger{
 		logger: l.logger,
 		module: fullModule,
 	}
 }
-
 
 func (c *zerologContext) Str(key, val string) LoggerContext {
 	return &zerologContext{ctx: c.ctx.Str(key, val)}
@@ -304,9 +276,7 @@ func (c *zerologContext) Logger() Logger {
 	}
 }
 
-
 var globalLogger Logger
-
 
 func GetLogger() Logger {
 	if globalLogger == nil {
@@ -315,18 +285,13 @@ func GetLogger() Logger {
 	return globalLogger
 }
 
-
-
-
 func SetLogger(logger Logger) {
 	globalLogger = logger
 }
 
-
 type waLogAdapter struct {
 	logger Logger
 }
-
 
 func NewWALogAdapter(logger Logger) waLog.Logger {
 	return &waLogAdapter{
@@ -334,33 +299,27 @@ func NewWALogAdapter(logger Logger) waLog.Logger {
 	}
 }
 
-
 func (w *waLogAdapter) Warnf(msg string, args ...interface{}) {
 	w.logger.Warnf(msg, args...)
 }
-
 
 func (w *waLogAdapter) Errorf(msg string, args ...interface{}) {
 	w.logger.Errorf(msg, args...)
 }
 
-
 func (w *waLogAdapter) Infof(msg string, args ...interface{}) {
 	w.logger.Infof(msg, args...)
 }
 
-
 func (w *waLogAdapter) Debugf(msg string, args ...interface{}) {
 	w.logger.Debugf(msg, args...)
 }
-
 
 func (w *waLogAdapter) Sub(module string) waLog.Logger {
 	return &waLogAdapter{
 		logger: w.logger.Sub(module),
 	}
 }
-
 
 func GetWALogger(module string) waLog.Logger {
 	return NewWALogAdapter(GetLogger().Sub(module))

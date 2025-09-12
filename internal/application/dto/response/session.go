@@ -1,4 +1,4 @@
-package session
+package response
 
 import "time"
 
@@ -54,6 +54,19 @@ type SuccessResponse struct {
 // ErrorResponse represents a generic error response
 type ErrorResponse struct {
 	Error string `json:"error" example:"Invalid request parameters"`
+}
+
+// SessionStatusResponse represents session status information
+type SessionStatusResponse struct {
+	ID        string   `json:"id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	Name      string   `json:"name" example:"my-session"`
+	Connected bool     `json:"connected" example:"true"`
+	LoggedIn  bool     `json:"logged_in" example:"true"`
+	Status    string   `json:"status" example:"connected"`
+	JID       string   `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	Webhook   string   `json:"webhook,omitempty" example:"https://api.example.com/webhook"`
+	Events    []string `json:"events,omitempty" example:"message.received,session.connected"`
+	ProxyURL  string   `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
 }
 
 // Response type aliases

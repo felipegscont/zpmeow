@@ -1,4 +1,3 @@
-
 package docs
 
 import "github.com/swaggo/swag"
@@ -3603,7 +3602,6 @@ const docTemplate = `{
         }
     }
 }`
-
 
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",

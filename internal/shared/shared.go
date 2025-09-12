@@ -44,11 +44,11 @@ var (
 
 // Error utilities
 var (
-	Error = errors.Error
-	MapDomainError = errors.MapDomainError
+	Error             = errors.Error
+	MapDomainError    = errors.MapDomainError
 	IsValidationError = errors.IsValidationError
-	IsConflictError = errors.IsConflictError
-	IsNotFoundError = errors.IsNotFoundError
+	IsConflictError   = errors.IsConflictError
+	IsNotFoundError   = errors.IsNotFoundError
 )
 
 // Error mappings

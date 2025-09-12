@@ -2,71 +2,56 @@ package application
 
 // Re-export application layer types to avoid aliases
 
-// DTOs
+// DTOs and Services
 import (
-	sessionDTO "zpmeow/internal/application/dto/session"
-	whatsappDTO "zpmeow/internal/application/dto/whatsapp"
-	webhookDTO "zpmeow/internal/application/dto/webhook"
+	"zpmeow/internal/application/dto/request"
+	"zpmeow/internal/application/dto/response"
 	"zpmeow/internal/application/services"
-	sessionUseCase "zpmeow/internal/application/usecase/session"
+	"zpmeow/internal/application/usecase"
 )
 
 // Session DTOs
-type CreateSessionRequest = sessionDTO.CreateSessionRequest
-type PairSessionRequest = sessionDTO.PairSessionRequest
-type ProxyRequest = sessionDTO.ProxyRequest
-type BaseSessionInfo = sessionDTO.BaseSessionInfo
-type ExtendedSessionInfo = sessionDTO.ExtendedSessionInfo
-type CreateSessionResponse = sessionDTO.CreateSessionResponse
-type SessionInfoResponse = sessionDTO.SessionInfoResponse
-type SessionListResponse = sessionDTO.SessionListResponse
-type PairSessionResponse = sessionDTO.PairSessionResponse
-type QRCodeResponse = sessionDTO.QRCodeResponse
-type ProxyResponse = sessionDTO.ProxyResponse
-type SuccessResponse = sessionDTO.SuccessResponse
-type ErrorResponse = sessionDTO.ErrorResponse
-type MessageResponse = sessionDTO.MessageResponse
-type PingResponse = sessionDTO.PingResponse
+type CreateSessionRequest = request.CreateSessionRequest
+type PairSessionRequest = request.PairSessionRequest
+type ProxyRequest = request.ProxyRequest
+type BaseSessionInfo = response.BaseSessionInfo
+type ExtendedSessionInfo = response.ExtendedSessionInfo
+type CreateSessionResponse = response.CreateSessionResponse
+type SessionInfoResponse = response.SessionInfoResponse
+type SessionListResponse = response.SessionListResponse
+type PairSessionResponse = response.PairSessionResponse
+type QRCodeResponse = response.QRCodeResponse
+type ProxyResponse = response.ProxyResponse
+type SuccessResponse = response.SuccessResponse
+type ErrorResponse = response.ErrorResponse
+type MessageResponse = response.MessageResponse
+type PingResponse = response.PingResponse
 
 // WhatsApp DTOs
-type ContextInfo = whatsappDTO.ContextInfo
-type SendTextRequest = whatsappDTO.SendTextRequest
-type SendImageRequest = whatsappDTO.SendImageRequest
-type SendAudioRequest = whatsappDTO.SendAudioRequest
-type SendMediaRequest = whatsappDTO.SendMediaRequest
-type SendLocationRequest = whatsappDTO.SendLocationRequest
-type SendContactRequest = whatsappDTO.SendContactRequest
-type SendPollRequest = whatsappDTO.SendPollRequest
-type UserPresenceRequest = whatsappDTO.UserPresenceRequest
-type CheckUserRequest = whatsappDTO.CheckUserRequest
-type GetUserInfoRequest = whatsappDTO.GetUserInfoRequest
-type ChatPresenceRequest = whatsappDTO.ChatPresenceRequest
-type ChatMarkReadRequest = whatsappDTO.ChatMarkReadRequest
-type ChatReactRequest = whatsappDTO.ChatReactRequest
-type ChatDeleteRequest = whatsappDTO.ChatDeleteRequest
-type ChatEditRequest = whatsappDTO.ChatEditRequest
-type ChatDownloadRequest = whatsappDTO.ChatDownloadRequest
+type ContextInfo = request.ContextInfo
+type SendTextRequest = request.SendTextRequest
+type SendImageRequest = request.SendImageRequest
+type SendAudioRequest = request.SendAudioRequest
+type SendMediaRequest = request.SendMediaRequest
+type SendLocationRequest = request.SendLocationRequest
+type SendContactRequest = request.SendContactRequest
+type SendPollRequest = request.SendPollRequest
 
 // Webhook DTOs
-type SetWebhookRequest = webhookDTO.SetWebhookRequest
-type UpdateWebhookRequest = webhookDTO.UpdateWebhookRequest
-type WebhookResponse = webhookDTO.WebhookResponse
-type WebhookPayload = webhookDTO.WebhookPayload
+type SetWebhookRequest = request.SetWebhookRequest
+type UpdateWebhookRequest = request.UpdateWebhookRequest
+type WebhookResponse = response.WebhookResponse
+type WebhookPayload = response.WebhookPayload
 
 // Webhook functions
 var (
-	NewWebhookPayload = webhookDTO.NewWebhookPayload
+	NewWebhookPayload = response.NewWebhookPayload
 )
 
-// Service types
-type SessionConverter = services.SessionConverter
-
-// Service instances
-var (
-	SessionToDTOConverter = services.SessionToDTOConverter
-)
+// Application Service types
+type SessionApplicationService = services.SessionApplicationService
 
 // Use case constructors
 var (
-	NewSessionService = sessionUseCase.NewSessionService
+	NewSessionService = usecase.NewSessionService
 )

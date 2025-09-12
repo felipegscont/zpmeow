@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"zpmeow/internal/application/dto/webhook"
+	"zpmeow/internal/application/dto/response"
 	"zpmeow/internal/infra/logger"
 )
 
@@ -23,15 +23,13 @@ func NewWebhookService() *WebhookService {
 	}
 }
 
-
-
 // SendWebhook sends a webhook event to the specified URL
 func (w *WebhookService) SendWebhook(ctx context.Context, webhookURL, event, sessionID string, data interface{}) error {
 	if webhookURL == "" {
 		return fmt.Errorf("webhook URL is empty")
 	}
 
-	payload := webhook.NewWebhookPayload(event, sessionID, data)
+	payload := response.NewWebhookPayload(event, sessionID, data)
 	w.logger.Infof("Sending webhook to %s for event %s (session: %s)", webhookURL, event, sessionID)
 
 	err := w.httpClient.Post(ctx, webhookURL, payload, nil)

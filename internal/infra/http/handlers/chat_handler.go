@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"net/http"
+
 	"github.com/gin-gonic/gin"
+
 	"zpmeow/internal/domain"
 	"zpmeow/internal/infra"
+	httpUtils "zpmeow/internal/infra/http/utils"
 	"zpmeow/internal/infra/logger"
 )
 
@@ -23,6 +26,24 @@ func NewChatHandler(sessionService domain.SessionService, meowService *infra.Meo
 }
 
 func (h *ChatHandler) SetPresence(c *gin.Context) {
+	// Validate session
+	sessionID := c.Param("sessionId")
+	if sessionID == "" {
+		httpUtils.RespondWithError(c, http.StatusBadRequest, "Session ID is required")
+		return
+	}
+
+	var req struct {
+		Phone string `json:"phone" binding:"required"`
+		State string `json:"state" binding:"required"`
+		Media string `json:"media,omitempty"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		httpUtils.RespondWithError(c, http.StatusBadRequest, "Invalid request", err.Error())
+		return
+	}
+
+	h.logger.Infof("SetPresence request: phone=%s state=%s media=%s session=%s", req.Phone, req.State, req.Media, sessionID)
 	c.JSON(http.StatusOK, gin.H{"message": "SetPresence - stub implementation"})
 }
 
