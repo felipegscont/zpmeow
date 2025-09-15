@@ -1,0 +1,873 @@
+basePath: /
+definitions:
+  dto.ConnectSessionResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ConnectSessionResponseData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.ConnectSessionResponseData:
+    properties:
+      action:
+        example: connect
+        type: string
+      connection:
+        $ref: '#/definitions/dto.SessionConnectionInfo'
+      qr_code:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+      session:
+        $ref: '#/definitions/dto.SessionInfo'
+      session_id:
+        example: default
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.CreateSessionRequest:
+    properties:
+      events:
+        example: message,status
+        type: string
+      name:
+        example: default
+        type: string
+      proxy_url:
+        example: http://proxy.example.com:8080
+        type: string
+      webhook_url:
+        example: https://webhook.example.com/whatsapp
+        type: string
+    required:
+    - name
+    type: object
+  dto.CreateSessionResponse:
+    properties:
+      code:
+        example: 201
+        type: integer
+      data:
+        $ref: '#/definitions/dto.CreateSessionResponseData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.CreateSessionResponseData:
+    properties:
+      action:
+        example: create
+        type: string
+      session:
+        $ref: '#/definitions/dto.SessionInfo'
+      session_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.PairPhoneRequest:
+    properties:
+      phone_number:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone_number
+    type: object
+  dto.PairPhoneResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/dto.PairPhoneResponseData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.PairPhoneResponseData:
+    properties:
+      action:
+        example: pair
+        type: string
+      pair_code:
+        example: ABCD-1234
+        type: string
+      phone_number:
+        example: "5511999999999"
+        type: string
+      session_id:
+        example: default
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.QRCodeResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/dto.QRCodeResponseData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.QRCodeResponseData:
+    properties:
+      action:
+        example: qr
+        type: string
+      qr_code:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+      session_id:
+        example: default
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.SessionConnectionInfo:
+    properties:
+      connected:
+        example: true
+        type: boolean
+      is_connected:
+        example: true
+        type: boolean
+      last_seen:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      pair_code:
+        example: ABCD-1234
+        type: string
+      qr_code:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+    type: object
+  dto.SessionData:
+    properties:
+      action:
+        example: create
+        type: string
+      connection:
+        $ref: '#/definitions/dto.SessionConnectionInfo'
+      pair_code:
+        example: ABCD-1234
+        type: string
+      qr_code:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+      session:
+        $ref: '#/definitions/dto.SessionInfo'
+      session_id:
+        example: default
+        type: string
+      sessions:
+        items:
+          $ref: '#/definitions/dto.SessionInfo'
+        type: array
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.SessionErrorResponse:
+    properties:
+      code:
+        example: INVALID_SESSION_ID
+        type: string
+      details:
+        example: Session ID must be alphanumeric
+        type: string
+      message:
+        example: Invalid session ID format
+        type: string
+    type: object
+  dto.SessionInfo:
+    properties:
+      api_key:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      events:
+        example:
+        - message
+        - status
+        items:
+          type: string
+        type: array
+      id:
+        example: default
+        type: string
+      name:
+        example: default
+        type: string
+      proxy_url:
+        example: http://proxy.example.com:8080
+        type: string
+      status:
+        example: connected
+        type: string
+      updated_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      wa_jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      webhook_url:
+        example: https://webhook.example.com/whatsapp
+        type: string
+    type: object
+  dto.SessionInfoResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/dto.SessionInfoResponseData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.SessionInfoResponseData:
+    properties:
+      action:
+        example: get
+        type: string
+      session:
+        $ref: '#/definitions/dto.SessionInfo'
+      session_id:
+        example: default
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.SessionListResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/dto.SessionListResponseData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.SessionListResponseData:
+    properties:
+      action:
+        example: list
+        type: string
+      sessions:
+        items:
+          $ref: '#/definitions/dto.SessionInfo'
+        type: array
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      total:
+        example: 5
+        type: integer
+    type: object
+  dto.SessionResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.SessionData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        type: boolean
+    type: object
+  dto.SessionStatusResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/dto.SessionStatusResponseData'
+      error:
+        $ref: '#/definitions/dto.SessionErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.SessionStatusResponseData:
+    properties:
+      action:
+        example: status
+        type: string
+      client_status:
+        example: connected
+        type: string
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      is_connected:
+        example: true
+        type: boolean
+      name:
+        example: default
+        type: string
+      session_id:
+        example: default
+        type: string
+      session_status:
+        example: connected
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      updated_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      wa_jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+    type: object
+  dto.UpdateWebhookRequest:
+    properties:
+      events:
+        example:
+        - '["message"'
+        - ' "status"]'
+        items:
+          type: string
+        type: array
+      secret:
+        example: new_webhook_secret_key
+        type: string
+      status:
+        example: active
+        type: string
+      url:
+        example: https://webhook.example.com/whatsapp
+        type: string
+    type: object
+  handlers.HealthData:
+    properties:
+      message:
+        example: Service is healthy
+        type: string
+      service:
+        example: zpmeow
+        type: string
+      status:
+        example: ok
+        type: string
+      version:
+        example: 1.0.0
+        type: string
+    type: object
+  handlers.HealthErrorResponse:
+    properties:
+      code:
+        example: HEALTH_CHECK_FAILED
+        type: string
+      details:
+        example: Service is not responding
+        type: string
+      message:
+        example: Health check failed
+        type: string
+    type: object
+  handlers.HealthStandardResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/handlers.HealthData'
+      error:
+        $ref: '#/definitions/handlers.HealthErrorResponse'
+      success:
+        type: boolean
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@zpmeow.com
+    name: zpmeow API Support
+    url: https://github.com/your-username/zpmeow
+  description: A WhatsApp API server built with Go, inspired by wuzapi
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: zpmeow WhatsApp API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Returns the health status of the service using standardized response
+        format
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service is healthy
+          schema:
+            $ref: '#/definitions/handlers.HealthStandardResponse'
+      summary: Health check endpoint
+      tags:
+      - Health
+  /ping:
+    get:
+      consumes:
+      - application/json
+      description: Simple ping endpoint that returns pong using standardized response
+        format
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pong response
+          schema:
+            $ref: '#/definitions/handlers.HealthStandardResponse'
+      summary: Ping endpoint
+      tags:
+      - Health
+  /sessions:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of all WhatsApp sessions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Sessions retrieved successfully
+          schema:
+            $ref: '#/definitions/dto.SessionListResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all sessions
+      tags:
+      - Sessions
+  /sessions/{id}/connect:
+    post:
+      consumes:
+      - application/json
+      description: Initiates connection to WhatsApp and returns QR code if needed.
+        Accepts session ID or name.
+      parameters:
+      - description: Session ID or Name
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Connection initiated successfully
+          schema:
+            $ref: '#/definitions/dto.ConnectSessionResponse'
+        "400":
+          description: Invalid session ID or name
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Connect a session to WhatsApp
+      tags:
+      - Sessions
+  /sessions/{id}/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a WhatsApp session and stops the client
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session deleted successfully
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "400":
+          description: Invalid session ID
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a session
+      tags:
+      - Sessions
+  /sessions/{id}/disconnect:
+    post:
+      consumes:
+      - application/json
+      description: Disconnects the session from WhatsApp without deleting it
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session disconnected successfully
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "400":
+          description: Invalid session ID
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Disconnect a session from WhatsApp
+      tags:
+      - Sessions
+  /sessions/{id}/info:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves detailed information about a specific session by ID or
+        name
+      parameters:
+      - description: Session ID or Name
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session information retrieved successfully
+          schema:
+            $ref: '#/definitions/dto.SessionInfoResponse'
+        "400":
+          description: Invalid session ID or name
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get session information
+      tags:
+      - Sessions
+  /sessions/{id}/pair:
+    post:
+      consumes:
+      - application/json
+      description: Pairs a phone number with the session for WhatsApp connection
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Phone pairing request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PairPhoneRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Phone pairing initiated successfully
+          schema:
+            $ref: '#/definitions/dto.PairPhoneResponse'
+        "400":
+          description: Invalid request body or session ID
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Pair phone number with session
+      tags:
+      - Sessions
+  /sessions/{id}/qr:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the QR code for connecting a session to WhatsApp
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: QR code generated successfully
+          schema:
+            $ref: '#/definitions/dto.QRCodeResponse'
+        "400":
+          description: Invalid session ID or session already connected
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get QR code for session connection
+      tags:
+      - Sessions
+  /sessions/{id}/regenerate-key:
+    post:
+      consumes:
+      - application/json
+      description: Regenerates the API key for a session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: API key regenerated successfully
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "400":
+          description: Invalid session ID
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Regenerate session API key
+      tags:
+      - Sessions
+  /sessions/{id}/status:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the current status and connection information of a session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session status retrieved successfully
+          schema:
+            $ref: '#/definitions/dto.SessionStatusResponse'
+        "400":
+          description: Invalid session ID
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get session status
+      tags:
+      - Sessions
+  /sessions/{id}/webhook:
+    put:
+      consumes:
+      - application/json
+      description: Updates the webhook URL and events for a session
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Webhook update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UpdateWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Webhook updated successfully
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update session webhook URL
+      tags:
+      - Sessions
+  /sessions/create:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new WhatsApp session and starts the client
+      parameters:
+      - description: Session creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Session created successfully
+          schema:
+            $ref: '#/definitions/dto.CreateSessionResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.SessionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new WhatsApp session
+      tags:
+      - Sessions
+schemes:
+- http
+- https
+securityDefinitions:
+  ApiKeyAuth:
+    description: 'API Key authentication. Simply provide your API key directly: "YOUR_API_KEY".
+      The system automatically detects if it''s a Global API Key (can access all sessions
+      and session management) or a Session-specific API Key (can only access the specific
+      session it belongs to).'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

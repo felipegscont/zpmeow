@@ -1,0 +1,1291 @@
+{
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "swagger": "2.0",
+    "info": {
+        "description": "A WhatsApp API server built with Go, inspired by wuzapi",
+        "title": "zpmeow WhatsApp API",
+        "termsOfService": "http://swagger.io/terms/",
+        "contact": {
+            "name": "zpmeow API Support",
+            "url": "https://github.com/your-username/zpmeow",
+            "email": "support@zpmeow.com"
+        },
+        "license": {
+            "name": "MIT",
+            "url": "https://opensource.org/licenses/MIT"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/health": {
+            "get": {
+                "description": "Returns the health status of the service using standardized response format",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health check endpoint",
+                "responses": {
+                    "200": {
+                        "description": "Service is healthy",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HealthStandardResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "description": "Simple ping endpoint that returns pong using standardized response format",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Ping endpoint",
+                "responses": {
+                    "200": {
+                        "description": "Pong response",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.HealthStandardResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of all WhatsApp sessions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Get all sessions",
+                "responses": {
+                    "200": {
+                        "description": "Sessions retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/create": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Creates a new WhatsApp session and starts the client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Create a new WhatsApp session",
+                "parameters": [
+                    {
+                        "description": "Session creation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Session created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/connect": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Initiates connection to WhatsApp and returns QR code if needed. Accepts session ID or name.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Connect a session to WhatsApp",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID or Name",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Connection initiated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ConnectSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID or name",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/delete": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Deletes a WhatsApp session and stops the client",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Delete a session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/disconnect": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Disconnects the session from WhatsApp without deleting it",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Disconnect a session from WhatsApp",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session disconnected successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/info": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves detailed information about a specific session by ID or name",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Get session information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID or Name",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session information retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID or name",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/pair": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Pairs a phone number with the session for WhatsApp connection",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Pair phone number with session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Phone pairing request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PairPhoneRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Phone pairing initiated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PairPhoneResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request body or session ID",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/qr": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves the QR code for connecting a session to WhatsApp",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Get QR code for session connection",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "QR code generated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.QRCodeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID or session already connected",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/regenerate-key": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Regenerates the API key for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Regenerate session API key",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "API key regenerated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/status": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves the current status and connection information of a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Get session status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session status retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/{id}/webhook": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Updates the webhook URL and events for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Update session webhook URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Webhook update request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Webhook updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "dto.ConnectSessionResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ConnectSessionResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.ConnectSessionResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "connect"
+                },
+                "connection": {
+                    "$ref": "#/definitions/dto.SessionConnectionInfo"
+                },
+                "qr_code": {
+                    "type": "string",
+                    "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                },
+                "session": {
+                    "$ref": "#/definitions/dto.SessionInfo"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.CreateSessionRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "events": {
+                    "type": "string",
+                    "example": "message,status"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "proxy_url": {
+                    "type": "string",
+                    "example": "http://proxy.example.com:8080"
+                },
+                "webhook_url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                }
+            }
+        },
+        "dto.CreateSessionResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 201
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CreateSessionResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.CreateSessionResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "create"
+                },
+                "session": {
+                    "$ref": "#/definitions/dto.SessionInfo"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.PairPhoneRequest": {
+            "type": "object",
+            "required": [
+                "phone_number"
+            ],
+            "properties": {
+                "phone_number": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.PairPhoneResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.PairPhoneResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.PairPhoneResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "pair"
+                },
+                "pair_code": {
+                    "type": "string",
+                    "example": "ABCD-1234"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.QRCodeResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.QRCodeResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.QRCodeResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "qr"
+                },
+                "qr_code": {
+                    "type": "string",
+                    "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.SessionConnectionInfo": {
+            "type": "object",
+            "properties": {
+                "connected": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "is_connected": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "last_seen": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "pair_code": {
+                    "type": "string",
+                    "example": "ABCD-1234"
+                },
+                "qr_code": {
+                    "type": "string",
+                    "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                }
+            }
+        },
+        "dto.SessionData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "create"
+                },
+                "connection": {
+                    "$ref": "#/definitions/dto.SessionConnectionInfo"
+                },
+                "pair_code": {
+                    "type": "string",
+                    "example": "ABCD-1234"
+                },
+                "qr_code": {
+                    "type": "string",
+                    "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                },
+                "session": {
+                    "$ref": "#/definitions/dto.SessionInfo"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "sessions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SessionInfo"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.SessionErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_SESSION_ID"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Session ID must be alphanumeric"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid session ID format"
+                }
+            }
+        },
+        "dto.SessionInfo": {
+            "type": "object",
+            "properties": {
+                "api_key": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "message",
+                        "status"
+                    ]
+                },
+                "id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "proxy_url": {
+                    "type": "string",
+                    "example": "http://proxy.example.com:8080"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "connected"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "wa_jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "webhook_url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                }
+            }
+        },
+        "dto.SessionInfoResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.SessionInfoResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.SessionInfoResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "get"
+                },
+                "session": {
+                    "$ref": "#/definitions/dto.SessionInfo"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.SessionListResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.SessionListResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.SessionListResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "list"
+                },
+                "sessions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.SessionInfo"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 5
+                }
+            }
+        },
+        "dto.SessionResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.SessionData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.SessionStatusResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.SessionStatusResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.SessionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.SessionStatusResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "status"
+                },
+                "client_status": {
+                    "type": "string",
+                    "example": "connected"
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "is_connected": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "name": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "session_status": {
+                    "type": "string",
+                    "example": "connected"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "wa_jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                }
+            }
+        },
+        "dto.UpdateWebhookRequest": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"message\"",
+                        " \"status\"]"
+                    ]
+                },
+                "secret": {
+                    "type": "string",
+                    "example": "new_webhook_secret_key"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                }
+            }
+        },
+        "handlers.HealthData": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "Service is healthy"
+                },
+                "service": {
+                    "type": "string",
+                    "example": "zpmeow"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ok"
+                },
+                "version": {
+                    "type": "string",
+                    "example": "1.0.0"
+                }
+            }
+        },
+        "handlers.HealthErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "HEALTH_CHECK_FAILED"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Service is not responding"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Health check failed"
+                }
+            }
+        },
+        "handlers.HealthStandardResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/handlers.HealthData"
+                },
+                "error": {
+                    "$ref": "#/definitions/handlers.HealthErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "description": "API Key authentication. Simply provide your API key directly: \"YOUR_API_KEY\". The system automatically detects if it's a Global API Key (can access all sessions and session management) or a Session-specific API Key (can only access the specific session it belongs to).",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}
