@@ -60,6 +60,17 @@ type AvatarInfo struct {
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T12:00:00Z"`
 }
 
+// ContactInfo represents contact information
+type ContactInfo struct {
+	JID          string `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	Name         string `json:"name,omitempty" example:"João Silva"`
+	Notify       string `json:"notify,omitempty" example:"João"`
+	PushName     string `json:"push_name,omitempty" example:"João"`
+	BusinessName string `json:"business_name,omitempty" example:"Empresa João"`
+	IsBlocked    bool   `json:"is_blocked" example:"false"`
+	IsMuted      bool   `json:"is_muted" example:"false"`
+}
+
 // ============================================================================
 // USER RESPONSE DTOs
 // ============================================================================
@@ -123,6 +134,52 @@ func NewUserErrorResponse(code int, errorCode, message, details string) *UserRes
 			Code:    errorCode,
 			Message: message,
 			Details: details,
+		},
+	}
+}
+
+// NewUserAvatarResponse creates a response for avatar operations
+func NewUserAvatarResponse(avatar *AvatarInfo) *UserResponse {
+	return &UserResponse{
+		Success: true,
+		Code:    200,
+		Data: UserData{
+			Action:    "get_avatar",
+			Status:    "success",
+			Timestamp: time.Now(),
+			Avatar:    avatar,
+		},
+	}
+}
+
+// ContactsResponse represents the response for contacts operations
+type ContactsResponse struct {
+	Success bool          `json:"success"`
+	Code    int           `json:"code"`
+	Data    ContactsData  `json:"data"`
+	Error   *UserErrorResponse `json:"error,omitempty"`
+}
+
+// ContactsData contains contacts response data
+type ContactsData struct {
+	Action    string        `json:"action" example:"get_contacts"`
+	Status    string        `json:"status" example:"success"`
+	Timestamp time.Time     `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+	Contacts  []ContactInfo `json:"contacts"`
+	Count     int           `json:"count" example:"10"`
+}
+
+// NewContactsResponse creates a response for contacts operations
+func NewContactsResponse(contacts []ContactInfo) *ContactsResponse {
+	return &ContactsResponse{
+		Success: true,
+		Code:    200,
+		Data: ContactsData{
+			Action:    "get_contacts",
+			Status:    "success",
+			Timestamp: time.Now(),
+			Contacts:  contacts,
+			Count:     len(contacts),
 		},
 	}
 }

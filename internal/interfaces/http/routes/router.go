@@ -82,6 +82,7 @@ func SetupRoutes(
 			chatGroup.POST("/react", chatHandler.ReactToMessage)
 			chatGroup.POST("/delete", chatHandler.DeleteMessage)
 			chatGroup.POST("/edit", chatHandler.EditMessage)
+			chatGroup.GET("/history", chatHandler.GetChatHistory)
 			chatGroup.POST("/download/image", chatHandler.DownloadImage)
 			chatGroup.POST("/download/video", chatHandler.DownloadVideo)
 			chatGroup.POST("/download/audio", chatHandler.DownloadAudio)

@@ -102,10 +102,10 @@ func main() {
 	healthHandler := handlers.NewHealthHandler()
 	meowServiceImpl := whatsappService.(*wameow.MeowService)
 	messageHandler := handlers.NewMessageHandler(appSessionService, meowServiceImpl)
-	chatHandler := handlers.NewChatHandler(nil, meowServiceImpl)
+	chatHandler := handlers.NewChatHandler(appSessionService, meowServiceImpl)
 	groupHandler := handlers.NewGroupHandler(appSessionService, meowServiceImpl)
 	webhookHandler := handlers.NewWebhookHandler(nil)
-	userHandler := handlers.NewUserHandler(nil, meowServiceImpl)
+	userHandler := handlers.NewUserHandler(appSessionService, meowServiceImpl)
 	newsletterHandler := handlers.NewNewsletterHandler(nil, meowServiceImpl)
 
 	gin.SetMode(cfg.GinMode)

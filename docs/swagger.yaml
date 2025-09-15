@@ -1,5 +1,132 @@
 basePath: /
 definitions:
+  dto.AvatarInfo:
+    properties:
+      avatar_url:
+        example: https://pps.whatsapp.net/...
+        type: string
+      jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      picture_id:
+        example: pic_123
+        type: string
+      timestamp:
+        example: "2023-01-01T12:00:00Z"
+        type: string
+    type: object
+  dto.ChatData:
+    properties:
+      action:
+        example: mark_read
+        type: string
+      message_id:
+        example: msg_123
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.ChatErrorResponse:
+    properties:
+      code:
+        example: INVALID_PHONE
+        type: string
+      details:
+        example: Phone number must include country code
+        type: string
+      message:
+        example: Invalid phone number format
+        type: string
+    type: object
+  dto.ChatHistoryData:
+    properties:
+      content:
+        example: Hello, World!
+        type: string
+      from_phone:
+        example: "5511888888888"
+        type: string
+      is_from_me:
+        example: false
+        type: boolean
+      media_url:
+        example: https://example.com/image.jpg
+        type: string
+      message_id:
+        example: msg_123456789
+        type: string
+      message_type:
+        example: text
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.ChatHistoryResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ChatHistoryResponseData'
+      error:
+        $ref: '#/definitions/dto.ChatErrorResponse'
+      success:
+        example: true
+        type: boolean
+    type: object
+  dto.ChatHistoryResponseData:
+    properties:
+      count:
+        example: 10
+        type: integer
+      limit:
+        example: 50
+        type: integer
+      messages:
+        items:
+          $ref: '#/definitions/dto.ChatHistoryData'
+        type: array
+      phone:
+        example: "5511999999999"
+        type: string
+    type: object
+  dto.ChatResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ChatData'
+      error:
+        $ref: '#/definitions/dto.ChatErrorResponse'
+      success:
+        type: boolean
+    type: object
+  dto.CheckUserRequest:
+    properties:
+      phones:
+        example:
+        - '["5511999999999"'
+        - ' "5511888888888"]'
+        items:
+          type: string
+        type: array
+    required:
+    - phones
+    type: object
   dto.ConnectSessionResponse:
     properties:
       code:
@@ -34,6 +161,60 @@ definitions:
       timestamp:
         example: "2023-01-01T00:00:00Z"
         type: string
+    type: object
+  dto.ContactInfo:
+    properties:
+      business_name:
+        example: Empresa João
+        type: string
+      is_blocked:
+        example: false
+        type: boolean
+      is_muted:
+        example: false
+        type: boolean
+      jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      name:
+        example: João Silva
+        type: string
+      notify:
+        example: João
+        type: string
+      push_name:
+        example: João
+        type: string
+    type: object
+  dto.ContactsData:
+    properties:
+      action:
+        example: get_contacts
+        type: string
+      contacts:
+        items:
+          $ref: '#/definitions/dto.ContactInfo'
+        type: array
+      count:
+        example: 10
+        type: integer
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
+  dto.ContactsResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.ContactsData'
+      error:
+        $ref: '#/definitions/dto.UserErrorResponse'
+      success:
+        type: boolean
     type: object
   dto.CreateSessionRequest:
     properties:
@@ -81,6 +262,108 @@ definitions:
       timestamp:
         example: "2023-01-01T00:00:00Z"
         type: string
+    type: object
+  dto.DeleteMessageRequest:
+    properties:
+      for_everyone:
+        description: true = delete for everyone, false = delete for me
+        example: true
+        type: boolean
+      message_id:
+        example: msg_123
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - message_id
+    - phone
+    type: object
+  dto.DownloadMediaRequest:
+    properties:
+      message_id:
+        example: msg_123
+        type: string
+    required:
+    - message_id
+    type: object
+  dto.EditMessageRequest:
+    properties:
+      message_id:
+        example: msg_123
+        type: string
+      new_text:
+        example: Edited message text
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - message_id
+    - new_text
+    - phone
+    type: object
+  dto.GetAvatarRequest:
+    properties:
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - phone
+    type: object
+  dto.GetUserInfoRequest:
+    properties:
+      phones:
+        example:
+        - '["5511999999999"'
+        - ' "5511888888888"]'
+        items:
+          type: string
+        type: array
+    required:
+    - phones
+    type: object
+  dto.MarkAsReadRequest:
+    properties:
+      message_ids:
+        example:
+        - '["msg_1"'
+        - ' "msg_2"]'
+        items:
+          type: string
+        type: array
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - message_ids
+    - phone
+    type: object
+  dto.MediaDownloadResponse:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data:
+        description: Base64 encoded media data
+        items:
+          type: integer
+        type: array
+      media_type:
+        example: image
+        type: string
+      message_id:
+        example: msg_123
+        type: string
+      mime_type:
+        example: image/jpeg
+        type: string
+      size:
+        example: 1024
+        type: integer
+      success:
+        example: true
+        type: boolean
     type: object
   dto.PairPhoneRequest:
     properties:
@@ -154,6 +437,23 @@ definitions:
       timestamp:
         example: "2023-01-01T00:00:00Z"
         type: string
+    type: object
+  dto.ReactToMessageRequest:
+    properties:
+      emoji:
+        description: Use "remove" to remove reaction
+        example: "\U0001F44D"
+        type: string
+      message_id:
+        example: msg_123
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+    required:
+    - emoji
+    - message_id
+    - phone
     type: object
   dto.SessionConnectionInfo:
     properties:
@@ -373,6 +673,30 @@ definitions:
         example: 5511999999999@s.whatsapp.net
         type: string
     type: object
+  dto.SetPresenceRequest:
+    properties:
+      media:
+        description: Optional media type for composing state
+        example: ""
+        type: string
+      phone:
+        example: "5511999999999"
+        type: string
+      state:
+        description: available, unavailable, composing, recording, paused
+        example: available
+        type: string
+    required:
+    - state
+    type: object
+  dto.SetUserPresenceRequest:
+    properties:
+      state:
+        example: available
+        type: string
+    required:
+    - state
+    type: object
   dto.UpdateWebhookRequest:
     properties:
       events:
@@ -391,6 +715,90 @@ definitions:
       url:
         example: https://webhook.example.com/whatsapp
         type: string
+    type: object
+  dto.UserCheckResult:
+    properties:
+      is_in_whatsapp:
+        example: true
+        type: boolean
+      jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      query:
+        example: "5511999999999"
+        type: string
+      verified_name:
+        example: João Silva
+        type: string
+    type: object
+  dto.UserData:
+    properties:
+      action:
+        example: check_users
+        type: string
+      avatar:
+        $ref: '#/definitions/dto.AvatarInfo'
+      check_results:
+        items:
+          $ref: '#/definitions/dto.UserCheckResult'
+        type: array
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      user_infos:
+        items:
+          $ref: '#/definitions/dto.UserInfo'
+        type: array
+    type: object
+  dto.UserErrorResponse:
+    properties:
+      code:
+        example: INVALID_PHONE
+        type: string
+      details:
+        example: Phone number must include country code
+        type: string
+      message:
+        example: Invalid phone number format
+        type: string
+    type: object
+  dto.UserInfo:
+    properties:
+      avatar:
+        example: https://...
+        type: string
+      device_count:
+        example: 2
+        type: integer
+      display_name:
+        example: João Silva
+        type: string
+      jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
+      picture_id:
+        example: pic_123
+        type: string
+      status:
+        example: Disponível
+        type: string
+      verified_name:
+        example: João Silva Empresa
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.UserData'
+      error:
+        $ref: '#/definitions/dto.UserErrorResponse'
+      success:
+        type: boolean
     type: object
   handlers.HealthData:
     properties:
@@ -476,6 +884,555 @@ paths:
       summary: Ping endpoint
       tags:
       - Health
+  /session/{sessionId}/chat/delete:
+    post:
+      consumes:
+      - application/json
+      description: Delete a message for everyone or just for me
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Delete request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DeleteMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete message
+      tags:
+      - Chat
+  /session/{sessionId}/chat/download/audio:
+    post:
+      consumes:
+      - application/json
+      description: Download audio media from a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DownloadMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MediaDownloadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Download audio
+      tags:
+      - Chat
+  /session/{sessionId}/chat/download/document:
+    post:
+      consumes:
+      - application/json
+      description: Download document media from a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DownloadMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MediaDownloadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Download document
+      tags:
+      - Chat
+  /session/{sessionId}/chat/download/image:
+    post:
+      consumes:
+      - application/json
+      description: Download image media from a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DownloadMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MediaDownloadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Download image
+      tags:
+      - Chat
+  /session/{sessionId}/chat/download/video:
+    post:
+      consumes:
+      - application/json
+      description: Download video media from a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Download request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.DownloadMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MediaDownloadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Download video
+      tags:
+      - Chat
+  /session/{sessionId}/chat/edit:
+    post:
+      consumes:
+      - application/json
+      description: Edit the text content of a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Edit request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.EditMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Edit message
+      tags:
+      - Chat
+  /session/{sessionId}/chat/history:
+    get:
+      consumes:
+      - application/json
+      description: Get chat history for a specific contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Phone number
+        in: query
+        name: phone
+        required: true
+        type: string
+      - description: 'Limit of messages (default: 50, max: 1000)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatHistoryResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get chat history
+      tags:
+      - Chat
+  /session/{sessionId}/chat/markread:
+    post:
+      consumes:
+      - application/json
+      description: Mark one or more messages as read in a chat
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Mark as read request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.MarkAsReadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Mark messages as read
+      tags:
+      - Chat
+  /session/{sessionId}/chat/presence:
+    post:
+      consumes:
+      - application/json
+      description: Set user presence state in a specific chat (composing, available,
+        etc.)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Presence request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set presence in chat
+      tags:
+      - Chat
+  /session/{sessionId}/chat/react:
+    post:
+      consumes:
+      - application/json
+      description: Add or remove reaction to a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: React request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReactToMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ChatResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: React to message
+      tags:
+      - Chat
+  /session/{sessionId}/user/avatar:
+    post:
+      consumes:
+      - application/json
+      description: Get user's profile picture/avatar
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Get avatar request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetAvatarRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user avatar
+      tags:
+      - User
+  /session/{sessionId}/user/check:
+    post:
+      consumes:
+      - application/json
+      description: Check if phone numbers are registered on WhatsApp
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Check user request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CheckUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Check users on WhatsApp
+      tags:
+      - User
+  /session/{sessionId}/user/contacts:
+    get:
+      consumes:
+      - application/json
+      description: Get all contacts from user's WhatsApp
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ContactsResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get contacts
+      tags:
+      - User
+  /session/{sessionId}/user/info:
+    post:
+      consumes:
+      - application/json
+      description: Get detailed information about users
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Get user info request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GetUserInfoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user information
+      tags:
+      - User
+  /session/{sessionId}/user/presence:
+    post:
+      consumes:
+      - application/json
+      description: Set global user presence (available/unavailable)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set presence request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetUserPresenceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set user presence
+      tags:
+      - User
   /sessions:
     get:
       consumes:

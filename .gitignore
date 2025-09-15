@@ -26,6 +26,7 @@ go.work.sum
 # Environment files
 *.env
 .env*
+!.env.example
 .env.local
 .env.development.local
 .env.test.local
@@ -304,7 +305,6 @@ CMakeCache.txt
 CMakeFiles
 CMakeScripts
 Testing
-Makefile
 cmake_install.cmake
 install_manifest.txt
 compile_commands.json

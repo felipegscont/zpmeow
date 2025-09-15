@@ -106,17 +106,7 @@ type MessageStatusData struct {
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 }
 
-// ChatHistoryData represents chat history information
-type ChatHistoryData struct {
-	MessageID   string    `json:"message_id" example:"msg_123456789"`
-	Phone       string    `json:"phone" example:"5511999999999"`
-	FromPhone   string    `json:"from_phone" example:"5511888888888"`
-	MessageType string    `json:"message_type" example:"text"`
-	Content     string    `json:"content" example:"Hello, World!"`
-	MediaURL    string    `json:"media_url,omitempty" example:"https://example.com/image.jpg"`
-	Timestamp   time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	IsFromMe    bool      `json:"is_from_me" example:"false"`
-}
+
 
 // BulkMessageResult represents bulk message operation result
 type BulkMessageResult struct {
@@ -176,17 +166,7 @@ type ErrorResponse struct {
 	Error   string `json:"error" example:"Field validation failed"`
 }
 
-// ChatHistoryResponseData represents legacy chat history response data (single message)
-type ChatHistoryResponseData struct {
-	MessageID   string    `json:"message_id" example:"msg_123456789"`
-	Phone       string    `json:"phone" example:"5511999999999"`
-	FromPhone   string    `json:"from_phone" example:"5511888888888"`
-	MessageType string    `json:"message_type" example:"text"`
-	Content     string    `json:"content" example:"Hello, World!"`
-	MediaURL    string    `json:"media_url,omitempty" example:"https://example.com/image.jpg"`
-	Timestamp   time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	IsFromMe    bool      `json:"is_from_me" example:"false"`
-}
+
 
 // MessageStatusResponseData represents legacy message status response data
 type MessageStatusResponseData struct {
