@@ -25,6 +25,4 @@ func NewValidationError(message string) error {
 	return &ValidationError{message: message}
 }
 
-
-
 var Error = &ErrorUtils{}

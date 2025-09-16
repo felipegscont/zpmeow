@@ -1,4 +1,4 @@
-package types
+package middleware
 
 type LogLevel string
 

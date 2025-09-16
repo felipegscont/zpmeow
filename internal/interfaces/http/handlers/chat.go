@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"context"
 	"net/http"
 	"strconv"
+	"strings"
+	"time"
 
 	"zpmeow/internal/application"
 	"zpmeow/internal/infrastructure/wameow"
@@ -27,18 +28,19 @@ func NewChatHandler(sessionService *application.SessionService, wameowService *w
 }
 
 // SetPresence handles setting user presence in a chat
-// @Summary Set presence in chat
-// @Description Set user presence state in a specific chat (composing, available, etc.)
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.SetPresenceRequest true "Presence request"
-// @Success 200 {object} dto.ChatResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/presence [post]
+//
+//	@Summary		Set presence in chat
+//	@Description	Set user presence state in a specific chat (composing, available, etc.)
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.SetPresenceRequest	true	"Presence request"
+//	@Success		200			{object}	dto.ChatResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/presence [post]
 func (h *ChatHandler) SetPresence(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -65,7 +67,7 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 	}
 
 	// Set presence via wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err := h.wameowService.SetPresence(ctx, sessionID, req.Phone, req.State, req.Media)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
@@ -81,350 +83,74 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// MarkAsRead handles marking messages as read
-// @Summary Mark messages as read
-// @Description Mark one or more messages as read in a chat
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.MarkAsReadRequest true "Mark as read request"
-// @Success 200 {object} dto.ChatResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/markread [post]
-func (h *ChatHandler) MarkAsRead(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-
-	var req dto.MarkAsReadRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request format",
-			err.Error(),
-		))
-		return
-	}
-
-	// Validate required fields
-	if req.Phone == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_PHONE",
-			"Phone number is required",
-			"",
-		))
-		return
-	}
-
-	if len(req.MessageIDs) == 0 {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_MESSAGE_IDS",
-			"At least one message ID is required",
-			"",
-		))
-		return
-	}
-
-	// Mark messages as read via wameow service
-	ctx := context.Background()
-	err := h.wameowService.MarkAsRead(ctx, sessionID, req.Phone, req.MessageIDs)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
-			http.StatusInternalServerError,
-			"MARK_READ_FAILED",
-			"Failed to mark messages as read",
-			err.Error(),
-		))
-		return
-	}
-
-	response := dto.NewChatSuccessResponse(req.Phone, "", "mark_read")
-	c.JSON(http.StatusOK, response)
-}
-
-// ReactToMessage handles reacting to a message
-// @Summary React to message
-// @Description Add or remove reaction to a message
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.ReactToMessageRequest true "React request"
-// @Success 200 {object} dto.ChatResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/react [post]
-func (h *ChatHandler) ReactToMessage(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-
-	var req dto.ReactToMessageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request format",
-			err.Error(),
-		))
-		return
-	}
-
-	// Validate required fields
-	if req.Phone == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_PHONE",
-			"Phone number is required",
-			"",
-		))
-		return
-	}
-
-	if req.MessageID == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_MESSAGE_ID",
-			"Message ID is required",
-			"",
-		))
-		return
-	}
-
-	if req.Emoji == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_EMOJI",
-			"Emoji is required (use 'remove' to remove reaction)",
-			"",
-		))
-		return
-	}
-
-	// React to message via wameow service
-	ctx := context.Background()
-	err := h.wameowService.ReactToMessage(ctx, sessionID, req.Phone, req.MessageID, req.Emoji)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
-			http.StatusInternalServerError,
-			"REACT_FAILED",
-			"Failed to react to message",
-			err.Error(),
-		))
-		return
-	}
-
-	response := dto.NewChatSuccessResponse(req.Phone, req.MessageID, "react")
-	c.JSON(http.StatusOK, response)
-}
-
-// DeleteMessage handles deleting a message
-// @Summary Delete message
-// @Description Delete a message for everyone or just for me
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.DeleteMessageRequest true "Delete request"
-// @Success 200 {object} dto.ChatResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/delete [post]
-func (h *ChatHandler) DeleteMessage(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-
-	var req dto.DeleteMessageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request format",
-			err.Error(),
-		))
-		return
-	}
-
-	// Validate required fields
-	if req.Phone == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_PHONE",
-			"Phone number is required",
-			"",
-		))
-		return
-	}
-
-	if req.MessageID == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_MESSAGE_ID",
-			"Message ID is required",
-			"",
-		))
-		return
-	}
-
-	// Delete message via wameow service
-	ctx := context.Background()
-	err := h.wameowService.DeleteMessage(ctx, sessionID, req.Phone, req.MessageID, req.ForEveryone)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
-			http.StatusInternalServerError,
-			"DELETE_FAILED",
-			"Failed to delete message",
-			err.Error(),
-		))
-		return
-	}
-
-	response := dto.NewChatSuccessResponse(req.Phone, req.MessageID, "delete")
-	c.JSON(http.StatusOK, response)
-}
-
-// EditMessage handles editing a message
-// @Summary Edit message
-// @Description Edit the text content of a message
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.EditMessageRequest true "Edit request"
-// @Success 200 {object} dto.ChatResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/edit [post]
-func (h *ChatHandler) EditMessage(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-
-	var req dto.EditMessageRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request format",
-			err.Error(),
-		))
-		return
-	}
-
-	// Validate required fields
-	if req.Phone == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_PHONE",
-			"Phone number is required",
-			"",
-		))
-		return
-	}
-
-	if req.MessageID == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_MESSAGE_ID",
-			"Message ID is required",
-			"",
-		))
-		return
-	}
-
-	if req.NewText == "" {
-		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_NEW_TEXT",
-			"New text is required",
-			"",
-		))
-		return
-	}
-
-	// Edit message via wameow service
-	ctx := context.Background()
-	resp, err := h.wameowService.EditMessage(ctx, sessionID, req.Phone, req.MessageID, req.NewText)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
-			http.StatusInternalServerError,
-			"EDIT_FAILED",
-			"Failed to edit message",
-			err.Error(),
-		))
-		return
-	}
-
-	response := dto.NewChatSuccessResponse(req.Phone, resp.ID, "edit")
-	c.JSON(http.StatusOK, response)
-}
-
 // DownloadImage handles downloading image media
-// @Summary Download image
-// @Description Download image media from a message
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.DownloadMediaRequest true "Download request"
-// @Success 200 {object} dto.MediaDownloadResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/download/image [post]
+//
+//	@Summary		Download image
+//	@Description	Download image media from a message
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.DownloadMediaRequest	true	"Download request"
+//	@Success		200			{object}	dto.MediaDownloadResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/download/image [post]
 func (h *ChatHandler) DownloadImage(c *gin.Context) {
 	h.downloadMedia(c, "image")
 }
 
 // DownloadVideo handles downloading video media
-// @Summary Download video
-// @Description Download video media from a message
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.DownloadMediaRequest true "Download request"
-// @Success 200 {object} dto.MediaDownloadResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/download/video [post]
+//
+//	@Summary		Download video
+//	@Description	Download video media from a message
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.DownloadMediaRequest	true	"Download request"
+//	@Success		200			{object}	dto.MediaDownloadResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/download/video [post]
 func (h *ChatHandler) DownloadVideo(c *gin.Context) {
 	h.downloadMedia(c, "video")
 }
 
 // DownloadAudio handles downloading audio media
-// @Summary Download audio
-// @Description Download audio media from a message
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.DownloadMediaRequest true "Download request"
-// @Success 200 {object} dto.MediaDownloadResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/download/audio [post]
+//
+//	@Summary		Download audio
+//	@Description	Download audio media from a message
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.DownloadMediaRequest	true	"Download request"
+//	@Success		200			{object}	dto.MediaDownloadResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/download/audio [post]
 func (h *ChatHandler) DownloadAudio(c *gin.Context) {
 	h.downloadMedia(c, "audio")
 }
 
 // DownloadDocument handles downloading document media
-// @Summary Download document
-// @Description Download document media from a message
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param request body dto.DownloadMediaRequest true "Download request"
-// @Success 200 {object} dto.MediaDownloadResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/download/document [post]
+//
+//	@Summary		Download document
+//	@Description	Download document media from a message
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.DownloadMediaRequest	true	"Download request"
+//	@Success		200			{object}	dto.MediaDownloadResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/download/document [post]
 func (h *ChatHandler) DownloadDocument(c *gin.Context) {
 	h.downloadMedia(c, "document")
 }
@@ -456,7 +182,7 @@ func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 	}
 
 	// Download media via wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	data, mimeType, err := h.wameowService.DownloadMedia(ctx, sessionID, req.MessageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
@@ -483,19 +209,20 @@ func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 }
 
 // GetChatHistory handles getting chat history
-// @Summary Get chat history
-// @Description Get chat history for a specific contact
-// @Tags Chat
-// @Accept json
-// @Produce json
-// @Param sessionId path string true "Session ID"
-// @Param phone query string true "Phone number"
-// @Param limit query int false "Limit of messages (default: 50, max: 1000)"
-// @Success 200 {object} dto.ChatHistoryResponse
-// @Failure 400 {object} dto.ChatResponse
-// @Failure 500 {object} dto.ChatResponse
-// @Security ApiKeyAuth
-// @Router /session/{sessionId}/chat/history [get]
+//
+//	@Summary		Get chat history
+//	@Description	Get chat history for a specific contact
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			phone		query		string	true	"Phone number"
+//	@Param			limit		query		int		false	"Limit of messages (default: 50, max: 1000)"
+//	@Success		200			{object}	dto.ChatHistoryResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/history [get]
 func (h *ChatHandler) GetChatHistory(c *gin.Context) {
 	phone := c.Query("phone")
 	limitStr := c.DefaultQuery("limit", "50")
@@ -536,5 +263,448 @@ func (h *ChatHandler) GetChatHistory(c *gin.Context) {
 		},
 	}
 
+	c.JSON(http.StatusOK, response)
+}
+
+// ============================================================================
+// NEW CHAT FUNCTIONALITY HANDLERS
+// ============================================================================
+
+// SetDisappearingTimer handles setting disappearing timer for a chat
+//
+//	@Summary		Set disappearing timer
+//	@Description	Set disappearing timer for messages in a chat
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string								true	"Session ID"
+//	@Param			request		body		dto.SetDisappearingTimerRequest		true	"Disappearing timer request"
+//	@Success		200			{object}	dto.ChatResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/disappearing-timer [post]
+func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+
+	var req dto.SetDisappearingTimerRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_REQUEST",
+			"Invalid request format",
+			err.Error(),
+		))
+		return
+	}
+
+	// Validate required fields
+	if req.JID == "" {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"MISSING_JID",
+			"JID is required",
+			"",
+		))
+		return
+	}
+
+	if req.Timer == "" {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"MISSING_TIMER",
+			"Timer is required",
+			"Valid values: off, 24h, 7d, 90d",
+		))
+		return
+	}
+
+	// Convert timer string to duration
+	var timer time.Duration
+	switch strings.ToLower(req.Timer) {
+	case "off", "0":
+		timer = 0
+	case "24h":
+		timer = 24 * time.Hour
+	case "7d":
+		timer = 7 * 24 * time.Hour
+	case "90d":
+		timer = 90 * 24 * time.Hour
+	default:
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_TIMER",
+			"Invalid timer value",
+			"Valid values: off, 24h, 7d, 90d",
+		))
+		return
+	}
+
+	// Set disappearing timer via wameow service
+	ctx := c.Request.Context()
+	err := h.wameowService.SetDisappearingTimer(ctx, sessionID, req.JID, timer)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
+			http.StatusInternalServerError,
+			"SET_TIMER_FAILED",
+			"Failed to set disappearing timer",
+			err.Error(),
+		))
+		return
+	}
+
+	response := dto.NewChatSuccessResponse(req.JID, "", "set_disappearing_timer")
+	c.JSON(http.StatusOK, response)
+}
+
+// ListChats handles listing all chats
+//
+//	@Summary		List chats
+//	@Description	List all chats (groups and/or contacts) for a session
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.ListChatsRequest	false	"List chats request"
+//	@Success		200			{object}	dto.ListChatsResponse
+//	@Failure		400			{object}	dto.ListChatsResponse
+//	@Failure		500			{object}	dto.ListChatsResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/list [post]
+func (h *ChatHandler) ListChats(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+
+	var req dto.ListChatsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// If no body provided, default to "all"
+		req.Type = "all"
+	}
+
+	// Validate chat type
+	if req.Type == "" {
+		req.Type = "all"
+	}
+
+	validTypes := map[string]bool{
+		"all":      true,
+		"groups":   true,
+		"contacts": true,
+	}
+
+	if !validTypes[req.Type] {
+		c.JSON(http.StatusBadRequest, dto.NewListChatsErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_TYPE",
+			"Invalid chat type",
+			"Valid types: all, groups, contacts",
+		))
+		return
+	}
+
+	// List chats via wameow service
+	ctx := c.Request.Context()
+	chats, err := h.wameowService.ListChats(ctx, sessionID, req.Type)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewListChatsErrorResponse(
+			http.StatusInternalServerError,
+			"LIST_CHATS_FAILED",
+			"Failed to list chats",
+			err.Error(),
+		))
+		return
+	}
+
+	// Convert to DTO format
+	dtoChats := make([]dto.ChatInfo, len(chats))
+	for i, chat := range chats {
+		dtoChats[i] = dto.ChatInfo{
+			JID:         chat.JID,
+			Name:        chat.Name,
+			Type:        chat.Type,
+			LastMessage: chat.LastMessage,
+			Timestamp:   chat.Timestamp,
+			UnreadCount: chat.UnreadCount,
+			Pinned:      chat.Pinned,
+			Muted:       chat.Muted,
+			Archived:    chat.Archived,
+		}
+	}
+
+	response := dto.NewListChatsSuccessResponse(dtoChats, req.Type)
+	c.JSON(http.StatusOK, response)
+}
+
+// GetChatInfo handles getting information about a specific chat
+//
+//	@Summary		Get chat info
+//	@Description	Get detailed information about a specific chat (group or contact)
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.GetChatInfoRequest		true	"Get chat info request"
+//	@Success		200			{object}	dto.GetChatInfoResponse
+//	@Failure		400			{object}	dto.GetChatInfoResponse
+//	@Failure		500			{object}	dto.GetChatInfoResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/info [post]
+func (h *ChatHandler) GetChatInfo(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+
+	var req dto.GetChatInfoRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewGetChatInfoErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_REQUEST",
+			"Invalid request format",
+			err.Error(),
+		))
+		return
+	}
+
+	// Validate required fields
+	if req.JID == "" {
+		c.JSON(http.StatusBadRequest, dto.NewGetChatInfoErrorResponse(
+			http.StatusBadRequest,
+			"MISSING_JID",
+			"JID is required",
+			"",
+		))
+		return
+	}
+
+	// Get chat info via wameow service
+	ctx := c.Request.Context()
+	chatInfo, err := h.wameowService.GetChatInfo(ctx, sessionID, req.JID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewGetChatInfoErrorResponse(
+			http.StatusInternalServerError,
+			"GET_CHAT_INFO_FAILED",
+			"Failed to get chat info",
+			err.Error(),
+		))
+		return
+	}
+
+	// Convert to DTO format
+	dtoChatInfo := dto.ChatInfo{
+		JID:         chatInfo.JID,
+		Name:        chatInfo.Name,
+		Type:        chatInfo.Type,
+		LastMessage: chatInfo.LastMessage,
+		Timestamp:   chatInfo.Timestamp,
+		UnreadCount: chatInfo.UnreadCount,
+		Pinned:      chatInfo.Pinned,
+		Muted:       chatInfo.Muted,
+		Archived:    chatInfo.Archived,
+	}
+
+	response := dto.NewGetChatInfoSuccessResponse(dtoChatInfo)
+	c.JSON(http.StatusOK, response)
+}
+
+// PinChat handles pinning/unpinning a chat
+//
+//	@Summary		Pin/unpin chat
+//	@Description	Pin or unpin a chat to keep it at the top of the chat list
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.PinChatRequest		true	"Pin chat request"
+//	@Success		200			{object}	dto.ChatResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/pin [post]
+func (h *ChatHandler) PinChat(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+
+	var req dto.PinChatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_REQUEST",
+			"Invalid request format",
+			err.Error(),
+		))
+		return
+	}
+
+	// Validate required fields
+	if req.JID == "" {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"MISSING_JID",
+			"JID is required",
+			"",
+		))
+		return
+	}
+
+	// Pin/unpin chat via wameow service
+	ctx := c.Request.Context()
+	err := h.wameowService.PinChat(ctx, sessionID, req.JID, req.Pinned)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
+			http.StatusInternalServerError,
+			"PIN_CHAT_FAILED",
+			"Failed to pin/unpin chat",
+			err.Error(),
+		))
+		return
+	}
+
+	action := "unpin_chat"
+	if req.Pinned {
+		action = "pin_chat"
+	}
+
+	response := dto.NewChatSuccessResponse(req.JID, "", action)
+	c.JSON(http.StatusOK, response)
+}
+
+// MuteChat handles muting/unmuting a chat
+//
+//	@Summary		Mute/unmute chat
+//	@Description	Mute or unmute a chat for a specified duration
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.MuteChatRequest		true	"Mute chat request"
+//	@Success		200			{object}	dto.ChatResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/mute [post]
+func (h *ChatHandler) MuteChat(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+
+	var req dto.MuteChatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_REQUEST",
+			"Invalid request format",
+			err.Error(),
+		))
+		return
+	}
+
+	// Validate required fields
+	if req.JID == "" {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"MISSING_JID",
+			"JID is required",
+			"",
+		))
+		return
+	}
+
+	// Convert duration string to time.Duration
+	var duration time.Duration
+	if req.Muted && req.Duration != "" {
+		switch strings.ToLower(req.Duration) {
+		case "1h":
+			duration = 1 * time.Hour
+		case "8h":
+			duration = 8 * time.Hour
+		case "1w":
+			duration = 7 * 24 * time.Hour
+		case "forever", "":
+			duration = 0 // 0 means forever
+		default:
+			c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+				http.StatusBadRequest,
+				"INVALID_DURATION",
+				"Invalid mute duration",
+				"Valid durations: 1h, 8h, 1w, forever",
+			))
+			return
+		}
+	}
+
+	// Mute/unmute chat via wameow service
+	ctx := c.Request.Context()
+	err := h.wameowService.MuteChat(ctx, sessionID, req.JID, req.Muted, duration)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
+			http.StatusInternalServerError,
+			"MUTE_CHAT_FAILED",
+			"Failed to mute/unmute chat",
+			err.Error(),
+		))
+		return
+	}
+
+	action := "unmute_chat"
+	if req.Muted {
+		action = "mute_chat"
+	}
+
+	response := dto.NewChatSuccessResponse(req.JID, "", action)
+	c.JSON(http.StatusOK, response)
+}
+
+// ArchiveChat handles archiving/unarchiving a chat
+//
+//	@Summary		Archive/unarchive chat
+//	@Description	Archive or unarchive a chat (archiving automatically unpins the chat)
+//	@Tags			Chat
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.ArchiveChatRequest		true	"Archive chat request"
+//	@Success		200			{object}	dto.ChatResponse
+//	@Failure		400			{object}	dto.ChatResponse
+//	@Failure		500			{object}	dto.ChatResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/chat/archive [post]
+func (h *ChatHandler) ArchiveChat(c *gin.Context) {
+	sessionID := c.Param("sessionId")
+
+	var req dto.ArchiveChatRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_REQUEST",
+			"Invalid request format",
+			err.Error(),
+		))
+		return
+	}
+
+	// Validate required fields
+	if req.JID == "" {
+		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
+			http.StatusBadRequest,
+			"MISSING_JID",
+			"JID is required",
+			"",
+		))
+		return
+	}
+
+	// Archive/unarchive chat via wameow service
+	ctx := c.Request.Context()
+	err := h.wameowService.ArchiveChat(ctx, sessionID, req.JID, req.Archived)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
+			http.StatusInternalServerError,
+			"ARCHIVE_CHAT_FAILED",
+			"Failed to archive/unarchive chat",
+			err.Error(),
+		))
+		return
+	}
+
+	action := "unarchive_chat"
+	if req.Archived {
+		action = "archive_chat"
+	}
+
+	response := dto.NewChatSuccessResponse(req.JID, "", action)
 	c.JSON(http.StatusOK, response)
 }

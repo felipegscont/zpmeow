@@ -103,10 +103,10 @@ type CreateSessionResponseData struct {
 
 // SessionInfoResponse represents the response for getting session information
 type SessionInfoResponse struct {
-	Success bool                        `json:"success" example:"true"`
-	Code    int                         `json:"code" example:"200"`
-	Data    SessionInfoResponseData     `json:"data"`
-	Error   *SessionErrorResponse       `json:"error,omitempty"`
+	Success bool                    `json:"success" example:"true"`
+	Code    int                     `json:"code" example:"200"`
+	Data    SessionInfoResponseData `json:"data"`
+	Error   *SessionErrorResponse   `json:"error,omitempty"`
 }
 
 // SessionInfoResponseData contains the data for session info response
@@ -120,10 +120,10 @@ type SessionInfoResponseData struct {
 
 // SessionListResponse represents the response for listing sessions
 type SessionListResponse struct {
-	Success bool                       `json:"success" example:"true"`
-	Code    int                        `json:"code" example:"200"`
-	Data    SessionListResponseData    `json:"data"`
-	Error   *SessionErrorResponse      `json:"error,omitempty"`
+	Success bool                    `json:"success" example:"true"`
+	Code    int                     `json:"code" example:"200"`
+	Data    SessionListResponseData `json:"data"`
+	Error   *SessionErrorResponse   `json:"error,omitempty"`
 }
 
 // SessionListResponseData contains the data for session list response
@@ -137,10 +137,10 @@ type SessionListResponseData struct {
 
 // ConnectSessionResponse represents the response for session connection
 type ConnectSessionResponse struct {
-	Success bool                           `json:"success" example:"true"`
-	Code    int                            `json:"code" example:"200"`
-	Data    ConnectSessionResponseData     `json:"data"`
-	Error   *SessionErrorResponse          `json:"error,omitempty"`
+	Success bool                       `json:"success" example:"true"`
+	Code    int                        `json:"code" example:"200"`
+	Data    ConnectSessionResponseData `json:"data"`
+	Error   *SessionErrorResponse      `json:"error,omitempty"`
 }
 
 // ConnectSessionResponseData contains the data for session connection response
@@ -173,10 +173,10 @@ type QRCodeResponseData struct {
 
 // PairPhoneResponse represents the response for phone pairing
 type PairPhoneResponse struct {
-	Success bool                     `json:"success" example:"true"`
-	Code    int                      `json:"code" example:"200"`
-	Data    PairPhoneResponseData    `json:"data"`
-	Error   *SessionErrorResponse    `json:"error,omitempty"`
+	Success bool                  `json:"success" example:"true"`
+	Code    int                   `json:"code" example:"200"`
+	Data    PairPhoneResponseData `json:"data"`
+	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
 // PairPhoneResponseData contains the data for phone pairing response
@@ -191,25 +191,25 @@ type PairPhoneResponseData struct {
 
 // SessionStatusResponse represents the response for session status
 type SessionStatusResponse struct {
-	Success bool                         `json:"success" example:"true"`
-	Code    int                          `json:"code" example:"200"`
-	Data    SessionStatusResponseData    `json:"data"`
-	Error   *SessionErrorResponse        `json:"error,omitempty"`
+	Success bool                      `json:"success" example:"true"`
+	Code    int                       `json:"code" example:"200"`
+	Data    SessionStatusResponseData `json:"data"`
+	Error   *SessionErrorResponse     `json:"error,omitempty"`
 }
 
 // SessionStatusResponseData contains the data for session status response
 type SessionStatusResponseData struct {
-	SessionID    string    `json:"session_id" example:"default"`
-	Action       string    `json:"action" example:"status"`
-	Status       string    `json:"status" example:"success"`
-	Timestamp    time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Name         string    `json:"name" example:"default"`
-	SessionStatus string   `json:"session_status" example:"connected"`
-	WaJID        string    `json:"wa_jid,omitempty" example:"5511999999999@s.whatsapp.net"`
-	IsConnected  bool      `json:"is_connected" example:"true"`
-	ClientStatus string    `json:"client_status" example:"connected"`
-	CreatedAt    time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
-	UpdatedAt    time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
+	SessionID     string    `json:"session_id" example:"default"`
+	Action        string    `json:"action" example:"status"`
+	Status        string    `json:"status" example:"success"`
+	Timestamp     time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+	Name          string    `json:"name" example:"default"`
+	SessionStatus string    `json:"session_status" example:"connected"`
+	WaJID         string    `json:"wa_jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	IsConnected   bool      `json:"is_connected" example:"true"`
+	ClientStatus  string    `json:"client_status" example:"connected"`
+	CreatedAt     time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
+	UpdatedAt     time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
 // ============================================================================

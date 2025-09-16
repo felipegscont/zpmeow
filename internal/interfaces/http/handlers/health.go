@@ -29,10 +29,10 @@ func NewHealthHandler() *HealthHandler {
 
 // HealthStandardResponse represents the standardized response format for health operations
 type HealthStandardResponse struct {
-	Success bool                      `json:"success"`
-	Code    int                       `json:"code"`
-	Data    HealthData `json:"data"`
-	Error   *HealthErrorResponse      `json:"error,omitempty"`
+	Success bool                 `json:"success"`
+	Code    int                  `json:"code"`
+	Data    HealthData           `json:"data"`
+	Error   *HealthErrorResponse `json:"error,omitempty"`
 }
 
 // HealthData contains the response data for health operations
@@ -77,16 +77,15 @@ func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, ver
 	c.Data(http.StatusOK, "application/json", jsonBytes)
 }
 
-
-
 // Health godoc
-// @Summary Health check endpoint
-// @Description Returns the health status of the service using standardized response format
-// @Tags Health
-// @Accept json
-// @Produce json
-// @Success 200 {object} HealthStandardResponse "Service is healthy"
-// @Router /health [get]
+//
+//	@Summary		Health check endpoint
+//	@Description	Returns the health status of the service using standardized response format
+//	@Tags			Health
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	HealthStandardResponse	"Service is healthy"
+//	@Router			/health [get]
 func (h *HealthHandler) Health(c *gin.Context) {
 	h.logger.Infof("Health check requested")
 
@@ -98,13 +97,14 @@ func (h *HealthHandler) Health(c *gin.Context) {
 }
 
 // Ping godoc
-// @Summary Ping endpoint
-// @Description Simple ping endpoint that returns pong using standardized response format
-// @Tags Health
-// @Accept json
-// @Produce json
-// @Success 200 {object} HealthStandardResponse "Pong response"
-// @Router /ping [get]
+//
+//	@Summary		Ping endpoint
+//	@Description	Simple ping endpoint that returns pong using standardized response format
+//	@Tags			Health
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	HealthStandardResponse	"Pong response"
+//	@Router			/ping [get]
 func (h *HealthHandler) Ping(c *gin.Context) {
 	h.logger.Infof("Ping requested")
 

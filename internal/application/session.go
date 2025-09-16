@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"zpmeow/internal/domain/session"
-	"zpmeow/internal/shared/validation"
 	"zpmeow/internal/interfaces/dto"
+	"zpmeow/internal/shared/validation"
 
 	"github.com/google/uuid"
 )
@@ -60,48 +60,36 @@ func (s *SessionService) GetSession(ctx context.Context, sessionIDOrName string)
 
 	// Clean the input
 	sessionIDOrName = strings.TrimSpace(sessionIDOrName)
-	fmt.Printf("DEBUG: Looking for session: '%s'\n", sessionIDOrName)
 
 	// Check if it looks like a UUID (contains hyphens and is 36 chars)
 	isUUID := len(sessionIDOrName) == 36 && strings.Contains(sessionIDOrName, "-")
-	fmt.Printf("DEBUG: Is UUID: %v (length: %d)\n", isUUID, len(sessionIDOrName))
 
 	if isUUID {
 		// If it looks like a UUID, try to parse it first to validate
 		if _, err := uuid.Parse(sessionIDOrName); err == nil {
-			fmt.Printf("DEBUG: Valid UUID, trying GetByID first\n")
 			// Valid UUID, try to get by ID first
 			sessionEntity, err := s.sessionRepo.GetByID(ctx, sessionIDOrName)
 			if err == nil {
-				fmt.Printf("DEBUG: Found by ID: %s\n", sessionEntity.ID)
 				return sessionEntity, nil
 			}
-			fmt.Printf("DEBUG: GetByID failed: %v\n", err)
 		}
 	}
 
 	// If not a valid UUID or not found by ID, try by name first
-	fmt.Printf("DEBUG: Trying GetByName\n")
 	sessionEntity, err := s.sessionRepo.GetByName(ctx, sessionIDOrName)
 	if err == nil {
-		fmt.Printf("DEBUG: Found by name: %s (ID: %s)\n", sessionEntity.Name, sessionEntity.ID)
 		return sessionEntity, nil
 	}
-	fmt.Printf("DEBUG: GetByName failed: %v\n", err)
 
 	// If not found by name and wasn't tried as ID yet, try by ID
 	if !isUUID {
-		fmt.Printf("DEBUG: Trying GetByID as fallback\n")
 		sessionEntity, err = s.sessionRepo.GetByID(ctx, sessionIDOrName)
 		if err == nil {
-			fmt.Printf("DEBUG: Found by ID (fallback): %s\n", sessionEntity.ID)
 			return sessionEntity, nil
 		}
-		fmt.Printf("DEBUG: GetByID fallback failed: %v\n", err)
 	}
 
 	// Not found by either method
-	fmt.Printf("DEBUG: Session not found by any method\n")
 	return nil, fmt.Errorf("session not found")
 }
 

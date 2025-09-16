@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -10,9 +9,9 @@ import (
 	"time"
 
 	"zpmeow/internal/application"
+	"zpmeow/internal/infrastructure/media"
 	"zpmeow/internal/infrastructure/wameow"
 	"zpmeow/internal/interfaces/dto"
-	"zpmeow/internal/shared/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -38,7 +37,7 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) 
 		return sessionIDOrName, nil
 	}
 
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	session, err := h.sessionService.GetSession(ctx, sessionIDOrName)
 	if err != nil {
 		return "", err
@@ -48,6 +47,20 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) 
 }
 
 // CreateGroup handles creating a group
+//
+//	@Summary		Create a new group
+//	@Description	Create a new WhatsApp group with specified name and participants
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.CreateGroupRequest	true	"Create group request"
+//	@Success		201			{object}	dto.CreateGroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/create [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -95,7 +108,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	}
 
 	// Create group using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	groupInfo, err := h.wameowService.CreateGroup(ctx, sessionID, req.Name, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -116,6 +129,20 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 }
 
 // GetGroupInfo handles getting group information
+//
+//	@Summary		Get group information
+//	@Description	Get detailed information about a specific group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.GetGroupInfoRequest	true	"Get group info request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/info [post]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -152,7 +179,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	}
 
 	// Get group info using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	groupInfo, err := h.wameowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -172,6 +199,19 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 }
 
 // ListGroups handles listing groups
+//
+//	@Summary		List all groups
+//	@Description	Get a list of all groups the user is a member of
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/list [get]
 func (h *GroupHandler) ListGroups(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -197,7 +237,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 	}
 
 	// List groups using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	groups, err := h.wameowService.ListGroups(ctx, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -217,6 +257,20 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 }
 
 // JoinGroup handles joining a group via invite link
+//
+//	@Summary		Join group via invite link
+//	@Description	Join a WhatsApp group using an invite link
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.JoinGroupRequest	true	"Join group request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -253,7 +307,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	}
 
 	// Join group using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	groupInfo, err := h.wameowService.JoinGroup(ctx, sessionID, req.InviteLink)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -273,6 +327,20 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 }
 
 // JoinGroupWithInvite handles joining a group with specific invite
+//
+//	@Summary		Join group with specific invite
+//	@Description	Join a WhatsApp group using specific invite details
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string							true	"Session ID"
+//	@Param			request		body		dto.JoinGroupWithInviteRequest	true	"Join group with invite request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/join-with-invite [post]
 func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -309,7 +377,7 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 	}
 
 	// Join group using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	groupInfo, err := h.wameowService.JoinGroupWithInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -328,6 +396,21 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// LeaveGroup handles leaving a group
+//
+//	@Summary		Leave group
+//	@Description	Leave a WhatsApp group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.LeaveGroupRequest	true	"Leave group request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/leave [post]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -364,7 +447,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	}
 
 	// Leave group using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.LeaveGroup(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -379,6 +462,22 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	response := dto.NewGroupOperationResponse(sessionID, "leave", "Successfully left the group")
 	c.JSON(http.StatusOK, response)
 }
+
+// GetInviteLink handles getting group invite link
+//
+//	@Summary		Get group invite link
+//	@Description	Get or reset the invite link for a group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.GetInviteLinkRequest	true	"Get invite link request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/invite-link [post]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -415,7 +514,7 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	}
 
 	// Get invite link using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	inviteLink, err := h.wameowService.GetInviteLink(ctx, sessionID, req.GroupJID, req.Reset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -431,8 +530,6 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// Note: RevokeInviteLink and UpdateGroupSettings are not implemented yet
-// These can be added later if needed
 // Note: AddParticipant, RemoveParticipant, PromoteParticipant, and DemoteParticipant
 // are now handled by the UpdateParticipants method with different action parameters
 
@@ -481,6 +578,22 @@ func convertWameowGroupInfoSliceToDTO(groups []wameow.GroupInfo) []dto.GroupInfo
 	}
 	return dtoGroups
 }
+
+// GetInviteInfo handles getting group info from invite link
+//
+//	@Summary		Get group info from invite link
+//	@Description	Get group information from an invite link without joining
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.GetInviteInfoRequest	true	"Get invite info request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/invite-info [post]
 func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -517,7 +630,7 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 	}
 
 	// Get invite info using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	groupInfo, err := h.wameowService.GetInviteInfo(ctx, sessionID, req.InviteLink)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -537,6 +650,20 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 }
 
 // GetGroupInfoFromInvite handles getting group info from specific invite
+//
+//	@Summary		Get group info from specific invite
+//	@Description	Get group information from specific invite details
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string								true	"Session ID"
+//	@Param			request		body		dto.GetGroupInfoFromInviteRequest	true	"Get group info from invite request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/invite-info-specific [post]
 func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -573,7 +700,7 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 	}
 
 	// Get group info from invite using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	groupInfo, err := h.wameowService.GetGroupInfoFromInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -592,6 +719,21 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// UpdateParticipants handles updating group participants
+//
+//	@Summary		Update group participants
+//	@Description	Add or remove participants from a group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string							true	"Session ID"
+//	@Param			request		body		dto.UpdateParticipantsRequest	true	"Update participants request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/participants [put]
 func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -639,7 +781,7 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 	}
 
 	// Update participants using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.UpdateParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -655,6 +797,22 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 	response := dto.NewGroupOperationResponse(sessionID, "update_participants", message)
 	c.JSON(http.StatusOK, response)
 }
+
+// SetName handles setting group name
+//
+//	@Summary		Set group name
+//	@Description	Update the name of a group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.SetGroupNameRequest	true	"Set group name request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/name [put]
 func (h *GroupHandler) SetName(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -691,7 +849,7 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 	}
 
 	// Set group name using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupName(ctx, sessionID, req.GroupJID, req.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -707,6 +865,21 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// SetTopic handles setting group topic
+//
+//	@Summary		Set group topic
+//	@Description	Update the topic/description of a group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.SetGroupTopicRequest	true	"Set group topic request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/topic [put]
 func (h *GroupHandler) SetTopic(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -743,7 +916,7 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 	}
 
 	// Set group topic using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupTopic(ctx, sessionID, req.GroupJID, req.Topic)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -758,6 +931,22 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 	response := dto.NewGroupOperationResponse(sessionID, "set_topic", "Group topic updated successfully")
 	c.JSON(http.StatusOK, response)
 }
+
+// SetPhoto handles setting group photo
+//
+//	@Summary		Set group photo
+//	@Description	Update the photo/avatar of a group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.SetGroupPhotoRequest	true	"Set group photo request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/photo [put]
 func (h *GroupHandler) SetPhoto(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -794,7 +983,7 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 	}
 
 	// Process photo data (supports URLs, base64, data URLs)
-	photoData, _, err := utils.ProcessUnifiedMedia(context.Background(), req.Photo, nil, "image")
+	photoData, _, err := media.ProcessUnifiedMedia(c.Request.Context(), req.Photo, nil, "image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -806,7 +995,7 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 	}
 
 	// Set group photo using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupPhoto(ctx, sessionID, req.GroupJID, photoData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -822,6 +1011,21 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// RemovePhoto handles removing group photo
+//
+//	@Summary		Remove group photo
+//	@Description	Remove the photo/avatar of a group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.RemoveGroupPhotoRequest	true	"Remove group photo request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/photo [delete]
 func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -858,7 +1062,7 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 	}
 
 	// Remove group photo using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.RemoveGroupPhoto(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -873,6 +1077,22 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 	response := dto.NewGroupOperationResponse(sessionID, "remove_photo", "Group photo removed successfully")
 	c.JSON(http.StatusOK, response)
 }
+
+// SetAnnounce handles setting group announce mode
+//
+//	@Summary		Set group announce mode
+//	@Description	Set whether only admins can send messages to the group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.SetGroupAnnounceRequest	true	"Set group announce request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/announce [put]
 func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -909,7 +1129,7 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 	}
 
 	// Set group announce using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupAnnounce(ctx, sessionID, req.GroupJID, req.AnnounceOnly)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -925,6 +1145,21 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// SetLocked handles setting group locked mode
+//
+//	@Summary		Set group locked mode
+//	@Description	Set whether only admins can edit group info
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string						true	"Session ID"
+//	@Param			request		body		dto.SetGroupLockedRequest	true	"Set group locked request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/locked [put]
 func (h *GroupHandler) SetLocked(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -961,7 +1196,7 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 	}
 
 	// Set group locked using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupLocked(ctx, sessionID, req.GroupJID, req.Locked)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -977,6 +1212,21 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// SetEphemeral handles setting group ephemeral mode
+//
+//	@Summary		Set group ephemeral mode
+//	@Description	Set disappearing messages for the group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string							true	"Session ID"
+//	@Param			request		body		dto.SetGroupEphemeralRequest	true	"Set group ephemeral request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/ephemeral [put]
 func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1013,7 +1263,7 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 	}
 
 	// Set group ephemeral using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupEphemeral(ctx, sessionID, req.GroupJID, req.Ephemeral, req.Duration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -1029,6 +1279,21 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// SetJoinApproval handles setting group join approval mode
+//
+//	@Summary		Set group join approval mode
+//	@Description	Set whether admin approval is required to join the group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string							true	"Session ID"
+//	@Param			request		body		dto.SetGroupJoinApprovalRequest	true	"Set group join approval request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/join-approval [put]
 func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1065,7 +1330,7 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 	}
 
 	// Set group join approval mode using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupJoinApprovalMode(ctx, sessionID, req.GroupJID, req.RequireApproval)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -1081,6 +1346,21 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+// SetMemberAddMode handles setting group member add mode
+//
+//	@Summary		Set group member add mode
+//	@Description	Set who can add members to the group (all or admin only)
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string								true	"Session ID"
+//	@Param			request		body		dto.SetGroupMemberAddModeRequest	true	"Set group member add mode request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/member-add-mode [put]
 func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1117,7 +1397,7 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 	}
 
 	// Set group member add mode using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.SetGroupMemberAddMode(ctx, sessionID, req.GroupJID, req.Mode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -1134,6 +1414,20 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 }
 
 // GetGroupRequestParticipants handles getting group request participants
+//
+//	@Summary		Get group request participants
+//	@Description	Get list of users requesting to join the group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string									true	"Session ID"
+//	@Param			request		body		dto.GetGroupRequestParticipantsRequest	true	"Get group request participants request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/request-participants [post]
 func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1181,7 +1475,7 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	}
 
 	// Get group request participants using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	participants, err := h.wameowService.GetGroupRequestParticipants(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -1210,6 +1504,20 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 }
 
 // UpdateGroupRequestParticipants handles updating group request participants
+//
+//	@Summary		Update group request participants
+//	@Description	Approve or reject users requesting to join the group
+//	@Tags			Groups
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string										true	"Session ID"
+//	@Param			request		body		dto.UpdateGroupRequestParticipantsRequest	true	"Update group request participants request"
+//	@Success		200			{object}	dto.GroupResponse
+//	@Failure		400			{object}	dto.GroupResponse
+//	@Failure		404			{object}	dto.GroupResponse
+//	@Failure		500			{object}	dto.GroupResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/groups/request-participants [put]
 func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1257,7 +1565,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	}
 
 	// Update group request participants using wameow service
-	ctx := context.Background()
+	ctx := c.Request.Context()
 	err = h.wameowService.UpdateGroupRequestParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -1272,244 +1580,6 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	message := fmt.Sprintf("Successfully %sed %d participants", req.Action, len(req.Participants))
 	response := dto.NewGroupOperationResponse(sessionID, "update_request_participants", message)
 	c.JSON(http.StatusOK, response)
-}
-
-// LinkGroup handles linking a group to a community
-func (h *GroupHandler) LinkGroup(c *gin.Context) {
-	sessionIDOrName := c.Param("sessionId")
-	if sessionIDOrName == "" {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_SESSION_ID",
-			"Session ID is required",
-			"Session ID must be provided in the URL path",
-		))
-		return
-	}
-
-	// Resolve session ID or name to actual session ID
-	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
-			http.StatusNotFound,
-			"SESSION_NOT_FOUND",
-			"Session not found",
-			err.Error(),
-		))
-		return
-	}
-
-	var req dto.LinkGroupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request body",
-			err.Error(),
-		))
-		return
-	}
-
-	// Link group using wameow service
-	ctx := context.Background()
-	err = h.wameowService.LinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
-			http.StatusInternalServerError,
-			"LINK_GROUP_FAILED",
-			"Failed to link group to community",
-			err.Error(),
-		))
-		return
-	}
-
-	message := fmt.Sprintf("Successfully linked group %s to community %s", req.GroupJID, req.CommunityJID)
-	response := dto.NewGroupOperationResponse(sessionID, "link_group", message)
-	c.JSON(http.StatusOK, response)
-}
-
-// UnlinkGroup handles unlinking a group from a community
-func (h *GroupHandler) UnlinkGroup(c *gin.Context) {
-	sessionIDOrName := c.Param("sessionId")
-	if sessionIDOrName == "" {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_SESSION_ID",
-			"Session ID is required",
-			"Session ID must be provided in the URL path",
-		))
-		return
-	}
-
-	// Resolve session ID or name to actual session ID
-	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
-			http.StatusNotFound,
-			"SESSION_NOT_FOUND",
-			"Session not found",
-			err.Error(),
-		))
-		return
-	}
-
-	var req dto.UnlinkGroupRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request body",
-			err.Error(),
-		))
-		return
-	}
-
-	// Unlink group using wameow service
-	ctx := context.Background()
-	err = h.wameowService.UnlinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
-			http.StatusInternalServerError,
-			"UNLINK_GROUP_FAILED",
-			"Failed to unlink group from community",
-			err.Error(),
-		))
-		return
-	}
-
-	message := fmt.Sprintf("Successfully unlinked group %s from community %s", req.GroupJID, req.CommunityJID)
-	response := dto.NewGroupOperationResponse(sessionID, "unlink_group", message)
-	c.JSON(http.StatusOK, response)
-}
-
-// GetSubGroups handles getting subgroups of a community
-func (h *GroupHandler) GetSubGroups(c *gin.Context) {
-	sessionIDOrName := c.Param("sessionId")
-	if sessionIDOrName == "" {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_SESSION_ID",
-			"Session ID is required",
-			"Session ID must be provided in the URL path",
-		))
-		return
-	}
-
-	// Resolve session ID or name to actual session ID
-	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
-			http.StatusNotFound,
-			"SESSION_NOT_FOUND",
-			"Session not found",
-			err.Error(),
-		))
-		return
-	}
-
-	var req dto.GetSubGroupsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request body",
-			err.Error(),
-		))
-		return
-	}
-
-	// Get subgroups using wameow service
-	ctx := context.Background()
-	subGroups, err := h.wameowService.GetSubGroups(ctx, sessionID, req.CommunityJID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
-			http.StatusInternalServerError,
-			"GET_SUBGROUPS_FAILED",
-			"Failed to get subgroups",
-			err.Error(),
-		))
-		return
-	}
-
-	// Create response with subgroups list
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"code":    200,
-		"data": gin.H{
-			"session_id":    sessionID,
-			"action":        "get_subgroups",
-			"status":        "success",
-			"timestamp":     time.Now(),
-			"community_jid": req.CommunityJID,
-			"subgroups":     subGroups,
-			"total":         len(subGroups),
-		},
-	})
-}
-
-// GetLinkedGroupsParticipants handles getting participants of linked groups
-func (h *GroupHandler) GetLinkedGroupsParticipants(c *gin.Context) {
-	sessionIDOrName := c.Param("sessionId")
-	if sessionIDOrName == "" {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"MISSING_SESSION_ID",
-			"Session ID is required",
-			"Session ID must be provided in the URL path",
-		))
-		return
-	}
-
-	// Resolve session ID or name to actual session ID
-	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
-	if err != nil {
-		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
-			http.StatusNotFound,
-			"SESSION_NOT_FOUND",
-			"Session not found",
-			err.Error(),
-		))
-		return
-	}
-
-	var req dto.GetLinkedGroupsParticipantsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
-			http.StatusBadRequest,
-			"INVALID_REQUEST",
-			"Invalid request body",
-			err.Error(),
-		))
-		return
-	}
-
-	// Get linked groups participants using wameow service
-	ctx := context.Background()
-	participants, err := h.wameowService.GetLinkedGroupsParticipants(ctx, sessionID, req.CommunityJID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
-			http.StatusInternalServerError,
-			"GET_LINKED_GROUPS_PARTICIPANTS_FAILED",
-			"Failed to get linked groups participants",
-			err.Error(),
-		))
-		return
-	}
-
-	// Create response with participants list
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"code":    200,
-		"data": gin.H{
-			"session_id":    sessionID,
-			"action":        "get_linked_groups_participants",
-			"status":        "success",
-			"timestamp":     time.Now(),
-			"community_jid": req.CommunityJID,
-			"participants":  participants,
-			"total":         len(participants),
-		},
-	})
 }
 
 // ============================================================================

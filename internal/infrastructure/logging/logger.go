@@ -291,19 +291,19 @@ func SetLogger(logger Logger) {
 }
 
 type waLogAdapter struct {
-	logger Logger
+	logger  Logger
 	sampler *logSampler
 }
 
 type logSampler struct {
-	mu sync.RWMutex
-	lastLogged map[string]time.Time
+	mu             sync.RWMutex
+	lastLogged     map[string]time.Time
 	sampleInterval time.Duration
 }
 
 func newLogSampler() *logSampler {
 	return &logSampler{
-		lastLogged: make(map[string]time.Time),
+		lastLogged:     make(map[string]time.Time),
 		sampleInterval: 30 * time.Second, // Sample frequent logs every 30 seconds
 	}
 }
@@ -350,7 +350,7 @@ func (s *logSampler) createSampleKey(msg string) string {
 
 func NewWALogAdapter(logger Logger) waLog.Logger {
 	return &waLogAdapter{
-		logger: logger,
+		logger:  logger,
 		sampler: newLogSampler(),
 	}
 }
@@ -385,21 +385,21 @@ func (w *waLogAdapter) Debugf(msg string, args ...interface{}) {
 
 func (w *waLogAdapter) Sub(module string) waLog.Logger {
 	return &waLogAdapter{
-		logger: w.logger.Sub(module),
+		logger:  w.logger.Sub(module),
 		sampler: w.sampler, // Share the same sampler instance
 	}
 }
 
 func (w *waLogAdapter) shouldSkipLog(msg string) bool {
 	if strings.Contains(msg, "<iq ") || strings.Contains(msg, "<ib ") ||
-	   strings.Contains(msg, "<message ") || strings.Contains(msg, "<receipt ") ||
-	   strings.Contains(msg, "<ack ") || strings.Contains(msg, "<success ") {
+		strings.Contains(msg, "<message ") || strings.Contains(msg, "<receipt ") ||
+		strings.Contains(msg, "<ack ") || strings.Contains(msg, "<success ") {
 		return true
 	}
 
 	if strings.Contains(msg, "xmlns=\"w:p\"") ||
-	   strings.Contains(msg, "type=\"get\"") ||
-	   strings.Contains(msg, "type=\"result\"") {
+		strings.Contains(msg, "type=\"get\"") ||
+		strings.Contains(msg, "type=\"result\"") {
 		return true
 	}
 

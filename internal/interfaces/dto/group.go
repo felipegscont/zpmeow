@@ -129,28 +129,6 @@ type UpdateGroupRequestParticipantsRequest struct {
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-// LinkGroupRequest represents the request to link a group to a community
-type LinkGroupRequest struct {
-	CommunityJID string `json:"community_jid" binding:"required" example:"120363025246125486@g.us"`
-	GroupJID     string `json:"group_jid" binding:"required" example:"120363025246125487@g.us"`
-}
-
-// UnlinkGroupRequest represents the request to unlink a group from a community
-type UnlinkGroupRequest struct {
-	CommunityJID string `json:"community_jid" binding:"required" example:"120363025246125486@g.us"`
-	GroupJID     string `json:"group_jid" binding:"required" example:"120363025246125487@g.us"`
-}
-
-// GetSubGroupsRequest represents the request to get subgroups of a community
-type GetSubGroupsRequest struct {
-	CommunityJID string `json:"community_jid" binding:"required" example:"120363025246125486@g.us"`
-}
-
-// GetLinkedGroupsParticipantsRequest represents the request to get participants of linked groups
-type GetLinkedGroupsParticipantsRequest struct {
-	CommunityJID string `json:"community_jid" binding:"required" example:"120363025246125486@g.us"`
-}
-
 // ============================================================================
 // GROUP DATA STRUCTURES
 // ============================================================================
@@ -176,22 +154,22 @@ type GroupInfo struct {
 
 // GroupResponse represents the standardized response format for group operations
 type GroupResponse struct {
-	Success bool                 `json:"success"`
-	Code    int                  `json:"code"`
-	Data    GroupData            `json:"data"`
-	Error   *GroupErrorResponse  `json:"error,omitempty"`
+	Success bool                `json:"success"`
+	Code    int                 `json:"code"`
+	Data    GroupData           `json:"data"`
+	Error   *GroupErrorResponse `json:"error,omitempty"`
 }
 
 // GroupData contains the response data for group operations
 type GroupData struct {
-	SessionID string     `json:"session_id,omitempty" example:"default"`
-	Action    string     `json:"action" example:"create"`
-	Status    string     `json:"status" example:"success"`
-	Timestamp time.Time  `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Group     *GroupInfo `json:"group,omitempty"`
-	Groups    []GroupInfo `json:"groups,omitempty"`
-	InviteLink string    `json:"invite_link,omitempty" example:"https://chat.whatsapp.com/ABC123"`
-	Message   string     `json:"message,omitempty" example:"Operation completed successfully"`
+	SessionID  string      `json:"session_id,omitempty" example:"default"`
+	Action     string      `json:"action" example:"create"`
+	Status     string      `json:"status" example:"success"`
+	Timestamp  time.Time   `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+	Group      *GroupInfo  `json:"group,omitempty"`
+	Groups     []GroupInfo `json:"groups,omitempty"`
+	InviteLink string      `json:"invite_link,omitempty" example:"https://chat.whatsapp.com/ABC123"`
+	Message    string      `json:"message,omitempty" example:"Operation completed successfully"`
 }
 
 // GroupErrorResponse represents error information for group operations
@@ -207,10 +185,10 @@ type GroupErrorResponse struct {
 
 // CreateGroupResponse represents the response for group creation
 type CreateGroupResponse struct {
-	Success bool                       `json:"success" example:"true"`
-	Code    int                        `json:"code" example:"201"`
-	Data    CreateGroupResponseData    `json:"data"`
-	Error   *GroupErrorResponse        `json:"error,omitempty"`
+	Success bool                    `json:"success" example:"true"`
+	Code    int                     `json:"code" example:"201"`
+	Data    CreateGroupResponseData `json:"data"`
+	Error   *GroupErrorResponse     `json:"error,omitempty"`
 }
 
 // CreateGroupResponseData contains the data for group creation response
@@ -224,10 +202,10 @@ type CreateGroupResponseData struct {
 
 // ListGroupsResponse represents the response for listing groups
 type ListGroupsResponse struct {
-	Success bool                      `json:"success" example:"true"`
-	Code    int                       `json:"code" example:"200"`
-	Data    ListGroupsResponseData    `json:"data"`
-	Error   *GroupErrorResponse       `json:"error,omitempty"`
+	Success bool                   `json:"success" example:"true"`
+	Code    int                    `json:"code" example:"200"`
+	Data    ListGroupsResponseData `json:"data"`
+	Error   *GroupErrorResponse    `json:"error,omitempty"`
 }
 
 // ListGroupsResponseData contains the data for group list response
@@ -242,10 +220,10 @@ type ListGroupsResponseData struct {
 
 // GetGroupInfoResponse represents the response for getting group information
 type GetGroupInfoResponse struct {
-	Success bool                        `json:"success" example:"true"`
-	Code    int                         `json:"code" example:"200"`
-	Data    GetGroupInfoResponseData    `json:"data"`
-	Error   *GroupErrorResponse         `json:"error,omitempty"`
+	Success bool                     `json:"success" example:"true"`
+	Code    int                      `json:"code" example:"200"`
+	Data    GetGroupInfoResponseData `json:"data"`
+	Error   *GroupErrorResponse      `json:"error,omitempty"`
 }
 
 // GetGroupInfoResponseData contains the data for group info response
@@ -259,10 +237,10 @@ type GetGroupInfoResponseData struct {
 
 // JoinGroupResponse represents the response for joining a group
 type JoinGroupResponse struct {
-	Success bool                     `json:"success" example:"true"`
-	Code    int                      `json:"code" example:"200"`
-	Data    JoinGroupResponseData    `json:"data"`
-	Error   *GroupErrorResponse      `json:"error,omitempty"`
+	Success bool                  `json:"success" example:"true"`
+	Code    int                   `json:"code" example:"200"`
+	Data    JoinGroupResponseData `json:"data"`
+	Error   *GroupErrorResponse   `json:"error,omitempty"`
 }
 
 // JoinGroupResponseData contains the data for join group response
@@ -276,10 +254,10 @@ type JoinGroupResponseData struct {
 
 // GetInviteLinkResponse represents the response for getting invite link
 type GetInviteLinkResponse struct {
-	Success bool                         `json:"success" example:"true"`
-	Code    int                          `json:"code" example:"200"`
-	Data    GetInviteLinkResponseData    `json:"data"`
-	Error   *GroupErrorResponse          `json:"error,omitempty"`
+	Success bool                      `json:"success" example:"true"`
+	Code    int                       `json:"code" example:"200"`
+	Data    GetInviteLinkResponseData `json:"data"`
+	Error   *GroupErrorResponse       `json:"error,omitempty"`
 }
 
 // GetInviteLinkResponseData contains the data for invite link response
@@ -490,134 +468,4 @@ func (r *UpdateGroupRequestParticipantsRequest) Validate() error {
 		}
 	}
 	return nil
-}
-
-// Validate validates a LinkGroupRequest
-func (r *LinkGroupRequest) Validate() error {
-	if r.CommunityJID == "" {
-		return &GroupValidationError{Field: "community_jid", Message: "Community JID is required"}
-	}
-	if !validateGroupJID(r.CommunityJID) {
-		return &GroupValidationError{Field: "community_jid", Message: "Invalid community JID format"}
-	}
-	if r.GroupJID == "" {
-		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
-	}
-	if !validateGroupJID(r.GroupJID) {
-		return &GroupValidationError{Field: "group_jid", Message: "Invalid group JID format"}
-	}
-	return nil
-}
-
-// Validate validates an UnlinkGroupRequest
-func (r *UnlinkGroupRequest) Validate() error {
-	if r.CommunityJID == "" {
-		return &GroupValidationError{Field: "community_jid", Message: "Community JID is required"}
-	}
-	if !validateGroupJID(r.CommunityJID) {
-		return &GroupValidationError{Field: "community_jid", Message: "Invalid community JID format"}
-	}
-	if r.GroupJID == "" {
-		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
-	}
-	if !validateGroupJID(r.GroupJID) {
-		return &GroupValidationError{Field: "group_jid", Message: "Invalid group JID format"}
-	}
-	return nil
-}
-
-// Validate validates a GetSubGroupsRequest
-func (r *GetSubGroupsRequest) Validate() error {
-	if r.CommunityJID == "" {
-		return &GroupValidationError{Field: "community_jid", Message: "Community JID is required"}
-	}
-	if !validateGroupJID(r.CommunityJID) {
-		return &GroupValidationError{Field: "community_jid", Message: "Invalid community JID format"}
-	}
-	return nil
-}
-
-// Validate validates a GetLinkedGroupsParticipantsRequest
-func (r *GetLinkedGroupsParticipantsRequest) Validate() error {
-	if r.CommunityJID == "" {
-		return &GroupValidationError{Field: "community_jid", Message: "Community JID is required"}
-	}
-	if !validateGroupJID(r.CommunityJID) {
-		return &GroupValidationError{Field: "community_jid", Message: "Invalid community JID format"}
-	}
-	return nil
-}
-
-// Newsletter/Channel DTOs
-
-// CreateNewsletterRequest represents the request to create a newsletter/channel
-type CreateNewsletterRequest struct {
-	Name        string `json:"name" binding:"required,min=1,max=100" example:"My Channel"`
-	Description string `json:"description" binding:"max=500" example:"Channel description"`
-	Picture     string `json:"picture,omitempty" example:"https://example.com/image.jpg"`
-}
-
-// CreateNewsletterResponse represents the response for creating a newsletter
-type CreateNewsletterResponse struct {
-	JID         string `json:"jid"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	CreatedAt   int64  `json:"created_at"`
-}
-
-// GetNewsletterInfoRequest represents the request to get newsletter info
-type GetNewsletterInfoRequest struct {
-	NewsletterJID string `json:"newsletter_jid" binding:"required" example:"120363197100429171@newsletter"`
-}
-
-// NewsletterInfo represents newsletter information
-type NewsletterInfo struct {
-	JID           string `json:"jid"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	Picture       string `json:"picture,omitempty"`
-	FollowerCount int64  `json:"follower_count"`
-	CreatedAt     int64  `json:"created_at"`
-	Verified      bool   `json:"verified"`
-	Muted         bool   `json:"muted"`
-}
-
-// GetNewsletterInfoResponse represents the response for getting newsletter info
-type GetNewsletterInfoResponse struct {
-	Newsletter NewsletterInfo `json:"newsletter"`
-}
-
-// FollowNewsletterRequest represents the request to follow a newsletter
-type FollowNewsletterRequest struct {
-	NewsletterJID string `json:"newsletter_jid" binding:"required" example:"120363197100429171@newsletter"`
-}
-
-// UnfollowNewsletterRequest represents the request to unfollow a newsletter
-type UnfollowNewsletterRequest struct {
-	NewsletterJID string `json:"newsletter_jid" binding:"required" example:"120363197100429171@newsletter"`
-}
-
-// GetSubscribedNewslettersResponse represents the response for getting subscribed newsletters
-type GetSubscribedNewslettersResponse struct {
-	Newsletters []NewsletterInfo `json:"newsletters"`
-}
-
-// NewsletterReactionRequest represents the request to react to a newsletter message
-type NewsletterReactionRequest struct {
-	NewsletterJID string `json:"newsletter_jid" binding:"required" example:"120363197100429171@newsletter"`
-	ServerID      string `json:"server_id" binding:"required" example:"msg_server_id"`
-	Reaction      string `json:"reaction" binding:"required" example:"👍"`
-	MessageID     string `json:"message_id,omitempty" example:"3EB0123456789ABCDEF"`
-}
-
-// NewsletterMarkViewedRequest represents the request to mark newsletter messages as viewed
-type NewsletterMarkViewedRequest struct {
-	NewsletterJID string   `json:"newsletter_jid" binding:"required" example:"120363197100429171@newsletter"`
-	ServerIDs     []string `json:"server_ids" binding:"required" example:"[\"msg_id_1\",\"msg_id_2\"]"`
-}
-
-// NewsletterToggleMuteRequest represents the request to toggle newsletter mute
-type NewsletterToggleMuteRequest struct {
-	NewsletterJID string `json:"newsletter_jid" binding:"required" example:"120363197100429171@newsletter"`
-	Mute          bool   `json:"mute" example:"true"`
 }

@@ -257,7 +257,7 @@ func NewStatusHelper(logger logging.Logger) *StatusHelper {
 func (h *StatusHelper) SetStatus(status types.Status, sessionID string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	
+
 	h.status = status
 	if status == types.StatusConnected || status == types.StatusDisconnected ||
 		status == types.StatusConnecting || status == types.StatusError {

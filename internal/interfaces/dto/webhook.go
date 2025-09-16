@@ -97,20 +97,20 @@ type TestWebhookResult struct {
 
 // WebhookResponse represents the standardized response format for webhook operations
 type WebhookResponse struct {
-	Success bool                   `json:"success"`
-	Code    int                    `json:"code"`
-	Data    WebhookResponseData    `json:"data"`
-	Error   *WebhookErrorResponse  `json:"error,omitempty"`
+	Success bool                  `json:"success"`
+	Code    int                   `json:"code"`
+	Data    WebhookResponseData   `json:"data"`
+	Error   *WebhookErrorResponse `json:"error,omitempty"`
 }
 
 // WebhookResponseData contains the response data for webhook operations
 type WebhookResponseData struct {
-	WebhookID string              `json:"webhook_id,omitempty" example:"webhook_123456789"`
-	Action    string              `json:"action" example:"register"`
-	Status    string              `json:"status" example:"success"`
-	Timestamp time.Time           `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Webhook   *WebhookInfo        `json:"webhook,omitempty"`
-	Webhooks  []WebhookInfo       `json:"webhooks,omitempty"`
+	WebhookID  string             `json:"webhook_id,omitempty" example:"webhook_123456789"`
+	Action     string             `json:"action" example:"register"`
+	Status     string             `json:"status" example:"success"`
+	Timestamp  time.Time          `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+	Webhook    *WebhookInfo       `json:"webhook,omitempty"`
+	Webhooks   []WebhookInfo      `json:"webhooks,omitempty"`
 	TestResult *TestWebhookResult `json:"test_result,omitempty"`
 }
 

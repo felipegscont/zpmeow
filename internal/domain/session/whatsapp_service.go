@@ -11,18 +11,18 @@ type WhatsAppService interface {
 	StartClient(sessionID string) error
 	StopClient(sessionID string) error
 	LogoutClient(sessionID string) error
-	
+
 	// Connection Status
 	IsClientConnected(sessionID string) bool
 	GetClientStatus(sessionID string) Status
-	
+
 	// Authentication
 	GetQRCode(sessionID string) (string, error)
 	PairPhone(sessionID, phoneNumber string) (string, error)
-	
+
 	// Startup Operations
 	ConnectOnStartup(ctx context.Context) error
-	
+
 	// Message Operations
 	SendTextMessage(ctx context.Context, sessionID, phone, text string) (*MessageResponse, error)
 	SendImageMessage(ctx context.Context, sessionID, phone string, imageData []byte, caption, mimeType string) (*MessageResponse, error)
@@ -31,7 +31,7 @@ type WhatsAppService interface {
 	SendDocumentMessage(ctx context.Context, sessionID, phone string, documentData []byte, filename, caption, mimeType string) (*MessageResponse, error)
 	SendLocationMessage(ctx context.Context, sessionID, phone string, latitude, longitude float64, name, address string) (*MessageResponse, error)
 	SendContactMessage(ctx context.Context, sessionID, phone, contactName, contactJID string) (*MessageResponse, error)
-	
+
 	// Group Operations
 	CreateGroup(ctx context.Context, sessionID, name string, participants []string) (*GroupResponse, error)
 	AddParticipants(ctx context.Context, sessionID, groupJID string, participants []string) error
@@ -47,13 +47,13 @@ type WhatsAppService interface {
 	SetGroupAnnounce(ctx context.Context, sessionID, groupJID string, announceOnly bool) error
 	SetGroupLocked(ctx context.Context, sessionID, groupJID string, locked bool) error
 	SetGroupEphemeral(ctx context.Context, sessionID, groupJID string, ephemeral bool, duration int) error
-	
+
 	// User Operations
 	GetUserInfo(ctx context.Context, sessionID, userJID string) (*UserInfo, error)
 	GetUserProfilePicture(ctx context.Context, sessionID, userJID string) (string, error)
 	BlockUser(ctx context.Context, sessionID, userJID string) error
 	UnblockUser(ctx context.Context, sessionID, userJID string) error
-	
+
 	// Chat Operations
 	GetChats(ctx context.Context, sessionID string) ([]*ChatInfo, error)
 	GetChatHistory(ctx context.Context, sessionID, chatJID string, limit int) ([]*MessageInfo, error)

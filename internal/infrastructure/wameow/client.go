@@ -302,7 +302,6 @@ func (c *WameowClient) setStatus(status types.Status) {
 	}
 }
 
-
 // startClientLoop starts the main client loop
 func (c *WameowClient) startClientLoop() {
 	defer func() {
@@ -494,4 +493,3 @@ func (c *WameowClient) persistQRSuccess() {
 
 	c.logger.Infof("Successfully updated session %s in database after QR scan: JID=%s, Status=%s", c.sessionID, deviceJID, session.StatusConnected)
 }
-

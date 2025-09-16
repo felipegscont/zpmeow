@@ -15,36 +15,48 @@ type SetPresenceRequest struct {
 	Media string `json:"media,omitempty" example:""`                   // Optional media type for composing state
 }
 
-// MarkAsReadRequest represents a request to mark messages as read
-type MarkAsReadRequest struct {
-	Phone      string   `json:"phone" binding:"required" example:"5511999999999"`
-	MessageIDs []string `json:"message_ids" binding:"required" example:"[\"msg_1\", \"msg_2\"]"`
-}
-
-// ReactToMessageRequest represents a request to react to a message
-type ReactToMessageRequest struct {
-	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
-	MessageID string `json:"message_id" binding:"required" example:"msg_123"`
-	Emoji     string `json:"emoji" binding:"required" example:"👍"` // Use "remove" to remove reaction
-}
-
-// DeleteMessageRequest represents a request to delete a message
-type DeleteMessageRequest struct {
-	Phone       string `json:"phone" binding:"required" example:"5511999999999"`
-	MessageID   string `json:"message_id" binding:"required" example:"msg_123"`
-	ForEveryone bool   `json:"for_everyone" example:"true"` // true = delete for everyone, false = delete for me
-}
-
-// EditMessageRequest represents a request to edit a message
-type EditMessageRequest struct {
-	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
-	MessageID string `json:"message_id" binding:"required" example:"msg_123"`
-	NewText   string `json:"new_text" binding:"required" example:"Edited message text"`
-}
-
 // DownloadMediaRequest represents a request to download media
 type DownloadMediaRequest struct {
 	MessageID string `json:"message_id" binding:"required" example:"msg_123"`
+}
+
+// ============================================================================
+// NEW CHAT FUNCTIONALITY REQUEST DTOs
+// ============================================================================
+
+// ListChatsRequest represents a request to list chats
+type ListChatsRequest struct {
+	Type string `json:"type,omitempty" example:"all"` // "all", "groups", "contacts"
+}
+
+// GetChatInfoRequest represents a request to get chat information
+type GetChatInfoRequest struct {
+	JID string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+}
+
+// SetDisappearingTimerRequest represents a request to set disappearing timer
+type SetDisappearingTimerRequest struct {
+	JID   string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	Timer string `json:"timer" binding:"required" example:"24h"` // "off", "24h", "7d", "90d"
+}
+
+// PinChatRequest represents a request to pin/unpin a chat
+type PinChatRequest struct {
+	JID    string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	Pinned bool   `json:"pinned" example:"true"`
+}
+
+// MuteChatRequest represents a request to mute/unmute a chat
+type MuteChatRequest struct {
+	JID      string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	Muted    bool   `json:"muted" example:"true"`
+	Duration string `json:"duration,omitempty" example:"8h"` // "1h", "8h", "1w", "forever" (only when muted=true)
+}
+
+// ArchiveChatRequest represents a request to archive/unarchive a chat
+type ArchiveChatRequest struct {
+	JID      string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	Archived bool   `json:"archived" example:"true"`
 }
 
 // ============================================================================
@@ -53,10 +65,50 @@ type DownloadMediaRequest struct {
 
 // ChatResponse represents the standardized response format for chat operations
 type ChatResponse struct {
-	Success bool                `json:"success"`
-	Code    int                 `json:"code"`
-	Data    ChatData            `json:"data"`
-	Error   *ChatErrorResponse  `json:"error,omitempty"`
+	Success bool               `json:"success"`
+	Code    int                `json:"code"`
+	Data    ChatData           `json:"data"`
+	Error   *ChatErrorResponse `json:"error,omitempty"`
+}
+
+// ============================================================================
+// NEW CHAT FUNCTIONALITY RESPONSE DTOs
+// ============================================================================
+
+// ChatInfo represents information about a chat (group or contact)
+type ChatInfo struct {
+	JID         string    `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	Name        string    `json:"name" example:"João Silva"`
+	Type        string    `json:"type" example:"contact"` // "contact", "group"
+	LastMessage string    `json:"last_message,omitempty" example:"Hello!"`
+	Timestamp   time.Time `json:"timestamp,omitempty" example:"2023-01-01T00:00:00Z"`
+	UnreadCount int       `json:"unread_count" example:"3"`
+	Pinned      bool      `json:"pinned" example:"false"`
+	Muted       bool      `json:"muted" example:"false"`
+	Archived    bool      `json:"archived" example:"false"`
+}
+
+// ListChatsResponse represents the response for listing chats
+type ListChatsResponse struct {
+	Success bool               `json:"success" example:"true"`
+	Code    int                `json:"code" example:"200"`
+	Data    ListChatsData      `json:"data"`
+	Error   *ChatErrorResponse `json:"error,omitempty"`
+}
+
+// ListChatsData contains the data for list chats response
+type ListChatsData struct {
+	Chats []ChatInfo `json:"chats"`
+	Count int        `json:"count" example:"25"`
+	Type  string     `json:"type" example:"all"`
+}
+
+// GetChatInfoResponse represents the response for getting chat info
+type GetChatInfoResponse struct {
+	Success bool               `json:"success" example:"true"`
+	Code    int                `json:"code" example:"200"`
+	Data    ChatInfo           `json:"data"`
+	Error   *ChatErrorResponse `json:"error,omitempty"`
 }
 
 // ChatData contains the response data for chat operations
@@ -88,10 +140,10 @@ type MediaDownloadResponse struct {
 
 // ChatHistoryResponse represents the response for chat history
 type ChatHistoryResponse struct {
-	Success bool                     `json:"success" example:"true"`
-	Code    int                      `json:"code" example:"200"`
-	Data    ChatHistoryResponseData  `json:"data"`
-	Error   *ChatErrorResponse       `json:"error,omitempty"`
+	Success bool                    `json:"success" example:"true"`
+	Code    int                     `json:"code" example:"200"`
+	Data    ChatHistoryResponseData `json:"data"`
+	Error   *ChatErrorResponse      `json:"error,omitempty"`
 }
 
 // ChatHistoryResponseData contains chat history data
@@ -142,6 +194,63 @@ func NewChatErrorResponse(code int, errorCode, message, details string) *ChatRes
 			Status:    "error",
 			Timestamp: time.Now(),
 		},
+		Error: &ChatErrorResponse{
+			Code:    errorCode,
+			Message: message,
+			Details: details,
+		},
+	}
+}
+
+// ============================================================================
+// NEW CHAT FUNCTIONALITY UTILITY FUNCTIONS
+// ============================================================================
+
+// NewListChatsSuccessResponse creates a successful list chats response
+func NewListChatsSuccessResponse(chats []ChatInfo, chatType string) *ListChatsResponse {
+	return &ListChatsResponse{
+		Success: true,
+		Code:    200,
+		Data: ListChatsData{
+			Chats: chats,
+			Count: len(chats),
+			Type:  chatType,
+		},
+	}
+}
+
+// NewListChatsErrorResponse creates an error response for list chats
+func NewListChatsErrorResponse(code int, errorCode, message, details string) *ListChatsResponse {
+	return &ListChatsResponse{
+		Success: false,
+		Code:    code,
+		Data: ListChatsData{
+			Chats: []ChatInfo{},
+			Count: 0,
+		},
+		Error: &ChatErrorResponse{
+			Code:    errorCode,
+			Message: message,
+			Details: details,
+		},
+	}
+}
+
+// NewGetChatInfoSuccessResponse creates a successful get chat info response
+func NewGetChatInfoSuccessResponse(chatInfo ChatInfo) *GetChatInfoResponse {
+	return &GetChatInfoResponse{
+		Success: true,
+		Code:    200,
+		Data:    chatInfo,
+	}
+}
+
+// NewGetChatInfoErrorResponse creates an error response for get chat info
+func NewGetChatInfoErrorResponse(code int, errorCode, message, details string) *GetChatInfoResponse {
+	return &GetChatInfoResponse{
+		Success: false,
+		Code:    code,
+		Data:    ChatInfo{},
 		Error: &ChatErrorResponse{
 			Code:    errorCode,
 			Message: message,

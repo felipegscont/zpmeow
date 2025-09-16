@@ -1,6 +1,7 @@
 package wameow
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"strings"
@@ -12,9 +13,12 @@ import (
 	"zpmeow/internal/shared/types"
 
 	"go.mau.fi/whatsmeow"
+	"go.mau.fi/whatsmeow/appstate"
 	waProto "go.mau.fi/whatsmeow/binary/proto"
+	waE2E "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	waTypes "go.mau.fi/whatsmeow/types"
+	waEvents "go.mau.fi/whatsmeow/types/events"
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
@@ -52,10 +56,18 @@ type GroupInfo struct {
 	Ephemeral    bool     `json:"ephemeral"`
 }
 
-
-
-
-
+// ChatInfo represents information about a chat (group or contact)
+type ChatInfo struct {
+	JID         string    `json:"jid"`
+	Name        string    `json:"name"`
+	Type        string    `json:"type"` // "contact", "group"
+	LastMessage string    `json:"last_message,omitempty"`
+	Timestamp   time.Time `json:"timestamp,omitempty"`
+	UnreadCount int       `json:"unread_count"`
+	Pinned      bool      `json:"pinned"`
+	Muted       bool      `json:"muted"`
+	Archived    bool      `json:"archived"`
+}
 
 type WameowService interface {
 	StartClient(sessionID string) error
@@ -66,8 +78,6 @@ type WameowService interface {
 	IsClientConnected(sessionID string) bool
 	GetClientStatus(sessionID string) types.Status
 	ConnectOnStartup(ctx context.Context) error
-
-
 
 	SendTextMessage(ctx context.Context, sessionID, phone, text string) (*whatsmeow.SendResponse, error)
 	SendImageMessage(ctx context.Context, sessionID, phone string, data []byte, caption, mimeType string) (*whatsmeow.SendResponse, error)
@@ -121,9 +131,43 @@ type WameowService interface {
 	GetContacts(ctx context.Context, sessionID string) ([]ContactResult, error)
 	SetUserPresence(ctx context.Context, sessionID, state string) error
 
+	// Privacy Operations
+	GetPrivacySettings(ctx context.Context, sessionID string) (*PrivacySettingsResult, error)
+	TryFetchPrivacySettings(ctx context.Context, sessionID string, ignoreCache bool) (*PrivacySettingsResult, error)
+	SetPrivacySetting(ctx context.Context, sessionID string, settingType, settingValue string) (*PrivacySettingsResult, error)
+	GetBlocklist(ctx context.Context, sessionID string) ([]string, error)
+	UpdateBlocklist(ctx context.Context, sessionID, jidStr, action string) ([]string, error)
+
 	// Session Management Operations
 	UpdateSessionWebhook(sessionID, webhookURL string) error
 	UpdateSessionSubscriptions(sessionID string, events []string) error
+
+	// Chat Management Operations
+	SetDisappearingTimer(ctx context.Context, sessionID, chatJID string, timer time.Duration) error
+	ListChats(ctx context.Context, sessionID string, chatType string) ([]ChatInfo, error)
+	GetChatInfo(ctx context.Context, sessionID, chatJID string) (*ChatInfo, error)
+	PinChat(ctx context.Context, sessionID, chatJID string, pinned bool) error
+	MuteChat(ctx context.Context, sessionID, chatJID string, muted bool, duration time.Duration) error
+	ArchiveChat(ctx context.Context, sessionID, chatJID string, archived bool) error
+
+	// Newsletter Operations
+	CreateNewsletter(ctx context.Context, sessionID string, params *whatsmeow.CreateNewsletterParams) (*waTypes.NewsletterMetadata, error)
+	GetNewsletterInfo(ctx context.Context, sessionID, newsletterJID string) (*NewsletterInfo, error)
+	GetNewsletterInfoWithInvite(ctx context.Context, sessionID, inviteKey string) (*NewsletterInfo, error)
+	FollowNewsletter(ctx context.Context, sessionID, newsletterJID string) error
+	UnfollowNewsletter(ctx context.Context, sessionID, newsletterJID string) error
+	GetSubscribedNewsletters(ctx context.Context, sessionID string) ([]NewsletterInfo, error)
+	GetNewsletterMessages(ctx context.Context, sessionID, newsletterJID string, params *whatsmeow.GetNewsletterMessagesParams) ([]NewsletterMessage, error)
+	GetNewsletterMessageUpdates(ctx context.Context, sessionID, newsletterJID string, params *whatsmeow.GetNewsletterMessagesParams) ([]NewsletterMessage, error)
+	NewsletterMarkViewed(ctx context.Context, sessionID, newsletterJID string, serverIDs []waTypes.MessageServerID) error
+	NewsletterSendReaction(ctx context.Context, sessionID, newsletterJID string, serverID waTypes.MessageServerID, reaction string, messageID waTypes.MessageID) error
+	NewsletterToggleMute(ctx context.Context, sessionID, newsletterJID string, mute bool) error
+	NewsletterSubscribeLiveUpdates(ctx context.Context, sessionID, newsletterJID string) error
+	UploadNewsletter(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error)
+	// ✅ SendNewsletterMessage - IMPLEMENTED using SendMessage + MediaHandle approach
+	// Based on whatsmeow issues #481, #697, and #498
+	SendNewsletterMessage(ctx context.Context, sessionID, newsletterJID string, message *waE2E.Message, mediaHandle string) (*whatsmeow.SendResponse, error)
+	UploadNewsletterReader(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error)
 }
 
 // User operation result types
@@ -152,23 +196,59 @@ type AvatarResult struct {
 }
 
 type ContactResult struct {
-	JID         string `json:"jid"`
-	Name        string `json:"name,omitempty"`
-	Notify      string `json:"notify,omitempty"`
-	PushName    string `json:"push_name,omitempty"`
+	JID          string `json:"jid"`
+	Name         string `json:"name,omitempty"`
+	Notify       string `json:"notify,omitempty"`
+	PushName     string `json:"push_name,omitempty"`
 	BusinessName string `json:"business_name,omitempty"`
-	IsBlocked   bool   `json:"is_blocked"`
-	IsMuted     bool   `json:"is_muted"`
+	IsBlocked    bool   `json:"is_blocked"`
+	IsMuted      bool   `json:"is_muted"`
+}
+
+// Privacy operation result types
+type PrivacySettingsResult struct {
+	GroupAdd     string `json:"groupAdd"`     // Who can add to groups: "all", "contacts", "contact_blacklist", "none"
+	LastSeen     string `json:"lastSeen"`     // Who can see last seen: "all", "contacts", "contact_blacklist", "none"
+	Status       string `json:"status"`       // Who can see status: "all", "contacts", "contact_blacklist", "none"
+	Profile      string `json:"profile"`      // Who can see profile photo: "all", "contacts", "contact_blacklist", "none"
+	ReadReceipts string `json:"readReceipts"` // Read receipts: "all", "none"
+	CallAdd      string `json:"callAdd"`      // Who can call: "all", "known"
+	Online       string `json:"online"`       // Who can see online status: "all", "match_last_seen"
+}
+
+// Newsletter operation result types
+type NewsletterInfo struct {
+	JID         string    `json:"jid"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Picture     string    `json:"picture,omitempty"`
+	Verified    bool      `json:"verified"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	UpdatedAt   time.Time `json:"updated_at,omitempty"`
+	OwnerJID    string    `json:"owner_jid,omitempty"`
+	Subscribers int       `json:"subscribers,omitempty"`
+	Muted       bool      `json:"muted,omitempty"`
+}
+
+type NewsletterMessage struct {
+	ID        string         `json:"id"`
+	ServerID  string         `json:"server_id"`
+	Content   string         `json:"content"`
+	MediaType string         `json:"media_type,omitempty"`
+	MediaURL  string         `json:"media_url,omitempty"`
+	Timestamp time.Time      `json:"timestamp"`
+	Views     int            `json:"views,omitempty"`
+	Reactions map[string]int `json:"reactions,omitempty"`
 }
 
 // MeowService - Simplified implementation following KISS principles
 type MeowService struct {
-	clients     map[string]*WameowClient
-	sessions    session.Repository
-	logger      logging.Logger
-	container   *sqlstore.Container
-	waLogger    waLog.Logger
-	mu          sync.RWMutex
+	clients   map[string]*WameowClient
+	sessions  session.Repository
+	logger    logging.Logger
+	container *sqlstore.Container
+	waLogger  waLog.Logger
+	mu        sync.RWMutex
 }
 
 func NewMeowService(container *sqlstore.Container, waLogger waLog.Logger, sessionRepo session.Repository) WameowService {
@@ -180,7 +260,6 @@ func NewMeowService(container *sqlstore.Container, waLogger waLog.Logger, sessio
 		waLogger:  waLogger,
 	}
 }
-
 
 func (m *MeowService) StartClient(sessionID string) error {
 	m.logger.Infof("Starting client for session %s", sessionID)
@@ -517,7 +596,7 @@ func (m *MeowService) EditMessage(ctx context.Context, sessionID, phone, message
 }
 
 func (m *MeowService) DownloadMedia(ctx context.Context, sessionID, messageID string) ([]byte, string, error) {
-	return nil, "", fmt.Errorf("media download not implemented yet")
+	return nil, "", fmt.Errorf("media download functionality pending")
 }
 
 func (m *MeowService) ReactToMessage(ctx context.Context, sessionID, phone, messageID, emoji string) error {
@@ -847,10 +926,6 @@ func (m *MeowService) SetPresence(ctx context.Context, sessionID, phone, state, 
 	m.logger.Debugf("Presence %s sent for session %s", state, sessionID)
 	return nil
 }
-
-
-
-
 
 func (m *MeowService) CreateGroup(ctx context.Context, sessionID, name string, participants []string) (*GroupInfo, error) {
 	client := m.getClient(sessionID)
@@ -2094,10 +2169,1099 @@ func (m *MeowService) UpdateSessionSubscriptions(sessionID string, events []stri
 	return nil
 }
 
+// Privacy Operations Implementation
+
+func (m *MeowService) GetPrivacySettings(ctx context.Context, sessionID string) (*PrivacySettingsResult, error) {
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Get privacy settings from WhatsApp
+	settings := client.GetClient().GetPrivacySettings(ctx)
+
+	// Convert to our result format
+	result := &PrivacySettingsResult{
+		GroupAdd:     string(settings.GroupAdd),
+		LastSeen:     string(settings.LastSeen),
+		Status:       string(settings.Status),
+		Profile:      string(settings.Profile),
+		ReadReceipts: string(settings.ReadReceipts),
+		CallAdd:      string(settings.CallAdd),
+		Online:       string(settings.Online),
+	}
+
+	m.logger.Debugf("Successfully retrieved privacy settings for session %s", sessionID)
+	return result, nil
+}
+
+func (m *MeowService) TryFetchPrivacySettings(ctx context.Context, sessionID string, ignoreCache bool) (*PrivacySettingsResult, error) {
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Force fetch privacy settings from server
+	settings, err := client.GetClient().TryFetchPrivacySettings(ctx, ignoreCache)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch privacy settings from server: %w", err)
+	}
+
+	// Convert to our result format
+	result := &PrivacySettingsResult{
+		GroupAdd:     string(settings.GroupAdd),
+		LastSeen:     string(settings.LastSeen),
+		Status:       string(settings.Status),
+		Profile:      string(settings.Profile),
+		ReadReceipts: string(settings.ReadReceipts),
+		CallAdd:      string(settings.CallAdd),
+		Online:       string(settings.Online),
+	}
+
+	m.logger.Debugf("Successfully fetched privacy settings from server for session %s (ignoreCache: %v)", sessionID, ignoreCache)
+	return result, nil
+}
+
+func (m *MeowService) SetPrivacySetting(ctx context.Context, sessionID string, settingType, settingValue string) (*PrivacySettingsResult, error) {
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Convert string types to whatsmeow types
+	privacySettingType := waTypes.PrivacySettingType(settingType)
+	privacySetting := waTypes.PrivacySetting(settingValue)
+
+	m.logger.Debugf("🔧 Setting privacy: type='%s' value='%s' for session %s", settingType, settingValue, sessionID)
+	m.logger.Debugf("🔧 Converted types: privacySettingType='%s' privacySetting='%s'", string(privacySettingType), string(privacySetting))
+
+	// Set privacy setting
+	settings, err := client.GetClient().SetPrivacySetting(ctx, privacySettingType, privacySetting)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to set privacy setting %s to %s: %v", settingType, settingValue, err)
+		return nil, fmt.Errorf("failed to set privacy setting %s to %s: %w", settingType, settingValue, err)
+	}
+
+	// Convert to our result format
+	result := &PrivacySettingsResult{
+		GroupAdd:     string(settings.GroupAdd),
+		LastSeen:     string(settings.LastSeen),
+		Status:       string(settings.Status),
+		Profile:      string(settings.Profile),
+		ReadReceipts: string(settings.ReadReceipts),
+		CallAdd:      string(settings.CallAdd),
+		Online:       string(settings.Online),
+	}
+
+	m.logger.Debugf("✅ Successfully set privacy setting %s to %s for session %s", settingType, settingValue, sessionID)
+	m.logger.Debugf("📊 Updated settings: %+v", result)
+
+	return result, nil
+}
+
 // Simplified parsePhoneToJID helper
 func (m *MeowService) parsePhoneToJID(phone string) (waTypes.JID, error) {
 	return parsePhoneToJID(phone) // Use the helper function from messages.go
 }
 
+func (m *MeowService) GetBlocklist(ctx context.Context, sessionID string) ([]string, error) {
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
 
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
 
+	// Get blocklist from WhatsApp
+	blocklist, err := client.GetClient().GetBlocklist()
+	if err != nil {
+		m.logger.Errorf("❌ Failed to get blocklist for session %s: %v", sessionID, err)
+		return nil, fmt.Errorf("failed to get blocklist: %w", err)
+	}
+
+	// Convert JIDs to strings
+	jidList := make([]string, len(blocklist.JIDs))
+	for i, jid := range blocklist.JIDs {
+		jidList[i] = jid.String()
+	}
+
+	m.logger.Debugf("✅ Successfully retrieved blocklist for session %s: %d entries", sessionID, len(jidList))
+	return jidList, nil
+}
+
+func (m *MeowService) UpdateBlocklist(ctx context.Context, sessionID, jidStr, action string) ([]string, error) {
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse JID
+	jid, err := waTypes.ParseJID(jidStr)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to parse JID %s for session %s: %v", jidStr, sessionID, err)
+		return nil, fmt.Errorf("invalid JID format: %w", err)
+	}
+
+	// Validate action
+	if action != "block" && action != "unblock" {
+		return nil, fmt.Errorf("invalid action '%s', must be 'block' or 'unblock'", action)
+	}
+
+	// Convert action to the correct type
+	var blocklistAction waEvents.BlocklistChangeAction
+	switch action {
+	case "block":
+		blocklistAction = waEvents.BlocklistChangeActionBlock
+	case "unblock":
+		blocklistAction = waEvents.BlocklistChangeActionUnblock
+	default:
+		return nil, fmt.Errorf("invalid action '%s', must be 'block' or 'unblock'", action)
+	}
+
+	// Update blocklist
+	updatedBlocklist, err := client.GetClient().UpdateBlocklist(jid, blocklistAction)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to %s user %s for session %s: %v", action, jidStr, sessionID, err)
+		return nil, fmt.Errorf("failed to %s user: %w", action, err)
+	}
+
+	// Convert updated blocklist to string list
+	jidList := make([]string, len(updatedBlocklist.JIDs))
+	for i, jid := range updatedBlocklist.JIDs {
+		jidList[i] = jid.String()
+	}
+
+	m.logger.Debugf("✅ Successfully %sed user %s for session %s. New blocklist has %d entries", action, jidStr, sessionID, len(jidList))
+	return jidList, nil
+}
+
+// ============================================================================
+// CHAT MANAGEMENT OPERATIONS
+// ============================================================================
+
+// SetDisappearingTimer sets the disappearing timer for a chat
+func (m *MeowService) SetDisappearingTimer(ctx context.Context, sessionID, chatJID string, timer time.Duration) error {
+	m.logger.Debugf("🕐 Setting disappearing timer for chat %s in session %s to %v", chatJID, sessionID, timer)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse JID
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	// Set disappearing timer
+	err = client.GetClient().SetDisappearingTimer(jid, timer, time.Now())
+	if err != nil {
+		m.logger.Errorf("❌ Failed to set disappearing timer for chat %s in session %s: %v", chatJID, sessionID, err)
+		return fmt.Errorf("failed to set disappearing timer: %w", err)
+	}
+
+	timerStr := "off"
+	if timer > 0 {
+		timerStr = timer.String()
+	}
+	m.logger.Debugf("✅ Successfully set disappearing timer for chat %s in session %s to %s", chatJID, sessionID, timerStr)
+	return nil
+}
+
+// ListChats lists all chats (groups and/or contacts) for a session
+func (m *MeowService) ListChats(ctx context.Context, sessionID string, chatType string) ([]ChatInfo, error) {
+	m.logger.Debugf("📋 Listing chats for session %s (type: %s)", sessionID, chatType)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	var chats []ChatInfo
+
+	// Get groups if requested
+	if chatType == "all" || chatType == "groups" {
+		groups, err := client.GetClient().GetJoinedGroups()
+		if err != nil {
+			m.logger.Errorf("❌ Failed to get joined groups for session %s: %v", sessionID, err)
+			return nil, fmt.Errorf("failed to get joined groups: %w", err)
+		}
+
+		for _, group := range groups {
+			chatInfo := ChatInfo{
+				JID:         group.JID.String(),
+				Name:        group.Name,
+				Type:        "group",
+				UnreadCount: 0,     // Future: Implement unread count from app state
+				Pinned:      false, // Future: Get from app state
+				Muted:       false, // Future: Get from app state
+				Archived:    false, // Future: Get from app state
+			}
+			chats = append(chats, chatInfo)
+		}
+	}
+
+	// Get contacts if requested
+	if chatType == "all" || chatType == "contacts" {
+		contacts, err := m.GetContacts(ctx, sessionID)
+		if err != nil {
+			m.logger.Errorf("❌ Failed to get contacts for session %s: %v", sessionID, err)
+			// Don't return error, just log it and continue without contacts
+		} else {
+			for _, contact := range contacts {
+				chatInfo := ChatInfo{
+					JID:         contact.JID,
+					Name:        contact.Name,
+					Type:        "contact",
+					UnreadCount: 0,     // Future: Implement unread count from app state
+					Pinned:      false, // Future: Get from app state
+					Muted:       contact.IsMuted,
+					Archived:    false, // Future: Get from app state
+				}
+				chats = append(chats, chatInfo)
+			}
+		}
+	}
+
+	m.logger.Debugf("✅ Successfully listed %d chats for session %s", len(chats), sessionID)
+	return chats, nil
+}
+
+// GetChatInfo gets information about a specific chat
+func (m *MeowService) GetChatInfo(ctx context.Context, sessionID, chatJID string) (*ChatInfo, error) {
+	m.logger.Debugf("ℹ️ Getting chat info for %s in session %s", chatJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse JID to determine if it's a group or contact
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	var chatInfo ChatInfo
+
+	if jid.Server == waTypes.GroupServer {
+		// It's a group
+		groupInfo, err := client.GetClient().GetGroupInfo(jid)
+		if err != nil {
+			m.logger.Errorf("❌ Failed to get group info for %s in session %s: %v", chatJID, sessionID, err)
+			return nil, fmt.Errorf("failed to get group info: %w", err)
+		}
+
+		chatInfo = ChatInfo{
+			JID:         groupInfo.JID.String(),
+			Name:        groupInfo.Name,
+			Type:        "group",
+			UnreadCount: 0,     // Future: Implement unread count from app state
+			Pinned:      false, // Future: Get from app state
+			Muted:       false, // Future: Get from app state
+			Archived:    false, // Future: Get from app state
+		}
+	} else {
+		// It's a contact
+		userInfo, err := m.GetUserInfo(ctx, sessionID, []string{chatJID})
+		if err != nil {
+			m.logger.Errorf("❌ Failed to get user info for %s in session %s: %v", chatJID, sessionID, err)
+			return nil, fmt.Errorf("failed to get user info: %w", err)
+		}
+
+		if info, exists := userInfo[chatJID]; exists {
+			chatInfo = ChatInfo{
+				JID:         info.JID,
+				Name:        info.DisplayName,
+				Type:        "contact",
+				UnreadCount: 0,     // Future: Implement unread count from app state
+				Pinned:      false, // Future: Get from app state
+				Muted:       false, // Future: Get from app state
+				Archived:    false, // Future: Get from app state
+			}
+		} else {
+			return nil, fmt.Errorf("chat not found: %s", chatJID)
+		}
+	}
+
+	m.logger.Debugf("✅ Successfully got chat info for %s in session %s", chatJID, sessionID)
+	return &chatInfo, nil
+}
+
+// PinChat pins or unpins a chat using App State
+func (m *MeowService) PinChat(ctx context.Context, sessionID, chatJID string, pinned bool) error {
+	m.logger.Debugf("📌 %s chat %s in session %s", map[bool]string{true: "Pinning", false: "Unpinning"}[pinned], chatJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse JID
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	// Build pin patch
+	patch := appstate.BuildPin(jid, pinned)
+
+	// Send app state patch
+	err = client.GetClient().SendAppState(ctx, patch)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to %s chat %s in session %s: %v", map[bool]string{true: "pin", false: "unpin"}[pinned], chatJID, sessionID, err)
+		return fmt.Errorf("failed to %s chat: %w", map[bool]string{true: "pin", false: "unpin"}[pinned], err)
+	}
+
+	m.logger.Debugf("✅ Successfully %s chat %s in session %s", map[bool]string{true: "pinned", false: "unpinned"}[pinned], chatJID, sessionID)
+	return nil
+}
+
+// MuteChat mutes or unmutes a chat using App State
+func (m *MeowService) MuteChat(ctx context.Context, sessionID, chatJID string, muted bool, duration time.Duration) error {
+	m.logger.Debugf("🔇 %s chat %s in session %s for %v", map[bool]string{true: "Muting", false: "Unmuting"}[muted], chatJID, sessionID, duration)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse JID
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	// Build mute patch
+	patch := appstate.BuildMute(jid, muted, duration)
+
+	// Send app state patch
+	err = client.GetClient().SendAppState(ctx, patch)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to %s chat %s in session %s: %v", map[bool]string{true: "mute", false: "unmute"}[muted], chatJID, sessionID, err)
+		return fmt.Errorf("failed to %s chat: %w", map[bool]string{true: "mute", false: "unmute"}[muted], err)
+	}
+
+	durationStr := "permanently"
+	if duration > 0 {
+		durationStr = "for " + duration.String()
+	}
+	m.logger.Debugf("✅ Successfully %s chat %s in session %s %s", map[bool]string{true: "muted", false: "unmuted"}[muted], chatJID, sessionID, durationStr)
+	return nil
+}
+
+// ArchiveChat archives or unarchives a chat using App State
+func (m *MeowService) ArchiveChat(ctx context.Context, sessionID, chatJID string, archived bool) error {
+	m.logger.Debugf("📦 %s chat %s in session %s", map[bool]string{true: "Archiving", false: "Unarchiving"}[archived], chatJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse JID
+	jid, err := waTypes.ParseJID(chatJID)
+	if err != nil {
+		return fmt.Errorf("invalid chat JID: %w", err)
+	}
+
+	// Build archive patch
+	// Note: BuildArchive automatically unpins the chat when archiving
+	patch := appstate.BuildArchive(jid, archived, time.Time{}, nil)
+
+	// Send app state patch
+	err = client.GetClient().SendAppState(ctx, patch)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to %s chat %s in session %s: %v", map[bool]string{true: "archive", false: "unarchive"}[archived], chatJID, sessionID, err)
+		return fmt.Errorf("failed to %s chat: %w", map[bool]string{true: "archive", false: "unarchive"}[archived], err)
+	}
+
+	m.logger.Debugf("✅ Successfully %s chat %s in session %s", map[bool]string{true: "archived", false: "unarchived"}[archived], chatJID, sessionID)
+	return nil
+}
+
+// ============================================================================
+// NEWSLETTER OPERATIONS
+// ============================================================================
+
+// CreateNewsletter creates a new newsletter
+func (m *MeowService) CreateNewsletter(ctx context.Context, sessionID string, params *whatsmeow.CreateNewsletterParams) (*waTypes.NewsletterMetadata, error) {
+	m.logger.Debugf("📰 Creating newsletter '%s' in session %s", params.Name, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Validate parameters
+	if params.Name == "" {
+		return nil, fmt.Errorf("newsletter name is required")
+	}
+
+	// Create newsletter using whatsmeow
+	resp, err := client.GetClient().CreateNewsletter(*params)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to create newsletter '%s' in session %s: %v", params.Name, sessionID, err)
+		return nil, fmt.Errorf("failed to create newsletter: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully created newsletter '%s' with JID %s in session %s", params.Name, resp.ID, sessionID)
+	return resp, nil
+}
+
+// UploadNewsletterReader uploads media for newsletter using a reader
+func (m *MeowService) UploadNewsletterReader(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
+	m.logger.Debugf("📰 Uploading newsletter media (reader) for session %s", sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Convert []byte to bytes.Reader for UploadNewsletterReader
+	reader := bytes.NewReader(data)
+
+	// Upload media using whatsmeow UploadNewsletterReader
+	resp, err := client.GetClient().UploadNewsletterReader(ctx, reader, mediaType)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to upload newsletter media (reader) for session %s: %v", sessionID, err)
+		return nil, fmt.Errorf("failed to upload newsletter media: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully uploaded newsletter media (reader) for session %s", sessionID)
+	return &resp, nil
+}
+
+// GetNewsletterInfo gets information about a newsletter
+func (m *MeowService) GetNewsletterInfo(ctx context.Context, sessionID, newsletterJID string) (*NewsletterInfo, error) {
+	m.logger.Debugf("📰 Getting newsletter info for %s in session %s", newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Get newsletter info using whatsmeow
+	info, err := client.GetClient().GetNewsletterInfo(jid)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to get newsletter info for %s in session %s: %v", newsletterJID, sessionID, err)
+		return nil, fmt.Errorf("failed to get newsletter info: %w", err)
+	}
+
+	// Convert to our NewsletterInfo type
+	result := &NewsletterInfo{
+		JID:         info.ID.String(),
+		Name:        info.ThreadMeta.Name.Text,
+		Description: info.ThreadMeta.Description.Text,
+		Picture:     "", // Picture extraction not available in current whatsmeow version
+		Verified:    info.ThreadMeta.VerificationState == waTypes.NewsletterVerificationStateVerified,
+		CreatedAt:   time.Now(), // Using current time - jsontime conversion complex
+		UpdatedAt:   time.Now(), // Using current time - jsontime conversion complex
+		OwnerJID:    "",         // Not available in NewsletterMetadata
+		Subscribers: info.ThreadMeta.SubscriberCount,
+		Muted:       info.ViewerMeta != nil && info.ViewerMeta.Mute == waTypes.NewsletterMuteOn,
+	}
+
+	m.logger.Debugf("✅ Successfully got newsletter info for %s in session %s", newsletterJID, sessionID)
+	return result, nil
+}
+
+// GetNewsletterInfoWithInvite gets newsletter information using an invite key
+func (m *MeowService) GetNewsletterInfoWithInvite(ctx context.Context, sessionID, inviteKey string) (*NewsletterInfo, error) {
+	m.logger.Debugf("📰 Getting newsletter info with invite key in session %s", sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Validate invite key
+	if inviteKey == "" {
+		return nil, fmt.Errorf("invite key is required")
+	}
+
+	// Get newsletter info using whatsmeow
+	info, err := client.GetClient().GetNewsletterInfoWithInvite(inviteKey)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to get newsletter info with invite in session %s: %v", sessionID, err)
+		return nil, fmt.Errorf("failed to get newsletter info with invite: %w", err)
+	}
+
+	// Convert to our NewsletterInfo type
+	result := &NewsletterInfo{
+		JID:         info.ID.String(),
+		Name:        info.ThreadMeta.Name.Text,
+		Description: info.ThreadMeta.Description.Text,
+		Picture:     "", // Picture extraction not available in current whatsmeow version
+		Verified:    info.ThreadMeta.VerificationState == waTypes.NewsletterVerificationStateVerified,
+		CreatedAt:   time.Now(), // Using current time - jsontime conversion complex
+		UpdatedAt:   time.Now(), // Using current time - jsontime conversion complex
+		OwnerJID:    "",         // Not available in NewsletterMetadata
+		Subscribers: info.ThreadMeta.SubscriberCount,
+		Muted:       info.ViewerMeta != nil && info.ViewerMeta.Mute == waTypes.NewsletterMuteOn,
+	}
+
+	m.logger.Debugf("✅ Successfully got newsletter info with invite in session %s", sessionID)
+	return result, nil
+}
+
+// FollowNewsletter follows a newsletter
+func (m *MeowService) FollowNewsletter(ctx context.Context, sessionID, newsletterJID string) error {
+	m.logger.Debugf("📰 Following newsletter %s in session %s", newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Follow newsletter using whatsmeow
+	err = client.GetClient().FollowNewsletter(jid)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to follow newsletter %s in session %s: %v", newsletterJID, sessionID, err)
+		return fmt.Errorf("failed to follow newsletter: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully followed newsletter %s in session %s", newsletterJID, sessionID)
+	return nil
+}
+
+// UnfollowNewsletter unfollows a newsletter
+func (m *MeowService) UnfollowNewsletter(ctx context.Context, sessionID, newsletterJID string) error {
+	m.logger.Debugf("📰 Unfollowing newsletter %s in session %s", newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Unfollow newsletter using whatsmeow
+	err = client.GetClient().UnfollowNewsletter(jid)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to unfollow newsletter %s in session %s: %v", newsletterJID, sessionID, err)
+		return fmt.Errorf("failed to unfollow newsletter: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully unfollowed newsletter %s in session %s", newsletterJID, sessionID)
+	return nil
+}
+
+// GetSubscribedNewsletters gets all subscribed newsletters
+func (m *MeowService) GetSubscribedNewsletters(ctx context.Context, sessionID string) ([]NewsletterInfo, error) {
+	m.logger.Debugf("📰 Getting subscribed newsletters in session %s", sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Get subscribed newsletters using whatsmeow
+	newsletters, err := client.GetClient().GetSubscribedNewsletters()
+	if err != nil {
+		m.logger.Errorf("❌ Failed to get subscribed newsletters in session %s: %v", sessionID, err)
+		return nil, fmt.Errorf("failed to get subscribed newsletters: %w", err)
+	}
+
+	// Convert to our NewsletterInfo type
+	result := make([]NewsletterInfo, len(newsletters))
+	for i, newsletter := range newsletters {
+		result[i] = NewsletterInfo{
+			JID:         newsletter.ID.String(),
+			Name:        newsletter.ThreadMeta.Name.Text,
+			Description: newsletter.ThreadMeta.Description.Text,
+			Picture:     "", // Picture extraction not available in current whatsmeow version
+			Verified:    newsletter.ThreadMeta.VerificationState == waTypes.NewsletterVerificationStateVerified,
+			CreatedAt:   time.Now(), // Using current time - jsontime conversion complex
+			UpdatedAt:   time.Now(), // Using current time - jsontime conversion complex
+			OwnerJID:    "",         // Not available in NewsletterMetadata
+			Subscribers: newsletter.ThreadMeta.SubscriberCount,
+			Muted:       newsletter.ViewerMeta != nil && newsletter.ViewerMeta.Mute == waTypes.NewsletterMuteOn,
+		}
+	}
+
+	m.logger.Debugf("✅ Successfully got %d subscribed newsletters in session %s", len(result), sessionID)
+	return result, nil
+}
+
+// GetNewsletterMessages gets messages from a newsletter
+func (m *MeowService) GetNewsletterMessages(ctx context.Context, sessionID, newsletterJID string, params *whatsmeow.GetNewsletterMessagesParams) ([]NewsletterMessage, error) {
+	m.logger.Debugf("📰 Getting newsletter messages for %s in session %s", newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Get newsletter messages using whatsmeow
+	messages, err := client.GetClient().GetNewsletterMessages(jid, params)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to get newsletter messages for %s in session %s: %v", newsletterJID, sessionID, err)
+		return nil, fmt.Errorf("failed to get newsletter messages: %w", err)
+	}
+
+	// Convert to our NewsletterMessage type
+	result := make([]NewsletterMessage, len(messages))
+	for i, msg := range messages {
+		result[i] = NewsletterMessage{
+			ID:        string(msg.MessageID),
+			ServerID:  fmt.Sprintf("%d", msg.MessageServerID),
+			Content:   extractMessageContent(msg),
+			MediaType: extractMediaType(msg),
+			MediaURL:  extractMediaURL(msg),
+			Timestamp: msg.Timestamp,
+			Views:     msg.ViewsCount,
+			Reactions: msg.ReactionCounts,
+		}
+	}
+
+	m.logger.Debugf("✅ Successfully got %d newsletter messages for %s in session %s", len(result), newsletterJID, sessionID)
+	return result, nil
+}
+
+// GetNewsletterMessageUpdates gets message updates from a newsletter
+func (m *MeowService) GetNewsletterMessageUpdates(ctx context.Context, sessionID, newsletterJID string, params *whatsmeow.GetNewsletterMessagesParams) ([]NewsletterMessage, error) {
+	m.logger.Debugf("📰 Getting newsletter message updates for %s in session %s", newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Get newsletter message updates using whatsmeow (using same method as GetNewsletterMessages)
+	updates, err := client.GetClient().GetNewsletterMessages(jid, params)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to get newsletter message updates for %s in session %s: %v", newsletterJID, sessionID, err)
+		return nil, fmt.Errorf("failed to get newsletter message updates: %w", err)
+	}
+
+	// Convert to our NewsletterMessage type
+	result := make([]NewsletterMessage, len(updates))
+	for i, update := range updates {
+		result[i] = NewsletterMessage{
+			ID:        string(update.MessageID),
+			ServerID:  fmt.Sprintf("%d", update.MessageServerID),
+			Content:   extractMessageContent(update),
+			MediaType: extractMediaType(update),
+			MediaURL:  extractMediaURL(update),
+			Timestamp: update.Timestamp,
+			Views:     update.ViewsCount,
+			Reactions: update.ReactionCounts,
+		}
+	}
+
+	m.logger.Debugf("✅ Successfully got %d newsletter message updates for %s in session %s", len(result), newsletterJID, sessionID)
+	return result, nil
+}
+
+// ============================================================================
+// NEWSLETTER MESSAGE HELPER FUNCTIONS
+// ============================================================================
+
+// extractMessageContent extracts text content from a newsletter message
+func extractMessageContent(msg *waTypes.NewsletterMessage) string {
+	if msg.Message == nil {
+		return ""
+	}
+
+	// Try to extract text from various message types
+	if msg.Message.Conversation != nil {
+		return *msg.Message.Conversation
+	}
+
+	if msg.Message.ExtendedTextMessage != nil && msg.Message.ExtendedTextMessage.Text != nil {
+		return *msg.Message.ExtendedTextMessage.Text
+	}
+
+	if msg.Message.ImageMessage != nil && msg.Message.ImageMessage.Caption != nil {
+		return *msg.Message.ImageMessage.Caption
+	}
+
+	if msg.Message.VideoMessage != nil && msg.Message.VideoMessage.Caption != nil {
+		return *msg.Message.VideoMessage.Caption
+	}
+
+	if msg.Message.DocumentMessage != nil && msg.Message.DocumentMessage.Caption != nil {
+		return *msg.Message.DocumentMessage.Caption
+	}
+
+	return ""
+}
+
+// extractMediaType extracts media type from a newsletter message
+func extractMediaType(msg *waTypes.NewsletterMessage) string {
+	if msg.Message == nil {
+		return ""
+	}
+
+	if msg.Message.ImageMessage != nil {
+		return "image"
+	}
+
+	if msg.Message.VideoMessage != nil {
+		return "video"
+	}
+
+	if msg.Message.AudioMessage != nil {
+		return "audio"
+	}
+
+	if msg.Message.DocumentMessage != nil {
+		return "document"
+	}
+
+	if msg.Message.StickerMessage != nil {
+		return "sticker"
+	}
+
+	return "text"
+}
+
+// extractMediaURL extracts media URL from a newsletter message
+func extractMediaURL(msg *waTypes.NewsletterMessage) string {
+	if msg.Message == nil {
+		return ""
+	}
+
+	if msg.Message.ImageMessage != nil && msg.Message.ImageMessage.URL != nil {
+		return *msg.Message.ImageMessage.URL
+	}
+
+	if msg.Message.VideoMessage != nil && msg.Message.VideoMessage.URL != nil {
+		return *msg.Message.VideoMessage.URL
+	}
+
+	if msg.Message.AudioMessage != nil && msg.Message.AudioMessage.URL != nil {
+		return *msg.Message.AudioMessage.URL
+	}
+
+	if msg.Message.DocumentMessage != nil && msg.Message.DocumentMessage.URL != nil {
+		return *msg.Message.DocumentMessage.URL
+	}
+
+	return ""
+}
+
+// extractReactions is no longer needed as reactions are directly available in NewsletterMessage.ReactionCounts
+
+// ============================================================================
+// NEWSLETTER INTERACTION OPERATIONS
+// ============================================================================
+
+// NewsletterMarkViewed marks newsletter messages as viewed
+func (m *MeowService) NewsletterMarkViewed(ctx context.Context, sessionID, newsletterJID string, serverIDs []waTypes.MessageServerID) error {
+	m.logger.Debugf("📰 Marking %d newsletter messages as viewed for %s in session %s", len(serverIDs), newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Mark messages as viewed using whatsmeow
+	err = client.GetClient().NewsletterMarkViewed(jid, serverIDs)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to mark newsletter messages as viewed for %s in session %s: %v", newsletterJID, sessionID, err)
+		return fmt.Errorf("failed to mark newsletter messages as viewed: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully marked %d newsletter messages as viewed for %s in session %s", len(serverIDs), newsletterJID, sessionID)
+	return nil
+}
+
+// NewsletterSendReaction sends a reaction to a newsletter message
+func (m *MeowService) NewsletterSendReaction(ctx context.Context, sessionID, newsletterJID string, serverID waTypes.MessageServerID, reaction string, messageID waTypes.MessageID) error {
+	m.logger.Debugf("📰 Sending reaction '%s' to newsletter message %s in %s for session %s", reaction, serverID, newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Validate reaction
+	if reaction == "" {
+		return fmt.Errorf("reaction cannot be empty")
+	}
+
+	// Send reaction using whatsmeow
+	err = client.GetClient().NewsletterSendReaction(jid, serverID, reaction, messageID)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to send reaction to newsletter message %s in %s for session %s: %v", serverID, newsletterJID, sessionID, err)
+		return fmt.Errorf("failed to send newsletter reaction: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully sent reaction '%s' to newsletter message %s in %s for session %s", reaction, serverID, newsletterJID, sessionID)
+	return nil
+}
+
+// NewsletterToggleMute toggles mute status for a newsletter
+func (m *MeowService) NewsletterToggleMute(ctx context.Context, sessionID, newsletterJID string, mute bool) error {
+	m.logger.Debugf("📰 %s newsletter %s in session %s", map[bool]string{true: "Muting", false: "Unmuting"}[mute], newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Toggle mute using whatsmeow
+	err = client.GetClient().NewsletterToggleMute(jid, mute)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to %s newsletter %s in session %s: %v", map[bool]string{true: "mute", false: "unmute"}[mute], newsletterJID, sessionID, err)
+		return fmt.Errorf("failed to %s newsletter: %w", map[bool]string{true: "mute", false: "unmute"}[mute], err)
+	}
+
+	m.logger.Debugf("✅ Successfully %s newsletter %s in session %s", map[bool]string{true: "muted", false: "unmuted"}[mute], newsletterJID, sessionID)
+	return nil
+}
+
+// NewsletterSubscribeLiveUpdates subscribes to live updates for a newsletter
+func (m *MeowService) NewsletterSubscribeLiveUpdates(ctx context.Context, sessionID, newsletterJID string) error {
+	m.logger.Debugf("📰 Subscribing to live updates for newsletter %s in session %s", newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Subscribe to live updates using whatsmeow
+	_, err = client.GetClient().NewsletterSubscribeLiveUpdates(ctx, jid)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to subscribe to live updates for newsletter %s in session %s: %v", newsletterJID, sessionID, err)
+		return fmt.Errorf("failed to subscribe to newsletter live updates: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully subscribed to live updates for newsletter %s in session %s", newsletterJID, sessionID)
+	return nil
+}
+
+// ============================================================================
+// NEWSLETTER UPLOAD OPERATIONS
+// ============================================================================
+
+// UploadNewsletter uploads media for newsletter
+func (m *MeowService) UploadNewsletter(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
+	m.logger.Debugf("📰 Uploading newsletter media (%d bytes, type: %s) in session %s", len(data), mediaType, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Validate data
+	if len(data) == 0 {
+		return nil, fmt.Errorf("media data cannot be empty")
+	}
+
+	// Upload media using whatsmeow
+	resp, err := client.GetClient().UploadNewsletter(ctx, data, mediaType)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to upload newsletter media in session %s: %v", sessionID, err)
+		return nil, fmt.Errorf("failed to upload newsletter media: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully uploaded newsletter media (%d bytes) in session %s", len(data), sessionID)
+	return &resp, nil
+}
+
+// SendNewsletterMessage sends a message to a newsletter using SendMessage + MediaHandle
+// Based on research from whatsmeow issues #481, #697, and #498
+func (m *MeowService) SendNewsletterMessage(ctx context.Context, sessionID, newsletterJID string, message *waE2E.Message, mediaHandle string) (*whatsmeow.SendResponse, error) {
+	m.logger.Debugf("📰 Sending message to newsletter %s in session %s", newsletterJID, sessionID)
+
+	client := m.getClient(sessionID)
+	if client == nil {
+		return nil, fmt.Errorf("client not found for session %s", sessionID)
+	}
+
+	if !client.IsConnected() {
+		return nil, fmt.Errorf("client not connected for session %s", sessionID)
+	}
+
+	// Parse newsletter JID
+	jid, err := waTypes.ParseJID(newsletterJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
+	}
+
+	// Validate that we have a message
+	if message == nil {
+		return nil, fmt.Errorf("message cannot be nil")
+	}
+
+	// For newsletters, MediaHandle is required for media messages
+	// Based on whatsmeow issue #697 and discussion #498
+	extra := whatsmeow.SendRequestExtra{}
+
+	// Check if this is a media message and require MediaHandle
+	isMediaMessage := message.ImageMessage != nil || message.VideoMessage != nil ||
+		message.AudioMessage != nil || message.DocumentMessage != nil ||
+		message.StickerMessage != nil
+
+	if isMediaMessage {
+		if mediaHandle == "" {
+			return nil, fmt.Errorf("MediaHandle is required for media messages in newsletters")
+		}
+		extra.MediaHandle = mediaHandle
+		m.logger.Debugf("📰 Using MediaHandle for newsletter media message: %s", mediaHandle)
+	}
+
+	// Send message using whatsmeow with MediaHandle for newsletters
+	resp, err := client.GetClient().SendMessage(ctx, jid, message, extra)
+	if err != nil {
+		m.logger.Errorf("❌ Failed to send message to newsletter %s in session %s: %v", newsletterJID, sessionID, err)
+		return nil, fmt.Errorf("failed to send newsletter message: %w", err)
+	}
+
+	m.logger.Debugf("✅ Successfully sent message to newsletter %s in session %s", newsletterJID, sessionID)
+	return &resp, nil
+}

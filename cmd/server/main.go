@@ -13,12 +13,12 @@
 //	@host		localhost:8080
 //	@BasePath	/
 
-// @schemes	http https
+//	@schemes	http https
 
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name Authorization
-// @description API Key authentication. Simply provide your API key directly: "YOUR_API_KEY". The system automatically detects if it's a Global API Key (can access all sessions and session management) or a Session-specific API Key (can only access the specific session it belongs to).
+// @securityDefinitions.apikey	ApiKeyAuth
+// @in							header
+// @name						Authorization
+// @description				API Key authentication. Simply provide your API key directly: "YOUR_API_KEY". The system automatically detects if it's a Global API Key (can access all sessions and session management) or a Session-specific API Key (can only access the specific session it belongs to).
 package main
 
 import (
@@ -104,14 +104,16 @@ func main() {
 	messageHandler := handlers.NewMessageHandler(appSessionService, meowServiceImpl)
 	chatHandler := handlers.NewChatHandler(appSessionService, meowServiceImpl)
 	groupHandler := handlers.NewGroupHandler(appSessionService, meowServiceImpl)
+	communityHandler := handlers.NewCommunityHandler(appSessionService, meowServiceImpl)
 	webhookHandler := handlers.NewWebhookHandler(nil)
-	userHandler := handlers.NewUserHandler(appSessionService, meowServiceImpl)
-	newsletterHandler := handlers.NewNewsletterHandler(nil, meowServiceImpl)
+	contactHandler := handlers.NewContactHandler(appSessionService, meowServiceImpl)
+	newsletterHandler := handlers.NewNewsletterHandler(appSessionService, meowServiceImpl)
+	privacyHandler := handlers.NewPrivacyHandler(appSessionService, meowServiceImpl)
 
 	gin.SetMode(cfg.GinMode)
 
 	ginRouter := gin.New()
-	routes.SetupRoutes(ginRouter, sessionHandler, healthHandler, messageHandler, chatHandler, groupHandler, webhookHandler, userHandler, newsletterHandler, authMiddleware)
+	routes.SetupRoutes(ginRouter, sessionHandler, healthHandler, messageHandler, chatHandler, groupHandler, communityHandler, webhookHandler, contactHandler, newsletterHandler, privacyHandler, authMiddleware)
 
 	addr := fmt.Sprintf(":%s", cfg.ServerPort)
 	log.Infof("Server listening on %s", addr)

@@ -171,5 +171,3 @@ func ValidateSessionStatus(currentStatus, newStatus Status) error {
 
 	return ErrInvalidSessionStatus
 }
-
-

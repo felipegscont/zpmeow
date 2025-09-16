@@ -3,21 +3,21 @@ package handlers
 import (
 	"net/http"
 
+	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infrastructure/wameow"
 	"zpmeow/internal/interfaces/dto"
-	"zpmeow/internal/shared/common"
 
 	"github.com/gin-gonic/gin"
 )
 
 // MediaHandler handles media-related HTTP requests
 type MediaHandler struct {
-	sessionService common.SessionService
+	sessionService session.ApplicationSessionService
 	wameowService  *wameow.MeowService
 }
 
 // NewMediaHandler creates a new media handler
-func NewMediaHandler(sessionService common.SessionService, wameowService *wameow.MeowService) *MediaHandler {
+func NewMediaHandler(sessionService session.ApplicationSessionService, wameowService *wameow.MeowService) *MediaHandler {
 	return &MediaHandler{
 		sessionService: sessionService,
 		wameowService:  wameowService,
@@ -25,6 +25,19 @@ func NewMediaHandler(sessionService common.SessionService, wameowService *wameow
 }
 
 // UploadMedia handles uploading media
+//
+//	@Summary		Upload media file
+//	@Description	Upload a media file to the server
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string					true	"Session ID"
+//	@Param			request		body		dto.UploadMediaRequest	true	"Upload media request"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/upload [post]
 func (h *MediaHandler) UploadMedia(c *gin.Context) {
 	var req dto.UploadMediaRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -42,6 +55,20 @@ func (h *MediaHandler) UploadMedia(c *gin.Context) {
 }
 
 // GetMedia handles getting media information
+//
+//	@Summary		Get media information
+//	@Description	Get information about a specific media file
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string				true	"Session ID"
+//	@Param			request		body		dto.GetMediaRequest	true	"Get media request"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		404			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/info [post]
 func (h *MediaHandler) GetMedia(c *gin.Context) {
 	var req dto.GetMediaRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -59,6 +86,20 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 }
 
 // DownloadMedia handles downloading media
+//
+//	@Summary		Download media file
+//	@Description	Download a media file from the server
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			mediaId		path		string	true	"Media ID"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		404			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/{mediaId}/download [get]
 func (h *MediaHandler) DownloadMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -67,6 +108,20 @@ func (h *MediaHandler) DownloadMedia(c *gin.Context) {
 }
 
 // DeleteMedia handles deleting media
+//
+//	@Summary		Delete media file
+//	@Description	Delete a media file from the server
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			mediaId		path		string	true	"Media ID"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		404			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/{mediaId} [delete]
 func (h *MediaHandler) DeleteMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -75,6 +130,20 @@ func (h *MediaHandler) DeleteMedia(c *gin.Context) {
 }
 
 // ListMedia handles listing media
+//
+//	@Summary		List media files
+//	@Description	Get a list of all media files for a session
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			limit		query		int		false	"Limit number of results (default: 50)"
+//	@Param			offset		query		int		false	"Offset for pagination (default: 0)"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/list [get]
 func (h *MediaHandler) ListMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -83,6 +152,20 @@ func (h *MediaHandler) ListMedia(c *gin.Context) {
 }
 
 // GetMediaProgress handles getting media upload progress
+//
+//	@Summary		Get media upload progress
+//	@Description	Get the upload progress of a media file
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			mediaId		path		string	true	"Media ID"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		404			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/{mediaId}/progress [get]
 func (h *MediaHandler) GetMediaProgress(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -91,6 +174,21 @@ func (h *MediaHandler) GetMediaProgress(c *gin.Context) {
 }
 
 // ConvertMedia handles converting media formats
+//
+//	@Summary		Convert media format
+//	@Description	Convert a media file to a different format
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			mediaId		path		string	true	"Media ID"
+//	@Param			format		query		string	true	"Target format (e.g., jpg, png, mp4, mp3)"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		404			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/{mediaId}/convert [post]
 func (h *MediaHandler) ConvertMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -99,6 +197,21 @@ func (h *MediaHandler) ConvertMedia(c *gin.Context) {
 }
 
 // CompressMedia handles compressing media
+//
+//	@Summary		Compress media file
+//	@Description	Compress a media file to reduce its size
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			mediaId		path		string	true	"Media ID"
+//	@Param			quality		query		int		false	"Compression quality (1-100, default: 80)"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		404			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/{mediaId}/compress [post]
 func (h *MediaHandler) CompressMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -107,6 +220,20 @@ func (h *MediaHandler) CompressMedia(c *gin.Context) {
 }
 
 // GetMediaMetadata handles getting media metadata
+//
+//	@Summary		Get media metadata
+//	@Description	Get detailed metadata information about a media file
+//	@Tags			Media
+//	@Accept			json
+//	@Produce		json
+//	@Param			sessionId	path		string	true	"Session ID"
+//	@Param			mediaId		path		string	true	"Media ID"
+//	@Success		200			{object}	dto.MediaResponse
+//	@Failure		400			{object}	dto.MediaResponse
+//	@Failure		404			{object}	dto.MediaResponse
+//	@Failure		500			{object}	dto.MediaResponse
+//	@Security		ApiKeyAuth
+//	@Router			/session/{sessionId}/media/{mediaId}/metadata [get]
 func (h *MediaHandler) GetMediaMetadata(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

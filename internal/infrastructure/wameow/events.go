@@ -2,6 +2,7 @@ package wameow
 
 import (
 	"fmt"
+	"time"
 
 	"zpmeow/internal/domain/session"
 	"zpmeow/internal/infrastructure/logging"
@@ -36,6 +37,10 @@ var eventHandlers = map[string]func(*EventProcessor, interface{}){
 	// Presence events
 	"*events.Presence":     (*EventProcessor).handlePresence,
 	"*events.ChatPresence": (*EventProcessor).handleChatPresence,
+
+	// Privacy events
+	"*events.PrivacySettings": (*EventProcessor).handlePrivacySettings,
+	"*events.Blocklist":       (*EventProcessor).handleBlocklist,
 }
 
 // NewEventProcessor creates a new simplified event processor
@@ -210,6 +215,94 @@ func (ep *EventProcessor) handleChatPresence(evt interface{}) {
 		"chat":      chatPresence.MessageSource.Chat.String(),
 		"presence":  string(chatPresence.State),
 	}
+	sendWebhook(ep.webhookURL, data)
+}
+
+func (ep *EventProcessor) handlePrivacySettings(evt interface{}) {
+	privacySettings := evt.(*events.PrivacySettings)
+	ep.logger.Infof("🔒 Privacy settings changed for session %s", ep.sessionID)
+
+	// Log detailed changes
+	changes := []string{}
+	if privacySettings.GroupAddChanged {
+		changes = append(changes, fmt.Sprintf("GroupAdd: %s", string(privacySettings.NewSettings.GroupAdd)))
+	}
+	if privacySettings.LastSeenChanged {
+		changes = append(changes, fmt.Sprintf("LastSeen: %s", string(privacySettings.NewSettings.LastSeen)))
+	}
+	if privacySettings.StatusChanged {
+		changes = append(changes, fmt.Sprintf("Status: %s", string(privacySettings.NewSettings.Status)))
+	}
+	if privacySettings.ProfileChanged {
+		changes = append(changes, fmt.Sprintf("Profile: %s", string(privacySettings.NewSettings.Profile)))
+	}
+	if privacySettings.ReadReceiptsChanged {
+		changes = append(changes, fmt.Sprintf("ReadReceipts: %s", string(privacySettings.NewSettings.ReadReceipts)))
+	}
+	if privacySettings.OnlineChanged {
+		changes = append(changes, fmt.Sprintf("Online: %s", string(privacySettings.NewSettings.Online)))
+	}
+	if privacySettings.CallAddChanged {
+		changes = append(changes, fmt.Sprintf("CallAdd: %s", string(privacySettings.NewSettings.CallAdd)))
+	}
+
+	ep.logger.Infof("🔒 Privacy changes: %v", changes)
+
+	// Prepare webhook data
+	data := map[string]interface{}{
+		"sessionId": ep.sessionID,
+		"event":     "privacy_settings_changed",
+		"timestamp": time.Now().Unix(),
+		"changes":   changes,
+		"newSettings": map[string]interface{}{
+			"groupAdd":     string(privacySettings.NewSettings.GroupAdd),
+			"lastSeen":     string(privacySettings.NewSettings.LastSeen),
+			"status":       string(privacySettings.NewSettings.Status),
+			"profile":      string(privacySettings.NewSettings.Profile),
+			"readReceipts": string(privacySettings.NewSettings.ReadReceipts),
+			"online":       string(privacySettings.NewSettings.Online),
+			"callAdd":      string(privacySettings.NewSettings.CallAdd),
+		},
+		"changedFields": map[string]bool{
+			"groupAdd":     privacySettings.GroupAddChanged,
+			"lastSeen":     privacySettings.LastSeenChanged,
+			"status":       privacySettings.StatusChanged,
+			"profile":      privacySettings.ProfileChanged,
+			"readReceipts": privacySettings.ReadReceiptsChanged,
+			"online":       privacySettings.OnlineChanged,
+			"callAdd":      privacySettings.CallAddChanged,
+		},
+	}
+
+	sendWebhook(ep.webhookURL, data)
+}
+
+func (ep *EventProcessor) handleBlocklist(evt interface{}) {
+	blocklist := evt.(*events.Blocklist)
+	ep.logger.Infof("🚫 Blocklist changed for session %s", ep.sessionID)
+
+	// Log detailed changes
+	changes := []map[string]interface{}{}
+	for _, change := range blocklist.Changes {
+		changeData := map[string]interface{}{
+			"jid":    change.JID.String(),
+			"action": string(change.Action),
+		}
+		changes = append(changes, changeData)
+		ep.logger.Infof("🚫 Blocklist change: %s %s", string(change.Action), change.JID.String())
+	}
+
+	// Prepare webhook data
+	data := map[string]interface{}{
+		"sessionId": ep.sessionID,
+		"event":     "blocklist_changed",
+		"timestamp": time.Now().Unix(),
+		"action":    string(blocklist.Action),
+		"dhash":     blocklist.DHash,
+		"prevDhash": blocklist.PrevDHash,
+		"changes":   changes,
+	}
+
 	sendWebhook(ep.webhookURL, data)
 }
 

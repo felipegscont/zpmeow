@@ -44,21 +44,21 @@ type SendContactRequest struct {
 // SendImageRequest represents an image message request
 type SendImageRequest struct {
 	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
-	Image   string `json:"image" binding:"required" example:"data:image/jpeg;base64,/9j/4AAQ..."`   // Base64 data URL or HTTP URL
+	Image   string `json:"image" binding:"required" example:"data:image/jpeg;base64,/9j/4AAQ..."` // Base64 data URL or HTTP URL
 	Caption string `json:"caption,omitempty" example:"Check out this image!"`
 }
 
 // SendAudioRequest represents an audio message request
 type SendAudioRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	Audio string `json:"audio" binding:"required" example:"data:audio/mp3;base64,SUQzBAA..."`   // Base64 data URL or HTTP URL
-	PTT   bool   `json:"ptt,omitempty" example:"true"`             // Push to talk
+	Audio string `json:"audio" binding:"required" example:"data:audio/mp3;base64,SUQzBAA..."` // Base64 data URL or HTTP URL
+	PTT   bool   `json:"ptt,omitempty" example:"true"`                                        // Push to talk
 }
 
 // SendVideoRequest represents a video message request
 type SendVideoRequest struct {
 	Phone       string `json:"phone" binding:"required" example:"5511999999999"`
-	Video       string `json:"video" binding:"required" example:"data:video/mp4;base64,AAAAIGZ0eXA..."`       // Base64 data URL or HTTP URL
+	Video       string `json:"video" binding:"required" example:"data:video/mp4;base64,AAAAIGZ0eXA..."` // Base64 data URL or HTTP URL
 	Caption     string `json:"caption,omitempty" example:"Check out this video!"`
 	GifPlayback bool   `json:"gif_playback,omitempty" example:"false"`
 }
@@ -66,7 +66,7 @@ type SendVideoRequest struct {
 // SendDocumentRequest represents a document message request
 type SendDocumentRequest struct {
 	Phone    string `json:"phone" binding:"required" example:"5511999999999"`
-	Document string `json:"document" binding:"required" example:"data:application/pdf;base64,JVBERi0x..."`   // Base64 data URL or HTTP URL
+	Document string `json:"document" binding:"required" example:"data:application/pdf;base64,JVBERi0x..."` // Base64 data URL or HTTP URL
 	FileName string `json:"filename,omitempty" example:"document.pdf"`
 	MimeType string `json:"mimetype,omitempty" example:"application/pdf"`
 }
@@ -74,7 +74,7 @@ type SendDocumentRequest struct {
 // SendStickerRequest represents a sticker message request
 type SendStickerRequest struct {
 	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
-	Sticker string `json:"sticker" binding:"required" example:"data:image/webp;base64,UklGRnoGAABXRUJQ..."`   // Base64 data URL or HTTP URL
+	Sticker string `json:"sticker" binding:"required" example:"data:image/webp;base64,UklGRnoGAABXRUJQ..."` // Base64 data URL or HTTP URL
 }
 
 // MessageStatusRequest represents a request to get message status
@@ -96,6 +96,65 @@ type BulkMessageRequest struct {
 }
 
 // ============================================================================
+// MESSAGE ACTION REQUEST DTOs
+// ============================================================================
+
+// MarkAsReadRequest represents a request to mark messages as read
+type MarkAsReadRequest struct {
+	Phone      string   `json:"phone" binding:"required" example:"5511999999999"`
+	MessageIDs []string `json:"message_ids" binding:"required" example:"[\"msg_1\", \"msg_2\"]"`
+}
+
+// ReactToMessageRequest represents a request to react to a message
+type ReactToMessageRequest struct {
+	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
+	MessageID string `json:"message_id" binding:"required" example:"3EB0D098B5FD4BF3BC4327"`
+	Emoji     string `json:"emoji" binding:"required" example:"👍"` // Use "remove" to remove reaction
+}
+
+// DeleteMessageRequest represents a request to delete a message
+type DeleteMessageRequest struct {
+	Phone       string `json:"phone" binding:"required" example:"5511999999999"`
+	MessageID   string `json:"message_id" binding:"required" example:"3EB0D098B5FD4BF3BC4327"`
+	ForEveryone bool   `json:"for_everyone" example:"true"` // true = delete for everyone, false = delete for me
+}
+
+// EditMessageRequest represents a request to edit a message
+type EditMessageRequest struct {
+	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
+	MessageID string `json:"message_id" binding:"required" example:"3EB0D098B5FD4BF3BC4327"`
+	NewText   string `json:"new_text" binding:"required" example:"Edited message text"`
+}
+
+// ============================================================================
+// MESSAGE ACTION RESPONSE DTOs
+// ============================================================================
+
+// MessageActionResponse represents the standardized response format for message action operations
+type MessageActionResponse struct {
+	Success bool                        `json:"success"`
+	Code    int                         `json:"code"`
+	Data    MessageActionData           `json:"data"`
+	Error   *MessageActionErrorResponse `json:"error,omitempty"`
+}
+
+// MessageActionData contains the response data for message action operations
+type MessageActionData struct {
+	Phone     string    `json:"phone" example:"5511999999999"`
+	MessageID string    `json:"message_id,omitempty" example:"msg_123"`
+	Action    string    `json:"action" example:"mark_read"`
+	Status    string    `json:"status" example:"success"`
+	Timestamp time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+}
+
+// MessageActionErrorResponse represents error information for message action operations
+type MessageActionErrorResponse struct {
+	Code    string `json:"code" example:"INVALID_PHONE"`
+	Message string `json:"message" example:"Invalid phone number format"`
+	Details string `json:"details,omitempty" example:"Phone number must include country code"`
+}
+
+// ============================================================================
 // MESSAGE DATA STRUCTURES
 // ============================================================================
 
@@ -105,8 +164,6 @@ type MessageStatusData struct {
 	Status    string    `json:"status" example:"delivered"`
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 }
-
-
 
 // BulkMessageResult represents bulk message operation result
 type BulkMessageResult struct {
@@ -166,8 +223,6 @@ type ErrorResponse struct {
 	Error   string `json:"error" example:"Field validation failed"`
 }
 
-
-
 // MessageStatusResponseData represents legacy message status response data
 type MessageStatusResponseData struct {
 	MessageID string    `json:"message_id" example:"msg_123456789"`
@@ -189,10 +244,10 @@ type BulkMessageResponseData struct {
 
 // MessageResponse represents the standardized message API response format
 type MessageResponse struct {
-	Success bool                    `json:"success"`
-	Code    int                     `json:"code"`
-	Data    MessageResponseData     `json:"data"`
-	Error   *MessageErrorResponse   `json:"error,omitempty"`
+	Success bool                  `json:"success"`
+	Code    int                   `json:"code"`
+	Data    MessageResponseData   `json:"data"`
+	Error   *MessageErrorResponse `json:"error,omitempty"`
 }
 
 // MessageResponseData contains the response data
@@ -448,6 +503,38 @@ func validateMessagePhone(phone string) bool {
 	return len(phone) >= 10 && len(phone) <= 15
 }
 
+// ============================================================================
+// MESSAGE ACTION UTILITY FUNCTIONS
+// ============================================================================
+
+// NewMessageActionSuccessResponse creates a successful message action response
+func NewMessageActionSuccessResponse(phone, messageID, action string) *MessageActionResponse {
+	return &MessageActionResponse{
+		Success: true,
+		Code:    200,
+		Data: MessageActionData{
+			Phone:     phone,
+			MessageID: messageID,
+			Action:    action,
+			Status:    "success",
+			Timestamp: time.Now(),
+		},
+	}
+}
+
+// NewMessageActionErrorResponse creates an error response for message actions
+func NewMessageActionErrorResponse(code int, errorCode, message, details string) *MessageActionResponse {
+	return &MessageActionResponse{
+		Success: false,
+		Code:    code,
+		Error: &MessageActionErrorResponse{
+			Code:    errorCode,
+			Message: message,
+			Details: details,
+		},
+	}
+}
+
 // Validate validates a SendTextRequest
 func (r *SendTextRequest) Validate() error {
 	if !validateMessagePhone(r.Phone) {
@@ -478,6 +565,89 @@ func (r *SendMediaRequest) Validate() error {
 	}
 	if r.MediaURL == "" {
 		return &MessageValidationError{Field: "media_url", Message: "Media URL is required"}
+	}
+	return nil
+}
+
+// Validate validates a SendLocationRequest
+func (r *SendLocationRequest) Validate() error {
+	if !validateMessagePhone(r.Phone) {
+		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
+	}
+	if r.Latitude < -90 || r.Latitude > 90 {
+		return &MessageValidationError{Field: "latitude", Message: "Latitude must be between -90 and 90"}
+	}
+	if r.Longitude < -180 || r.Longitude > 180 {
+		return &MessageValidationError{Field: "longitude", Message: "Longitude must be between -180 and 180"}
+	}
+	return nil
+}
+
+// Validate validates a SendContactRequest
+func (r *SendContactRequest) Validate() error {
+	if !validateMessagePhone(r.Phone) {
+		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
+	}
+	if r.ContactName == "" {
+		return &MessageValidationError{Field: "contact_name", Message: "Contact name is required"}
+	}
+	if r.ContactPhone == "" {
+		return &MessageValidationError{Field: "contact_phone", Message: "Contact phone is required"}
+	}
+	return nil
+}
+
+// Validate validates a SendImageRequest
+func (r *SendImageRequest) Validate() error {
+	if !validateMessagePhone(r.Phone) {
+		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
+	}
+	if r.Image == "" {
+		return &MessageValidationError{Field: "image", Message: "Image data is required"}
+	}
+	return nil
+}
+
+// Validate validates a SendAudioRequest
+func (r *SendAudioRequest) Validate() error {
+	if !validateMessagePhone(r.Phone) {
+		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
+	}
+	if r.Audio == "" {
+		return &MessageValidationError{Field: "audio", Message: "Audio data is required"}
+	}
+	return nil
+}
+
+// Validate validates a SendVideoRequest
+func (r *SendVideoRequest) Validate() error {
+	if !validateMessagePhone(r.Phone) {
+		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
+	}
+	if r.Video == "" {
+		return &MessageValidationError{Field: "video", Message: "Video data is required"}
+	}
+	return nil
+}
+
+// Validate validates a SendDocumentRequest
+func (r *SendDocumentRequest) Validate() error {
+	if !validateMessagePhone(r.Phone) {
+		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
+	}
+	if r.Document == "" {
+		return &MessageValidationError{Field: "document", Message: "Document data is required"}
+	}
+	return nil
+}
+
+// Validate validates a SendStickerRequest
+func (r *SendStickerRequest) Validate() error {
+	if !validateMessagePhone(r.Phone) {
+		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
+	}
+	if r.Sticker == "" {
+		return &MessageValidationError{Field: "sticker", Message: "Sticker data is required"}
 	}
 	return nil
 }

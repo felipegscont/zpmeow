@@ -127,7 +127,7 @@ func (r *RetryStrategy) isRetryableError(err error) bool {
 
 func IsHTTPStatusRetryable(statusCode int) bool {
 	switch statusCode {
-	case http.StatusRequestTimeout,     // 408
+	case http.StatusRequestTimeout, // 408
 		http.StatusTooManyRequests,     // 429
 		http.StatusInternalServerError, // 500
 		http.StatusBadGateway,          // 502

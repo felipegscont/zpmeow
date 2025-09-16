@@ -14,9 +14,9 @@ import (
 )
 
 type AuthMiddleware struct {
-	config          *config.Config
-	sessionRepo     session.Repository
-	logger          logging.Logger
+	config      *config.Config
+	sessionRepo session.Repository
+	logger      logging.Logger
 }
 
 func NewAuthMiddleware(config *config.Config, sessionRepo session.Repository, logger logging.Logger) *AuthMiddleware {

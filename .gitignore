@@ -93,6 +93,22 @@ Thumbs.db
 *.old
 *.orig
 *.rej
+backup_*/
+backup*/
+*_backup/
+*backup*
+
+# Test and temporary files
+test_*.jpg
+test_*.png
+test_*.txt
+*_test.*
+MISSING_METHODS.md
+REAL_MISSING_METHODS.md
+TESTE_COMPLETO_RESULTADOS.md
+ROUTES.md
+*.md.bak
+*.md.old
 
 # Archive files
 *.tar

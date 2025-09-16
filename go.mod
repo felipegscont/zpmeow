@@ -2,8 +2,6 @@ module zpmeow
 
 go 1.24.0
 
-toolchain go1.24.7
-
 require (
 	github.com/gin-contrib/cors v1.7.6
 	github.com/gin-gonic/gin v1.10.1
@@ -20,6 +18,7 @@ require (
 	github.com/swaggo/swag v1.16.6
 	github.com/vincent-petithory/dataurl v1.0.0
 	go.mau.fi/whatsmeow v0.0.0-20250905121447-8d6da61ecbfa
+	google.golang.org/protobuf v1.36.9
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
@@ -82,7 +81,6 @@ require (
 	golang.org/x/term v0.35.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	golang.org/x/tools v0.36.0 // indirect
-	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	rsc.io/qr v0.2.0 // indirect
 )

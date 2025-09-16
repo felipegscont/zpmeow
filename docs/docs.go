@@ -70,14 +70,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/session/{sessionId}/chat/delete": {
+        "/session/{sessionId}/chat/archive": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Delete a message for everyone or just for me",
+                "description": "Archive or unarchive a chat (archiving automatically unpins the chat)",
                 "consumes": [
                     "application/json"
                 ],
@@ -87,7 +87,7 @@ const docTemplate = `{
                 "tags": [
                     "Chat"
                 ],
-                "summary": "Delete message",
+                "summary": "Archive/unarchive chat",
                 "parameters": [
                     {
                         "type": "string",
@@ -97,12 +97,70 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Delete request",
+                        "description": "Archive chat request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.DeleteMessageRequest"
+                            "$ref": "#/definitions/dto.ArchiveChatRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChatResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChatResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChatResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/chat/disappearing-timer": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Set disappearing timer for messages in a chat",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Set disappearing timer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Disappearing timer request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetDisappearingTimerRequest"
                         }
                     }
                 ],
@@ -360,64 +418,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/session/{sessionId}/chat/edit": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Edit the text content of a message",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Chat"
-                ],
-                "summary": "Edit message",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Edit request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.EditMessageRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ChatResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ChatResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ChatResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/session/{sessionId}/chat/history": {
             "get": {
                 "security": [
@@ -480,14 +480,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/session/{sessionId}/chat/markread": {
+        "/session/{sessionId}/chat/info": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Mark one or more messages as read in a chat",
+                "description": "Get detailed information about a specific chat (group or contact)",
                 "consumes": [
                     "application/json"
                 ],
@@ -497,7 +497,7 @@ const docTemplate = `{
                 "tags": [
                     "Chat"
                 ],
-                "summary": "Mark messages as read",
+                "summary": "Get chat info",
                 "parameters": [
                     {
                         "type": "string",
@@ -507,12 +507,185 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Mark as read request",
+                        "description": "Get chat info request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.MarkAsReadRequest"
+                            "$ref": "#/definitions/dto.GetChatInfoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetChatInfoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetChatInfoResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetChatInfoResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/chat/list": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "List all chats (groups and/or contacts) for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "List chats",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "List chats request",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListChatsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListChatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListChatsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListChatsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/chat/mute": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Mute or unmute a chat for a specified duration",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Mute/unmute chat",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Mute chat request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MuteChatRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChatResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChatResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ChatResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/chat/pin": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Pin or unpin a chat to keep it at the top of the chat list",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Chat"
+                ],
+                "summary": "Pin/unpin chat",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Pin chat request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.PinChatRequest"
                         }
                     }
                 ],
@@ -596,14 +769,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/session/{sessionId}/chat/react": {
+        "/session/{sessionId}/community/link": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Add or remove reaction to a message",
+                "description": "Link a group to a community",
                 "consumes": [
                     "application/json"
                 ],
@@ -611,9 +784,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Chat"
+                    "Community"
                 ],
-                "summary": "React to message",
+                "summary": "Link group to community",
                 "parameters": [
                     {
                         "type": "string",
@@ -623,12 +796,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "React request",
+                        "description": "Link group request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.ReactToMessageRequest"
+                            "$ref": "#/definitions/dto.LinkGroupRequest"
                         }
                     }
                 ],
@@ -636,32 +809,32 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ChatResponse"
+                            "$ref": "#/definitions/dto.CommunityResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.ChatResponse"
+                            "$ref": "#/definitions/dto.CommunityResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/dto.ChatResponse"
+                            "$ref": "#/definitions/dto.CommunityResponse"
                         }
                     }
                 }
             }
         },
-        "/session/{sessionId}/user/avatar": {
+        "/session/{sessionId}/community/participants": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get user's profile picture/avatar",
+                "description": "Get all participants of linked groups in a community",
                 "consumes": [
                     "application/json"
                 ],
@@ -669,9 +842,183 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Community"
                 ],
-                "summary": "Get user avatar",
+                "summary": "Get community participants",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get participants request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetLinkedGroupsParticipantsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityParticipantsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/community/subgroups": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get all subgroups of a community",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Community"
+                ],
+                "summary": "Get community subgroups",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get subgroups request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetSubGroupsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunitySubGroupsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/community/unlink": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Unlink a group from a community",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Community"
+                ],
+                "summary": "Unlink group from community",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Unlink group request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UnlinkGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CommunityResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/contacts/avatar": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get contact's profile picture/avatar",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
+                ],
+                "summary": "Get contact avatar",
                 "parameters": [
                     {
                         "type": "string",
@@ -694,25 +1041,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     }
                 }
             }
         },
-        "/session/{sessionId}/user/check": {
+        "/session/{sessionId}/contacts/check": {
             "post": {
                 "security": [
                     {
@@ -727,9 +1074,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Contacts"
                 ],
-                "summary": "Check users on WhatsApp",
+                "summary": "Check contacts on WhatsApp",
                 "parameters": [
                     {
                         "type": "string",
@@ -739,12 +1086,12 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Check user request",
+                        "description": "Check contact request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.CheckUserRequest"
+                            "$ref": "#/definitions/dto.CheckContactRequest"
                         }
                     }
                 ],
@@ -752,32 +1099,32 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     }
                 }
             }
         },
-        "/session/{sessionId}/user/contacts": {
-            "get": {
+        "/session/{sessionId}/contacts/info": {
+            "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all contacts from user's WhatsApp",
+                "description": "Get detailed information about contacts",
                 "consumes": [
                     "application/json"
                 ],
@@ -785,7 +1132,65 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Contacts"
+                ],
+                "summary": "Get contact information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get contact info request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetContactInfoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ContactResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ContactResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ContactResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/contacts/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get all contacts from contact's WhatsApp",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Contacts"
                 ],
                 "summary": "Get contacts",
                 "parameters": [
@@ -807,20 +1212,20 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     }
                 }
             }
         },
-        "/session/{sessionId}/user/info": {
+        "/session/{sessionId}/contacts/presence": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get detailed information about users",
+                "description": "Set global contact presence (available/unavailable)",
                 "consumes": [
                     "application/json"
                 ],
@@ -828,67 +1233,9 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "User"
+                    "Contacts"
                 ],
-                "summary": "Get user information",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Get user info request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.GetUserInfoRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/session/{sessionId}/user/presence": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Set global user presence (available/unavailable)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "User"
-                ],
-                "summary": "Set user presence",
+                "summary": "Set contact presence",
                 "parameters": [
                     {
                         "type": "string",
@@ -903,7 +1250,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.SetUserPresenceRequest"
+                            "$ref": "#/definitions/dto.SetContactPresenceRequest"
                         }
                     }
                 ],
@@ -911,32 +1258,32 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/dto.UserResponse"
+                            "$ref": "#/definitions/dto.ContactResponse"
                         }
                     }
                 }
             }
         },
-        "/sessions": {
-            "get": {
+        "/session/{sessionId}/groups/announce": {
+            "put": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a list of all WhatsApp sessions",
+                "description": "Set whether only admins can send messages to the group",
                 "consumes": [
                     "application/json"
                 ],
@@ -944,20 +1291,3994 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Sessions"
+                    "Groups"
                 ],
-                "summary": "Get all sessions",
+                "summary": "Set group announce mode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group announce request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupAnnounceRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Sessions retrieved successfully",
+                        "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.SessionListResponse"
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/create": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new WhatsApp group with specified name and participants",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Create a new group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Create group request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateGroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/ephemeral": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Set disappearing messages for the group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Set group ephemeral mode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group ephemeral request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupEphemeralRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/info": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get detailed information about a specific group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get group information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get group info request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetGroupInfoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/invite-info": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get group information from an invite link without joining",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get group info from invite link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get invite info request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetInviteInfoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/invite-info-specific": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get group information from specific invite details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get group info from specific invite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get group info from invite request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetGroupInfoFromInviteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/invite-link": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get or reset the invite link for a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get group invite link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get invite link request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetInviteLinkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/join": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Join a WhatsApp group using an invite link",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Join group via invite link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Join group request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.JoinGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/join-approval": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Set whether admin approval is required to join the group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Set group join approval mode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group join approval request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupJoinApprovalRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/join-with-invite": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Join a WhatsApp group using specific invite details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Join group with specific invite",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Join group with invite request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.JoinGroupWithInviteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/leave": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Leave a WhatsApp group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Leave group",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Leave group request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.LeaveGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all groups the user is a member of",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "List all groups",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/locked": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Set whether only admins can edit group info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Set group locked mode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group locked request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupLockedRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/member-add-mode": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Set who can add members to the group (all or admin only)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Set group member add mode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group member add mode request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupMemberAddModeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/name": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update the name of a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Set group name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group name request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupNameRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/participants": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Add or remove participants from a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Update group participants",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update participants request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateParticipantsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/photo": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update the photo/avatar of a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Set group photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group photo request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupPhotoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Remove the photo/avatar of a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Remove group photo",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Remove group photo request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RemoveGroupPhotoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/request-participants": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Approve or reject users requesting to join the group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Update group request participants",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update group request participants request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateGroupRequestParticipantsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get list of users requesting to join the group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get group request participants",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get group request participants request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetGroupRequestParticipantsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/groups/topic": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update the topic/description of a group",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Set group topic",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Set group topic request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetGroupTopicRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GroupResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/info": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get information about a specific media file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Get media information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Get media request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetMediaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all media files for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "List media files",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit number of results (default: 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/upload": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Upload a media file to the server",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Upload media file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Upload media request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadMediaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/{mediaId}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete a media file from the server",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Delete media file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "mediaId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/{mediaId}/compress": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Compress a media file to reduce its size",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Compress media file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "mediaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Compression quality (1-100, default: 80)",
+                        "name": "quality",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/{mediaId}/convert": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Convert a media file to a different format",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Convert media format",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "mediaId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Target format (e.g., jpg, png, mp4, mp3)",
+                        "name": "format",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/{mediaId}/download": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Download a media file from the server",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Download media file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "mediaId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/{mediaId}/metadata": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get detailed metadata information about a media file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Get media metadata",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "mediaId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/media/{mediaId}/progress": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get the upload progress of a media file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Media"
+                ],
+                "summary": "Get media upload progress",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media ID",
+                        "name": "mediaId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MediaResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/audio": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send an audio message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send audio message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Audio message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendAudioRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/buttons": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a button message to a WhatsApp contact (not yet implemented)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send button message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/contact": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a contact message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send contact message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Contact message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendContactRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/document": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a document message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send document message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Document message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendDocumentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/image": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send an image message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send image message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Image message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendImageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/list": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a list message to a WhatsApp contact (not yet implemented)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send list message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/location": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a location message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send location message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Location message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendLocationRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/markread": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Mark one or more messages as read in a chat",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Mark messages as read",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Mark as read request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.MarkAsReadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/media": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a media message (image, video, audio, document) to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send media message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Media message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendMediaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/poll": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a poll message to a WhatsApp contact (not yet implemented)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send poll message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/sticker": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a sticker message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send sticker message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Sticker message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendStickerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/text": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a text message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send text message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Text message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendTextRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/video": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a video message to a WhatsApp contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Send video message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Video message request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendVideoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/{messageId}": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete a message for everyone or just for me",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Delete message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Delete request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.DeleteMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/{messageId}/edit": {
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Edit the text content of a message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Edit message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Edit request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.EditMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/messages/{messageId}/reactions": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Add or remove reaction to a message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "React to message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "React request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.ReactToMessageRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.MessageActionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create a new WhatsApp newsletter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Create newsletter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Newsletter created successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter/{newsletterId}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get information about a specific newsletter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Get newsletter information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newsletter information retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update newsletter information (name, description, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Update newsletter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newsletter updated successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete a newsletter permanently",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Delete newsletter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newsletter deleted successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter/{newsletterId}/metrics": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get analytics and metrics for a newsletter (subscribers, engagement, etc.)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Get newsletter metrics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Time period for metrics (day, week, month, year)",
+                        "name": "period",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Metrics retrieved successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter/{newsletterId}/send": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a message to all newsletter subscribers",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Send newsletter message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Message sent successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter/{newsletterId}/subscribe": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Subscribe to a newsletter to receive updates",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Subscribe to newsletter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subscribed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter/{newsletterId}/subscribers": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all subscribers for a newsletter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Get newsletter subscribers",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit number of results (default: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subscribers retrieved successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter/{newsletterId}/unsubscribe": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Unsubscribe from a newsletter to stop receiving updates",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Unsubscribe from newsletter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Newsletter ID",
+                        "name": "newsletterId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unsubscribed successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "404": {
+                        "description": "Newsletter not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletters": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all newsletters for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "List newsletters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit number of results (default: 50)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination (default: 0)",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newsletters retrieved successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/privacy/blocklist": {
+            "get": {
+                "description": "Get the list of blocked contacts (blocklist)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Get blocked contacts list",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Block or unblock a contact",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Update blocklist (block/unblock contact)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update blocklist request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateBlocklistRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.BlocklistResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/privacy/find": {
+            "post": {
+                "description": "Get specific privacy settings or all settings if none specified",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Find specific privacy settings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Find privacy settings request (optional)",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/dto.FindPrivacySettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/privacy/set": {
+            "put": {
+                "description": "Set multiple privacy settings in a single request",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Set multiple privacy settings",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Privacy settings request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SetAllPrivacySettingsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.PrivacySettingsResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/webhook": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get information about registered webhooks for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Get webhook information",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.GetWebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Update webhook URL, events, or status for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Update webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Update webhook request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UpdateWebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Delete/unregister a webhook for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Delete webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.DeleteWebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/webhook/register": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Register a webhook URL to receive WhatsApp events",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Register webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Register webhook request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/dto.RegisterWebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/webhook/test": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Send a test event to a webhook to verify it's working",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "Test webhook",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Test webhook request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.TestWebhookRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.TestWebhookResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/webhooks": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all registered webhooks for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Webhooks"
+                ],
+                "summary": "List webhooks",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ListWebhooksResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.WebhookResponse"
                         }
                     }
                 }
@@ -1003,6 +5324,40 @@ const docTemplate = `{
                         "description": "Invalid request body",
                         "schema": {
                             "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/sessions/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves a list of all WhatsApp sessions",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Sessions"
+                ],
+                "summary": "Get all sessions",
+                "responses": {
+                    "200": {
+                        "description": "Sessions retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SessionListResponse"
                         }
                     },
                     "500": {
@@ -1298,116 +5653,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/sessions/{id}/qr": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Retrieves the QR code for connecting a session to WhatsApp",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Sessions"
-                ],
-                "summary": "Get QR code for session connection",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "QR code generated successfully",
-                        "schema": {
-                            "$ref": "#/definitions/dto.QRCodeResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid session ID or session already connected",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Session not found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/sessions/{id}/regenerate-key": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Regenerates the API key for a session",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Sessions"
-                ],
-                "summary": "Regenerate session API key",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "API key regenerated successfully",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid session ID",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Session not found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.SessionResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/sessions/{id}/status": {
             "get": {
                 "security": [
@@ -1529,6 +5774,35 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dto.ArchiveChatRequest": {
+            "type": "object",
+            "required": [
+                "jid"
+            ],
+            "properties": {
+                "archived": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                }
+            }
+        },
+        "dto.AudioMessagePayload": {
+            "type": "object",
+            "properties": {
+                "ptt": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/audio.mp3"
+                }
+            }
+        },
         "dto.AvatarInfo": {
             "type": "object",
             "properties": {
@@ -1551,6 +5825,26 @@ const docTemplate = `{
                 "timestamp": {
                     "type": "string",
                     "example": "2023-01-01T12:00:00Z"
+                }
+            }
+        },
+        "dto.BlocklistResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.PrivacyErrorResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1675,6 +5969,48 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ChatInfo": {
+            "type": "object",
+            "properties": {
+                "archived": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "last_message": {
+                    "type": "string",
+                    "example": "Hello!"
+                },
+                "muted": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "João Silva"
+                },
+                "pinned": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "type": {
+                    "description": "\"contact\", \"group\"",
+                    "type": "string",
+                    "example": "contact"
+                },
+                "unread_count": {
+                    "type": "integer",
+                    "example": 3
+                }
+            }
+        },
         "dto.ChatResponse": {
             "type": "object",
             "properties": {
@@ -1692,7 +6028,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.CheckUserRequest": {
+        "dto.CheckContactRequest": {
             "type": "object",
             "required": [
                 "phones"
@@ -1707,6 +6043,181 @@ const docTemplate = `{
                         "[\"5511999999999\"",
                         " \"5511888888888\"]"
                     ]
+                }
+            }
+        },
+        "dto.CommunityData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "link_group"
+                },
+                "community_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125487@g.us"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.CommunityErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_COMMUNITY_JID"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Community JID must be in format: number@g.us"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid community JID format"
+                }
+            }
+        },
+        "dto.CommunityParticipantsData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "get_participants"
+                },
+                "community_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"5511999999999\"",
+                        " \"5511888888888\"]"
+                    ]
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "dto.CommunityParticipantsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CommunityParticipantsData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.CommunityErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.CommunityResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CommunityData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.CommunityErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.CommunitySubGroupsData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "get_subgroups"
+                },
+                "community_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "subgroups": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"120363025246125487@g.us\"",
+                        " \"120363025246125488@g.us\"]"
+                    ]
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "total": {
+                    "type": "integer",
+                    "example": 2
+                }
+            }
+        },
+        "dto.CommunitySubGroupsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CommunitySubGroupsData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.CommunityErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1760,12 +6271,94 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ContactCheckResult": {
+            "type": "object",
+            "properties": {
+                "is_in_whatsapp": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "query": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "verified_name": {
+                    "type": "string",
+                    "example": "João Silva"
+                }
+            }
+        },
+        "dto.ContactData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "check_contacts"
+                },
+                "avatar": {
+                    "$ref": "#/definitions/dto.AvatarInfo"
+                },
+                "check_results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ContactCheckResult"
+                    }
+                },
+                "contact_infos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ContactInfo"
+                    }
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.ContactErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_PHONE"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Phone number must include country code"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid phone number format"
+                }
+            }
+        },
         "dto.ContactInfo": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string",
+                    "example": "https://..."
+                },
                 "business_name": {
                     "type": "string",
                     "example": "Empresa João"
+                },
+                "device_count": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "display_name": {
+                    "type": "string",
+                    "example": "João Silva"
                 },
                 "is_blocked": {
                     "type": "boolean",
@@ -1787,9 +6380,51 @@ const docTemplate = `{
                     "type": "string",
                     "example": "João"
                 },
+                "picture_id": {
+                    "type": "string",
+                    "example": "pic_123"
+                },
                 "push_name": {
                     "type": "string",
                     "example": "João"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "Disponível"
+                },
+                "verified_name": {
+                    "type": "string",
+                    "example": "João Silva Empresa"
+                }
+            }
+        },
+        "dto.ContactMessagePayload": {
+            "type": "object",
+            "properties": {
+                "displayName": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "vcard": {
+                    "type": "string",
+                    "example": "BEGIN:VCARD..."
+                }
+            }
+        },
+        "dto.ContactResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ContactData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.ContactErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -1830,10 +6465,76 @@ const docTemplate = `{
                     "$ref": "#/definitions/dto.ContactsData"
                 },
                 "error": {
-                    "$ref": "#/definitions/dto.UserErrorResponse"
+                    "$ref": "#/definitions/dto.ContactErrorResponse"
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.CreateGroupRequest": {
+            "type": "object",
+            "required": [
+                "name",
+                "participants"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "My Group"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"5511999999999\"",
+                        " \"5511888888888\"]"
+                    ]
+                }
+            }
+        },
+        "dto.CreateGroupResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 201
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.CreateGroupResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.GroupErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.CreateGroupResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "create"
+                },
+                "group": {
+                    "$ref": "#/definitions/dto.GroupInfo"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
                 }
             }
         },
@@ -1907,7 +6608,6 @@ const docTemplate = `{
         "dto.DeleteMessageRequest": {
             "type": "object",
             "required": [
-                "message_id",
                 "phone"
             ],
             "properties": {
@@ -1916,13 +6616,55 @@ const docTemplate = `{
                     "type": "boolean",
                     "example": true
                 },
-                "message_id": {
-                    "type": "string",
-                    "example": "msg_123"
-                },
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                }
+            }
+        },
+        "dto.DeleteWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.DeleteWebhookResponseData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Webhook deleted successfully"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "dto.DeleteWebhookResponseData": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "deleted"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
+                }
+            }
+        },
+        "dto.DocumentMessagePayload": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/document.pdf"
                 }
             }
         },
@@ -1941,15 +6683,10 @@ const docTemplate = `{
         "dto.EditMessageRequest": {
             "type": "object",
             "required": [
-                "message_id",
                 "new_text",
                 "phone"
             ],
             "properties": {
-                "message_id": {
-                    "type": "string",
-                    "example": "msg_123"
-                },
                 "new_text": {
                     "type": "string",
                     "example": "Edited message text"
@@ -1957,6 +6694,18 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                }
+            }
+        },
+        "dto.FindPrivacySettingsRequest": {
+            "type": "object",
+            "properties": {
+                "settings": {
+                    "description": "Specific settings to retrieve: [\"groupAdd\", \"lastSeen\", \"status\", \"profile\", \"readReceipts\", \"callAdd\", \"online\"]",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -1972,7 +6721,38 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetUserInfoRequest": {
+        "dto.GetChatInfoRequest": {
+            "type": "object",
+            "required": [
+                "jid"
+            ],
+            "properties": {
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                }
+            }
+        },
+        "dto.GetChatInfoResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ChatInfo"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.ChatErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.GetContactInfoRequest": {
             "type": "object",
             "required": [
                 "phones"
@@ -1987,6 +6767,514 @@ const docTemplate = `{
                         "[\"5511999999999\"",
                         " \"5511888888888\"]"
                     ]
+                }
+            }
+        },
+        "dto.GetGroupInfoFromInviteRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "expiration",
+                "group_jid",
+                "inviter"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "ABC123DEF456"
+                },
+                "expiration": {
+                    "type": "integer",
+                    "example": 1640995200
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "inviter": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                }
+            }
+        },
+        "dto.GetGroupInfoRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.GetGroupRequestParticipantsRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.GetInviteInfoRequest": {
+            "type": "object",
+            "required": [
+                "invite_link"
+            ],
+            "properties": {
+                "invite_link": {
+                    "type": "string",
+                    "example": "https://chat.whatsapp.com/ABC123"
+                }
+            }
+        },
+        "dto.GetInviteLinkRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "reset": {
+                    "type": "boolean",
+                    "example": false
+                }
+            }
+        },
+        "dto.GetLinkedGroupsParticipantsRequest": {
+            "type": "object",
+            "required": [
+                "community_jid"
+            ],
+            "properties": {
+                "community_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.GetMediaRequest": {
+            "type": "object",
+            "required": [
+                "media_id"
+            ],
+            "properties": {
+                "media_id": {
+                    "type": "string",
+                    "example": "media_123456789"
+                }
+            }
+        },
+        "dto.GetSubGroupsRequest": {
+            "type": "object",
+            "required": [
+                "community_jid"
+            ],
+            "properties": {
+                "community_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.GetWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.GetWebhookResponseData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Webhook retrieved successfully"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "dto.GetWebhookResponseData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"message\"",
+                        " \"status\"",
+                        " \"connection\"]"
+                    ]
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
+                }
+            }
+        },
+        "dto.GroupData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "create"
+                },
+                "group": {
+                    "$ref": "#/definitions/dto.GroupInfo"
+                },
+                "groups": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.GroupInfo"
+                    }
+                },
+                "invite_link": {
+                    "type": "string",
+                    "example": "https://chat.whatsapp.com/ABC123"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Operation completed successfully"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.GroupErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_GROUP_JID"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Group JID must end with @g.us"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid group JID format"
+                }
+            }
+        },
+        "dto.GroupInfo": {
+            "type": "object",
+            "properties": {
+                "admins": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"5511999999999@s.whatsapp.net\"]"
+                    ]
+                },
+                "announce": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "created_at": {
+                    "type": "integer",
+                    "example": 1640995200
+                },
+                "ephemeral": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "locked": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Group"
+                },
+                "owner": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"5511999999999@s.whatsapp.net\"",
+                        " \"5511888888888@s.whatsapp.net\"]"
+                    ]
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "topic": {
+                    "type": "string",
+                    "example": "Group topic description"
+                }
+            }
+        },
+        "dto.GroupResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.GroupData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.GroupErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.ImageMessagePayload": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Check out this image!"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/image.jpg"
+                }
+            }
+        },
+        "dto.JoinGroupRequest": {
+            "type": "object",
+            "required": [
+                "invite_link"
+            ],
+            "properties": {
+                "invite_link": {
+                    "type": "string",
+                    "example": "https://chat.whatsapp.com/ABC123"
+                }
+            }
+        },
+        "dto.JoinGroupWithInviteRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "expiration",
+                "group_jid",
+                "inviter"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "ABC123DEF456"
+                },
+                "expiration": {
+                    "type": "integer",
+                    "example": 1640995200
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "inviter": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                }
+            }
+        },
+        "dto.LeaveGroupRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.LinkGroupRequest": {
+            "type": "object",
+            "required": [
+                "community_jid",
+                "group_jid"
+            ],
+            "properties": {
+                "community_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125487@g.us"
+                }
+            }
+        },
+        "dto.ListChatsData": {
+            "type": "object",
+            "properties": {
+                "chats": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ChatInfo"
+                    }
+                },
+                "count": {
+                    "type": "integer",
+                    "example": 25
+                },
+                "type": {
+                    "type": "string",
+                    "example": "all"
+                }
+            }
+        },
+        "dto.ListChatsRequest": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "description": "\"all\", \"groups\", \"contacts\"",
+                    "type": "string",
+                    "example": "all"
+                }
+            }
+        },
+        "dto.ListChatsResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.ListChatsData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.ChatErrorResponse"
+                },
+                "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.ListWebhooksResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.ListWebhooksResponseData"
+                    }
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Webhooks retrieved successfully"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "dto.ListWebhooksResponseData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"message\"",
+                        " \"status\"",
+                        " \"connection\"]"
+                    ]
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
+                }
+            }
+        },
+        "dto.LocationMessagePayload": {
+            "type": "object",
+            "properties": {
+                "latitude": {
+                    "type": "number",
+                    "example": -23.5505
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": -46.6333
+                },
+                "name": {
+                    "type": "string",
+                    "example": "São Paulo"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://maps.google.com/..."
                 }
             }
         },
@@ -2010,6 +7298,53 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                }
+            }
+        },
+        "dto.MediaData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "upload"
+                },
+                "download": {
+                    "$ref": "#/definitions/dto.MediaDownloadInfo"
+                },
+                "media_id": {
+                    "type": "string",
+                    "example": "media_123456789"
+                },
+                "media_info": {
+                    "$ref": "#/definitions/dto.MediaInfo"
+                },
+                "progress": {
+                    "$ref": "#/definitions/dto.MediaUploadProgress"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.MediaDownloadInfo": {
+            "type": "object",
+            "properties": {
+                "download_url": {
+                    "type": "string",
+                    "example": "https://storage.example.com/media_123456789"
+                },
+                "expires_at": {
+                    "type": "string",
+                    "example": "2023-01-01T01:00:00Z"
+                },
+                "media_id": {
+                    "type": "string",
+                    "example": "media_123456789"
                 }
             }
         },
@@ -2044,6 +7379,273 @@ const docTemplate = `{
                     "example": 1024
                 },
                 "success": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.MediaErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_MEDIA_ID"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Media ID must be alphanumeric"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid media ID format"
+                }
+            }
+        },
+        "dto.MediaInfo": {
+            "type": "object",
+            "properties": {
+                "file_name": {
+                    "type": "string",
+                    "example": "image.jpg"
+                },
+                "media_id": {
+                    "type": "string",
+                    "example": "media_123456789"
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "image"
+                },
+                "mime_type": {
+                    "type": "string",
+                    "example": "image/jpeg"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "size": {
+                    "type": "integer",
+                    "example": 1024000
+                },
+                "status": {
+                    "type": "string",
+                    "example": "ready"
+                },
+                "uploaded_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.MediaResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MediaData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.MediaErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.MediaUploadProgress": {
+            "type": "object",
+            "properties": {
+                "bytes_uploaded": {
+                    "type": "integer",
+                    "example": 768000
+                },
+                "media_id": {
+                    "type": "string",
+                    "example": "media_123456789"
+                },
+                "progress": {
+                    "type": "number",
+                    "example": 75.5
+                },
+                "status": {
+                    "type": "string",
+                    "example": "uploading"
+                },
+                "total_bytes": {
+                    "type": "integer",
+                    "example": 1024000
+                }
+            }
+        },
+        "dto.MessageActionData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "mark_read"
+                },
+                "message_id": {
+                    "type": "string",
+                    "example": "msg_123"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
+        "dto.MessageActionErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_PHONE"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Phone number must include country code"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid phone number format"
+                }
+            }
+        },
+        "dto.MessageActionResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MessageActionData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.MessageActionErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.MessageErrorResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "INVALID_PHONE"
+                },
+                "details": {
+                    "type": "string",
+                    "example": "Phone number must include country code"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Invalid phone number format"
+                }
+            }
+        },
+        "dto.MessageKey": {
+            "type": "object",
+            "properties": {
+                "fromMe": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "remoteJid": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.MessagePayload": {
+            "type": "object",
+            "properties": {
+                "audio": {
+                    "$ref": "#/definitions/dto.AudioMessagePayload"
+                },
+                "contact": {
+                    "$ref": "#/definitions/dto.ContactMessagePayload"
+                },
+                "document": {
+                    "$ref": "#/definitions/dto.DocumentMessagePayload"
+                },
+                "image": {
+                    "$ref": "#/definitions/dto.ImageMessagePayload"
+                },
+                "location": {
+                    "$ref": "#/definitions/dto.LocationMessagePayload"
+                },
+                "sticker": {
+                    "$ref": "#/definitions/dto.StickerMessagePayload"
+                },
+                "text": {
+                    "$ref": "#/definitions/dto.TextMessagePayload"
+                },
+                "video": {
+                    "$ref": "#/definitions/dto.VideoMessagePayload"
+                }
+            }
+        },
+        "dto.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "data": {
+                    "$ref": "#/definitions/dto.MessageResponseData"
+                },
+                "error": {
+                    "$ref": "#/definitions/dto.MessageErrorResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.MessageResponseData": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "$ref": "#/definitions/dto.MessageKey"
+                },
+                "message": {
+                    "$ref": "#/definitions/dto.MessagePayload"
+                },
+                "timestamp": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.MuteChatRequest": {
+            "type": "object",
+            "required": [
+                "jid"
+            ],
+            "properties": {
+                "duration": {
+                    "description": "\"1h\", \"8h\", \"1w\", \"forever\" (only when muted=true)",
+                    "type": "string",
+                    "example": "8h"
+                },
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "muted": {
                     "type": "boolean",
                     "example": true
                 }
@@ -2109,47 +7711,83 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.QRCodeResponse": {
+        "dto.PinChatRequest": {
             "type": "object",
+            "required": [
+                "jid"
+            ],
             "properties": {
-                "code": {
-                    "type": "integer",
-                    "example": 200
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
                 },
-                "data": {
-                    "$ref": "#/definitions/dto.QRCodeResponseData"
-                },
-                "error": {
-                    "$ref": "#/definitions/dto.SessionErrorResponse"
-                },
-                "success": {
+                "pinned": {
                     "type": "boolean",
                     "example": true
                 }
             }
         },
-        "dto.QRCodeResponseData": {
+        "dto.PrivacyErrorResponse": {
             "type": "object",
             "properties": {
-                "action": {
-                    "type": "string",
-                    "example": "qr"
+                "code": {
+                    "type": "string"
                 },
-                "qr_code": {
-                    "type": "string",
-                    "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                "details": {
+                    "type": "string"
                 },
-                "session_id": {
-                    "type": "string",
-                    "example": "default"
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PrivacySettingsData": {
+            "type": "object",
+            "properties": {
+                "callAdd": {
+                    "description": "Who can call: \"all\", \"known\"",
+                    "type": "string"
+                },
+                "groupAdd": {
+                    "description": "Who can add to groups: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                },
+                "lastSeen": {
+                    "description": "Who can see last seen: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                },
+                "online": {
+                    "description": "Who can see online status: \"all\", \"match_last_seen\"",
+                    "type": "string"
+                },
+                "profile": {
+                    "description": "Who can see profile photo: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                },
+                "readReceipts": {
+                    "description": "Read receipts: \"all\", \"none\"",
+                    "type": "string"
                 },
                 "status": {
-                    "type": "string",
-                    "example": "success"
+                    "description": "Who can see status: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.PrivacySettingsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.PrivacySettingsData"
                 },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
+                "error": {
+                    "$ref": "#/definitions/dto.PrivacyErrorResponse"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -2157,7 +7795,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "emoji",
-                "message_id",
                 "phone"
             ],
             "properties": {
@@ -2166,13 +7803,316 @@ const docTemplate = `{
                     "type": "string",
                     "example": "👍"
                 },
-                "message_id": {
+                "phone": {
                     "type": "string",
-                    "example": "msg_123"
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.RegisterWebhookRequest": {
+            "type": "object",
+            "required": [
+                "events",
+                "session_id",
+                "url"
+            ],
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"message\"",
+                        " \"status\"",
+                        " \"connection\"]"
+                    ]
+                },
+                "secret": {
+                    "type": "string",
+                    "example": "webhook_secret_key"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                }
+            }
+        },
+        "dto.RegisterWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.RegisterWebhookResponseData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Webhook registered successfully"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 201
+                }
+            }
+        },
+        "dto.RegisterWebhookResponseData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"message\"",
+                        " \"status\"",
+                        " \"connection\"]"
+                    ]
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
+                }
+            }
+        },
+        "dto.RemoveGroupPhotoRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.SendAudioRequest": {
+            "type": "object",
+            "required": [
+                "audio",
+                "phone"
+            ],
+            "properties": {
+                "audio": {
+                    "description": "Base64 data URL or HTTP URL",
+                    "type": "string",
+                    "example": "data:audio/mp3;base64,SUQzBAA..."
                 },
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                },
+                "ptt": {
+                    "description": "Push to talk",
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.SendContactRequest": {
+            "type": "object",
+            "required": [
+                "contact_name",
+                "contact_phone",
+                "phone"
+            ],
+            "properties": {
+                "contact_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "contact_phone": {
+                    "type": "string",
+                    "example": "5511888888888"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendDocumentRequest": {
+            "type": "object",
+            "required": [
+                "document",
+                "phone"
+            ],
+            "properties": {
+                "document": {
+                    "description": "Base64 data URL or HTTP URL",
+                    "type": "string",
+                    "example": "data:application/pdf;base64,JVBERi0x..."
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "document.pdf"
+                },
+                "mimetype": {
+                    "type": "string",
+                    "example": "application/pdf"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendImageRequest": {
+            "type": "object",
+            "required": [
+                "image",
+                "phone"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Check out this image!"
+                },
+                "image": {
+                    "description": "Base64 data URL or HTTP URL",
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQ..."
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendLocationRequest": {
+            "type": "object",
+            "required": [
+                "latitude",
+                "longitude",
+                "phone"
+            ],
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "São Paulo, SP, Brazil"
+                },
+                "latitude": {
+                    "type": "number",
+                    "example": -23.5505
+                },
+                "longitude": {
+                    "type": "number",
+                    "example": -46.6333
+                },
+                "name": {
+                    "type": "string",
+                    "example": "São Paulo"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendMediaRequest": {
+            "type": "object",
+            "required": [
+                "media_type",
+                "media_url",
+                "phone"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Check out this image!"
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "image"
+                },
+                "media_url": {
+                    "type": "string",
+                    "example": "https://example.com/image.jpg"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendStickerRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "sticker"
+            ],
+            "properties": {
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "sticker": {
+                    "description": "Base64 data URL or HTTP URL",
+                    "type": "string",
+                    "example": "data:image/webp;base64,UklGRnoGAABXRUJQ..."
+                }
+            }
+        },
+        "dto.SendTextRequest": {
+            "type": "object",
+            "required": [
+                "body",
+                "phone"
+            ],
+            "properties": {
+                "body": {
+                    "type": "string",
+                    "example": "Hello, World!"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendVideoRequest": {
+            "type": "object",
+            "required": [
+                "phone",
+                "video"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Check out this video!"
+                },
+                "gif_playback": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511999999999"
+                },
+                "video": {
+                    "description": "Base64 data URL or HTTP URL",
+                    "type": "string",
+                    "example": "data:video/mp4;base64,AAAAIGZ0eXA..."
                 }
             }
         },
@@ -2484,6 +8424,206 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SetAllPrivacySettingsRequest": {
+            "type": "object",
+            "properties": {
+                "callAdd": {
+                    "description": "Who can call: \"all\", \"known\"",
+                    "type": "string"
+                },
+                "groupAdd": {
+                    "description": "Who can add to groups: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                },
+                "lastSeen": {
+                    "description": "Who can see last seen: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                },
+                "online": {
+                    "description": "Who can see online status: \"all\", \"match_last_seen\"",
+                    "type": "string"
+                },
+                "profile": {
+                    "description": "Who can see profile photo: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                },
+                "readReceipts": {
+                    "description": "Read receipts enabled/disabled",
+                    "type": "boolean"
+                },
+                "status": {
+                    "description": "Who can see status: \"all\", \"contacts\", \"contact_blacklist\", \"none\"",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.SetContactPresenceRequest": {
+            "type": "object",
+            "required": [
+                "state"
+            ],
+            "properties": {
+                "state": {
+                    "type": "string",
+                    "example": "available"
+                }
+            }
+        },
+        "dto.SetDisappearingTimerRequest": {
+            "type": "object",
+            "required": [
+                "jid",
+                "timer"
+            ],
+            "properties": {
+                "jid": {
+                    "type": "string",
+                    "example": "5511999999999@s.whatsapp.net"
+                },
+                "timer": {
+                    "description": "\"off\", \"24h\", \"7d\", \"90d\"",
+                    "type": "string",
+                    "example": "24h"
+                }
+            }
+        },
+        "dto.SetGroupAnnounceRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "announce_only": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.SetGroupEphemeralRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "duration": {
+                    "type": "integer",
+                    "example": 86400
+                },
+                "ephemeral": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                }
+            }
+        },
+        "dto.SetGroupJoinApprovalRequest": {
+            "type": "object",
+            "required": [
+                "group_jid",
+                "require_approval"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "require_approval": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.SetGroupLockedRequest": {
+            "type": "object",
+            "required": [
+                "group_jid"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "locked": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.SetGroupMemberAddModeRequest": {
+            "type": "object",
+            "required": [
+                "group_jid",
+                "mode"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "mode": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "dto.SetGroupNameRequest": {
+            "type": "object",
+            "required": [
+                "group_jid",
+                "name"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "New Group Name"
+                }
+            }
+        },
+        "dto.SetGroupPhotoRequest": {
+            "type": "object",
+            "required": [
+                "group_jid",
+                "photo"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "photo": {
+                    "type": "string",
+                    "example": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..."
+                }
+            }
+        },
+        "dto.SetGroupTopicRequest": {
+            "type": "object",
+            "required": [
+                "group_jid",
+                "topic"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "topic": {
+                    "type": "string",
+                    "example": "Group topic description"
+                }
+            }
+        },
         "dto.SetPresenceRequest": {
             "type": "object",
             "required": [
@@ -2506,15 +8646,193 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SetUserPresenceRequest": {
+        "dto.StickerMessagePayload": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/sticker.webp"
+                }
+            }
+        },
+        "dto.TestWebhookRequest": {
             "type": "object",
             "required": [
-                "state"
+                "event_type"
             ],
             "properties": {
-                "state": {
+                "event_type": {
                     "type": "string",
-                    "example": "available"
+                    "example": "message"
+                },
+                "test_data": {
+                    "type": "object",
+                    "additionalProperties": true
+                }
+            }
+        },
+        "dto.TestWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.TestWebhookResponseData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Webhook test completed"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
+        "dto.TestWebhookResponseData": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": ""
+                },
+                "response_code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "response_time_ms": {
+                    "type": "integer",
+                    "example": 150
+                },
+                "test_result": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
+                }
+            }
+        },
+        "dto.TestWebhookResult": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": ""
+                },
+                "response_code": {
+                    "type": "integer",
+                    "example": 200
+                },
+                "response_time_ms": {
+                    "type": "integer",
+                    "example": 150
+                },
+                "test_result": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
+                }
+            }
+        },
+        "dto.TextMessagePayload": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "example": "Hello, World!"
+                }
+            }
+        },
+        "dto.UnlinkGroupRequest": {
+            "type": "object",
+            "required": [
+                "community_jid",
+                "group_jid"
+            ],
+            "properties": {
+                "community_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125487@g.us"
+                }
+            }
+        },
+        "dto.UpdateBlocklistRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "jid"
+            ],
+            "properties": {
+                "action": {
+                    "description": "\"block\" or \"unblock\"",
+                    "type": "string"
+                },
+                "jid": {
+                    "description": "JID to block/unblock",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.UpdateGroupRequestParticipantsRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "group_jid",
+                "participants"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "approve"
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"5511999999999\"",
+                        " \"5511888888888\"]"
+                    ]
+                }
+            }
+        },
+        "dto.UpdateParticipantsRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "group_jid",
+                "participants"
+            ],
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "add"
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "participants": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"5511999999999\"",
+                        " \"5511888888888\"]"
+                    ]
                 }
             }
         },
@@ -2545,123 +8863,204 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UserCheckResult": {
+        "dto.UpdateWebhookResponse": {
             "type": "object",
             "properties": {
-                "is_in_whatsapp": {
-                    "type": "boolean",
-                    "example": true
+                "data": {
+                    "$ref": "#/definitions/dto.UpdateWebhookResponseData"
                 },
-                "jid": {
+                "message": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "Webhook updated successfully"
                 },
-                "query": {
-                    "type": "string",
-                    "example": "5511999999999"
-                },
-                "verified_name": {
-                    "type": "string",
-                    "example": "João Silva"
+                "status": {
+                    "type": "integer",
+                    "example": 200
                 }
             }
         },
-        "dto.UserData": {
+        "dto.UpdateWebhookResponseData": {
             "type": "object",
             "properties": {
-                "action": {
-                    "type": "string",
-                    "example": "check_users"
-                },
-                "avatar": {
-                    "$ref": "#/definitions/dto.AvatarInfo"
-                },
-                "check_results": {
+                "events": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/dto.UserCheckResult"
-                    }
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"message\"",
+                        " \"status\"",
+                        " \"connection\"]"
+                    ]
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
                 },
                 "status": {
                     "type": "string",
-                    "example": "success"
+                    "example": "active"
                 },
-                "timestamp": {
+                "updated_at": {
                     "type": "string",
                     "example": "2023-01-01T00:00:00Z"
                 },
-                "user_infos": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.UserInfo"
-                    }
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
                 }
             }
         },
-        "dto.UserErrorResponse": {
+        "dto.UploadMediaRequest": {
+            "type": "object",
+            "required": [
+                "media_type",
+                "session_id"
+            ],
+            "properties": {
+                "file_name": {
+                    "type": "string",
+                    "example": "image.jpg"
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "image"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                }
+            }
+        },
+        "dto.VideoMessagePayload": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Check out this video!"
+                },
+                "gifPlayback": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://example.com/video.mp4"
+                }
+            }
+        },
+        "dto.WebhookErrorResponse": {
             "type": "object",
             "properties": {
                 "code": {
                     "type": "string",
-                    "example": "INVALID_PHONE"
+                    "example": "INVALID_WEBHOOK_URL"
                 },
                 "details": {
                     "type": "string",
-                    "example": "Phone number must include country code"
+                    "example": "Webhook URL must be a valid HTTPS URL"
                 },
                 "message": {
                     "type": "string",
-                    "example": "Invalid phone number format"
+                    "example": "Invalid webhook URL format"
                 }
             }
         },
-        "dto.UserInfo": {
+        "dto.WebhookInfo": {
             "type": "object",
             "properties": {
-                "avatar": {
+                "created_at": {
                     "type": "string",
-                    "example": "https://..."
+                    "example": "2023-01-01T00:00:00Z"
                 },
-                "device_count": {
-                    "type": "integer",
-                    "example": 2
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"message\"",
+                        " \"status\"",
+                        " \"connection\"]"
+                    ]
                 },
-                "display_name": {
+                "secret": {
                     "type": "string",
-                    "example": "João Silva"
+                    "example": "webhook_secret_key"
                 },
-                "jid": {
+                "session_id": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
-                },
-                "picture_id": {
-                    "type": "string",
-                    "example": "pic_123"
+                    "example": "default"
                 },
                 "status": {
                     "type": "string",
-                    "example": "Disponível"
+                    "example": "active"
                 },
-                "verified_name": {
+                "updated_at": {
                     "type": "string",
-                    "example": "João Silva Empresa"
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/whatsapp"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
                 }
             }
         },
-        "dto.UserResponse": {
+        "dto.WebhookResponse": {
             "type": "object",
             "properties": {
                 "code": {
                     "type": "integer"
                 },
                 "data": {
-                    "$ref": "#/definitions/dto.UserData"
+                    "$ref": "#/definitions/dto.WebhookResponseData"
                 },
                 "error": {
-                    "$ref": "#/definitions/dto.UserErrorResponse"
+                    "$ref": "#/definitions/dto.WebhookErrorResponse"
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "dto.WebhookResponseData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "register"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "test_result": {
+                    "$ref": "#/definitions/dto.TestWebhookResult"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "webhook": {
+                    "$ref": "#/definitions/dto.WebhookInfo"
+                },
+                "webhook_id": {
+                    "type": "string",
+                    "example": "webhook_123456789"
+                },
+                "webhooks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.WebhookInfo"
+                    }
                 }
             }
         },

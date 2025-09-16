@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"zpmeow/internal/domain/session"
-	"zpmeow/internal/shared/validation"
 	"zpmeow/internal/interfaces/dto"
+	"zpmeow/internal/shared/validation"
 )
 
 // ChatService implements chat use cases following Clean Architecture
@@ -59,7 +59,7 @@ func (s *ChatService) GetChatHistory(ctx context.Context, sessionID, phone strin
 	// 5. Return mock chat history (actual implementation would query infrastructure)
 	// In a real implementation, this would call the infrastructure layer to get chat history
 	history := make([]*dto.ChatHistoryData, 0)
-	
+
 	// Mock data for demonstration
 	history = append(history, &dto.ChatHistoryData{
 		MessageID:   "msg_001",
@@ -92,7 +92,7 @@ func (s *ChatService) ListChats(ctx context.Context, sessionID string) ([]map[st
 
 	// 3. Return mock chat list (actual implementation would query infrastructure)
 	chats := make([]map[string]interface{}, 0)
-	
+
 	// Mock data for demonstration
 	chats = append(chats, map[string]interface{}{
 		"jid":          "5511999999999@s.whatsapp.net",
@@ -139,7 +139,7 @@ func (s *ChatService) MarkAsRead(ctx context.Context, sessionID string, req *dto
 
 	// 6. Create success response (actual implementation would call infrastructure)
 	response := dto.NewChatSuccessResponse(req.Phone, "", "mark_read")
-	
+
 	return response, nil
 }
 
@@ -187,7 +187,7 @@ func (s *ChatService) SetPresence(ctx context.Context, sessionID string, req *dt
 
 	// 6. Create success response (actual implementation would call infrastructure)
 	response := dto.NewChatSuccessResponse(req.Phone, "", "set_presence")
-	
+
 	return response, nil
 }
 
@@ -215,7 +215,7 @@ func (s *ChatService) ArchiveChat(ctx context.Context, sessionID, chatJID string
 
 	// 4. Create success response (actual implementation would call infrastructure)
 	response := dto.NewChatSuccessResponse(chatJID, "", "archive_chat")
-	
+
 	return response, nil
 }
 
@@ -243,7 +243,7 @@ func (s *ChatService) UnarchiveChat(ctx context.Context, sessionID, chatJID stri
 
 	// 4. Create success response (actual implementation would call infrastructure)
 	response := dto.NewChatSuccessResponse(chatJID, "", "unarchive_chat")
-	
+
 	return response, nil
 }
 
@@ -271,7 +271,7 @@ func (s *ChatService) DeleteChat(ctx context.Context, sessionID, chatJID string)
 
 	// 4. Create success response (actual implementation would call infrastructure)
 	response := dto.NewChatSuccessResponse(chatJID, "", "delete_chat")
-	
+
 	return response, nil
 }
 
@@ -304,7 +304,7 @@ func (s *ChatService) MuteChat(ctx context.Context, sessionID, chatJID string, d
 
 	// 5. Create success response (actual implementation would call infrastructure)
 	response := dto.NewChatSuccessResponse(chatJID, "", "mute_chat")
-	
+
 	return response, nil
 }
 
@@ -332,6 +332,6 @@ func (s *ChatService) UnmuteChat(ctx context.Context, sessionID, chatJID string)
 
 	// 4. Create success response (actual implementation would call infrastructure)
 	response := dto.NewChatSuccessResponse(chatJID, "", "unmute_chat")
-	
+
 	return response, nil
 }
