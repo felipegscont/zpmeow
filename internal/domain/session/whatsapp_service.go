@@ -4,9 +4,9 @@ import (
 	"context"
 )
 
-// WhatsAppService defines the interface for WhatsApp operations
+// WAService defines the interface for WhatsApp operations
 // This interface abstracts the WhatsApp SDK implementation from the domain layer
-type WhatsAppService interface {
+type WAService interface {
 	// Session Management
 	StartClient(sessionID string) error
 	StopClient(sessionID string) error

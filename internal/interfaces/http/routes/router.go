@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"zpmeow/docs"
-	"zpmeow/internal/infrastructure/middleware"
-	"zpmeow/internal/interfaces/http/handlers"
+	"meow/docs"
+	"meow/internal/infrastructure/middleware"
+	"meow/internal/interfaces/http/handlers"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"
@@ -25,7 +25,7 @@ func SetupRoutes(
 	authMiddleware *middleware.AuthMiddleware,
 ) {
 
-	router.Use(middleware.CORS())
+	// Note: CORS middleware now requires configuration - will be updated in main.go
 	router.Use(middleware.Logger())
 	router.Use(gin.Recovery())
 
@@ -41,6 +41,12 @@ func SetupRoutes(
 
 	router.GET("/ping", healthHandler.Ping)
 	router.GET("/health", healthHandler.Health)
+
+	// Global webhook routes (not session-specific, no auth required)
+	webhookGlobal := router.Group("/webhooks")
+	{
+		webhookGlobal.GET("/events", webhookHandler.GetSupportedEvents)
+	}
 
 	sessionGroup := router.Group("/sessions")
 	sessionGroup.Use(authMiddleware.AuthenticateGlobal())

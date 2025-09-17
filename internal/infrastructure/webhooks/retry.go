@@ -1,4 +1,4 @@
-package webhook
+package webhooks
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"zpmeow/internal/infrastructure/logging"
+	"meow/internal/infrastructure/logging"
 )
 
 type RetryConfig struct {

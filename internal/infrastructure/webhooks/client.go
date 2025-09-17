@@ -1,4 +1,4 @@
-package webhook
+package webhooks
 
 import (
 	"bytes"
@@ -40,7 +40,7 @@ func (c *WebhookHTTPClient) Post(ctx context.Context, url string, payload interf
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "zpmeow-webhook-client/1.0")
+	req.Header.Set("User-Agent", "meow-webhook-client/1.0")
 
 	for key, value := range headers {
 		req.Header.Set(key, value)

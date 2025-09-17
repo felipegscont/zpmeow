@@ -3,31 +3,31 @@ package handlers
 import (
 	"net/http"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 // ContactHandler handles contact-related HTTP requests
 type ContactHandler struct {
-	sessionService *application.SessionService
-	wameowService  *wameow.MeowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 }
 
 // NewContactHandler creates a new contact handler
-func NewContactHandler(sessionService *application.SessionService, wameowService *wameow.MeowService) *ContactHandler {
+func NewContactHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ContactHandler {
 	return &ContactHandler{
 		sessionService: sessionService,
-		wameowService:  wameowService,
+		wmeowService:    wmeowService,
 	}
 }
 
-// CheckContact handles checking if contacts are on WhatsApp
+// CheckContact handles checking if contacts are on meow
 //
-//	@Summary		Check contacts on WhatsApp
-//	@Description	Check if phone numbers are registered on WhatsApp
+//	@Summary		Check contacts on meow
+//	@Description	Check if phone numbers are registered on meow
 //	@Tags			Contacts
 //	@Accept			json
 //	@Produce		json
@@ -63,9 +63,9 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 		return
 	}
 
-	// Check contacts via wameow service
+	// Check contacts via meow service
 	ctx := c.Request.Context()
-	results, err := h.wameowService.CheckUser(ctx, sessionID, req.Phones)
+	results, err := h.wmeowService.CheckUser(ctx, sessionID, req.Phones)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewContactErrorResponse(
 			http.StatusInternalServerError,
@@ -76,12 +76,12 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow results to DTO format
+	// Convert meow results to DTO format
 	var checkResults []dto.ContactCheckResult
 	for _, result := range results {
 		checkResults = append(checkResults, dto.ContactCheckResult{
 			Query:        result.Query,
-			IsInWhatsapp: result.IsInWhatsapp,
+			IsInmeow:     result.IsInmeow,
 			JID:          result.JID,
 			VerifiedName: result.VerifiedName,
 		})
@@ -130,9 +130,9 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 		return
 	}
 
-	// Get contact info via wameow service
+	// Get contact info via meow service
 	ctx := c.Request.Context()
-	results, err := h.wameowService.GetUserInfo(ctx, sessionID, req.Phones)
+	results, err := h.wmeowService.GetUserInfo(ctx, sessionID, req.Phones)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewContactErrorResponse(
 			http.StatusInternalServerError,
@@ -143,7 +143,7 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow results to DTO format
+	// Convert meow results to DTO format
 	var contactInfos []dto.ContactInfo
 	for _, result := range results {
 		contactInfos = append(contactInfos, dto.ContactInfo{
@@ -200,9 +200,9 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 		return
 	}
 
-	// Get avatar via wameow service
+	// Get avatar via meow service
 	ctx := c.Request.Context()
-	result, err := h.wameowService.GetAvatar(ctx, sessionID, req.Phone)
+	result, err := h.wmeowService.GetAvatar(ctx, sessionID, req.Phone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewContactErrorResponse(
 			http.StatusInternalServerError,
@@ -213,7 +213,7 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow result to DTO format
+	// Convert meow result to DTO format
 	avatarInfo := &dto.AvatarInfo{
 		Phone:     result.Phone,
 		JID:       result.JID,
@@ -264,9 +264,9 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 		return
 	}
 
-	// Set contact presence via wameow service
+	// Set contact presence via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.SetUserPresence(ctx, sessionID, req.State)
+	err := h.wmeowService.SetUserPresence(ctx, sessionID, req.State)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewContactErrorResponse(
 			http.StatusInternalServerError,
@@ -284,7 +284,7 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 // GetContacts handles getting contact list
 //
 //	@Summary		Get contacts
-//	@Description	Get all contacts from contact's WhatsApp
+//	@Description	Get all contacts from contact's meow
 //	@Tags			Contacts
 //	@Accept			json
 //	@Produce		json
@@ -296,9 +296,9 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 func (h *ContactHandler) GetContacts(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
-	// Get contacts via wameow service
+	// Get contacts via meow service
 	ctx := c.Request.Context()
-	results, err := h.wameowService.GetContacts(ctx, sessionID)
+	results, err := h.wmeowService.GetContacts(ctx, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewContactErrorResponse(
 			http.StatusInternalServerError,
@@ -309,7 +309,7 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow results to DTO format
+	// Convert meow results to DTO format
 	var contacts []dto.ContactInfo
 	for _, result := range results {
 		contacts = append(contacts, dto.ContactInfo{

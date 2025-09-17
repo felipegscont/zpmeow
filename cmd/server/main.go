@@ -1,11 +1,11 @@
-//	@title			zpmeow WhatsApp API
+//	@title			meow meow API
 //	@version		1.0
-//	@description	A WhatsApp API server built with Go, inspired by wuzapi
+//	@description	A meow API server built with Go, inspired by meow
 //	@termsOfService	http://swagger.io/terms/
 
-//	@contact.name	zpmeow API Support
-//	@contact.url	https://github.com/your-username/zpmeow
-//	@contact.email	support@zpmeow.com
+//	@contact.name	meow API Support
+//	@contact.url	https://github.com/your-username/meow
+//	@contact.email	support@meow.com
 
 //	@license.name	MIT
 //	@license.url	https://opensource.org/licenses/MIT
@@ -25,18 +25,19 @@ import (
 	"context"
 	"fmt"
 
-	_ "zpmeow/docs" // Import for swagger docs
-	"zpmeow/internal/application"
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/infrastructure/config"
-	"zpmeow/internal/infrastructure/database"
-	"zpmeow/internal/infrastructure/database/repository"
-	"zpmeow/internal/infrastructure/logging"
-	"zpmeow/internal/infrastructure/middleware"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/http/handlers"
-	"zpmeow/internal/interfaces/http/routes"
-	"zpmeow/internal/shared/validation"
+	_ "meow/docs" // Import for swagger docs
+	"meow/internal/application"
+	"meow/internal/config"
+	"meow/internal/domain/session"
+	"meow/internal/infrastructure/database"
+	"meow/internal/infrastructure/database/repository"
+	"meow/internal/infrastructure/logging"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/infrastructure/webhooks"
+	"meow/internal/infrastructure/middleware"
+	"meow/internal/interfaces/http/handlers"
+	"meow/internal/interfaces/http/routes"
+	"meow/internal/shared/validation"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -50,10 +51,9 @@ func main() {
 		return
 	}
 
-	loggerConfig := cfg.GetLoggerConfig()
-	log := logging.Initialize(loggerConfig)
+	log := logging.Initialize(cfg.GetLogging())
 	logging.SetLogger(log)
-	log.Info("Starting zpmeow server")
+	log.Info("Starting meow server")
 
 	db, err := database.Connect(cfg)
 	if err != nil {
@@ -66,7 +66,7 @@ func main() {
 	}
 
 	dbLog := logging.GetWALogger("Database")
-	container, err := sqlstore.New(context.Background(), "postgres", cfg.DBUrl, dbLog)
+	container, err := sqlstore.New(context.Background(), "postgres", cfg.GetDatabaseURL(), dbLog)
 	if err != nil {
 		log.Fatalf("Failed to create whatsmeow container: %v", err)
 	}
@@ -74,19 +74,25 @@ func main() {
 	waLogger := logging.GetWALogger("MeowService")
 
 	// Create session repository
-	sessionRepo := repository.NewSessionRepo(db)
+	sessionRepo := repository.NewPostgresRepo(db)
 
-	// Create whatsapp service
-	whatsappService := wameow.NewMeowService(container, waLogger, sessionRepo)
+	// Create webhook service
+	webhookService := webhooks.NewService()
+
+	// Create WhatsApp service
+	wmeowService := wmeow.NewService(container, waLogger, sessionRepo, cfg.GetMeow(), webhookService)
 
 	// Create session service with proper dependencies
-	domainSessionService := session.NewSessionService()
+	domainSessionService := session.NewService()
 	validator := validation.NewValidator()
-	appSessionService := application.NewSessionService(sessionRepo, domainSessionService, validator)
+	appSessionService := application.NewSessionApp(sessionRepo, domainSessionService, validator)
+
+	// Create webhook application service
+	webhookAppService := application.NewWebhookService(sessionRepo, webhookService)
 
 	// Connect active sessions on startup
 	log.Info("Connecting active sessions on startup...")
-	if err := whatsappService.ConnectOnStartup(context.Background()); err != nil {
+	if err := wmeowService.ConnectOnStartup(context.Background()); err != nil {
 		log.Errorf("Failed to connect active sessions on startup: %v", err)
 	} else {
 		log.Info("Active sessions connected successfully")
@@ -98,24 +104,50 @@ func main() {
 	authMiddleware := middleware.NewAuthMiddleware(cfg, sessionRepo, log)
 
 	// Use application service in handlers
-	sessionHandler := handlers.NewSessionHandler(appSessionService, whatsappService)
+	sessionHandler := handlers.NewSessionHandler(appSessionService, wmeowService)
 	healthHandler := handlers.NewHealthHandler()
-	meowServiceImpl := whatsappService.(*wameow.MeowService)
-	messageHandler := handlers.NewMessageHandler(appSessionService, meowServiceImpl)
-	chatHandler := handlers.NewChatHandler(appSessionService, meowServiceImpl)
-	groupHandler := handlers.NewGroupHandler(appSessionService, meowServiceImpl)
-	communityHandler := handlers.NewCommunityHandler(appSessionService, meowServiceImpl)
-	webhookHandler := handlers.NewWebhookHandler(nil)
-	contactHandler := handlers.NewContactHandler(appSessionService, meowServiceImpl)
-	newsletterHandler := handlers.NewNewsletterHandler(appSessionService, meowServiceImpl)
-	privacyHandler := handlers.NewPrivacyHandler(appSessionService, meowServiceImpl)
+	messageHandler := handlers.NewMessageHandler(appSessionService, wmeowService)
+	chatHandler := handlers.NewChatHandler(appSessionService, wmeowService)
+	groupHandler := handlers.NewGroupHandler(appSessionService, wmeowService)
+	communityHandler := handlers.NewCommunityHandler(appSessionService, wmeowService)
+	webhookHandler := handlers.NewWebhookHandler(appSessionService, webhookAppService)
+	contactHandler := handlers.NewContactHandler(appSessionService, wmeowService)
+	newsletterHandler := handlers.NewNewsletterHandler(appSessionService, wmeowService)
+	privacyHandler := handlers.NewPrivacyHandler(appSessionService, wmeowService)
 
-	gin.SetMode(cfg.GinMode)
+	gin.SetMode(cfg.GetServer().GetMode())
 
+	// Create Gin router with custom middleware (no default logging)
 	ginRouter := gin.New()
+
+	// Add recovery middleware
+	ginRouter.Use(gin.Recovery())
+
+	// Add custom logging middleware only for errors and important requests
+	ginRouter.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		SkipPaths: []string{"/ping", "/health"}, // Skip health check logs
+		Formatter: func(param gin.LogFormatterParams) string {
+			// Only log non-2xx responses and important endpoints
+			if param.StatusCode >= 400 ||
+			   (param.Path != "/ping" && param.Path != "/health") {
+				return fmt.Sprintf("%s - %s %s %d %s\n",
+					param.TimeStamp.Format("15:04:05"),
+					param.Method,
+					param.Path,
+					param.StatusCode,
+					param.Latency,
+				)
+			}
+			return ""
+		},
+	}))
+
+	// Add CORS middleware with configuration
+	ginRouter.Use(middleware.CORS(cfg.GetCORS()))
+
 	routes.SetupRoutes(ginRouter, sessionHandler, healthHandler, messageHandler, chatHandler, groupHandler, communityHandler, webhookHandler, contactHandler, newsletterHandler, privacyHandler, authMiddleware)
 
-	addr := fmt.Sprintf(":%s", cfg.ServerPort)
+	addr := fmt.Sprintf(":%s", cfg.GetServer().GetPort())
 	log.Infof("Server listening on %s", addr)
 	if err := ginRouter.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)

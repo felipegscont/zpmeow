@@ -12,7 +12,7 @@ import (
 type CreateSessionRequest struct {
 	Name       string `json:"name" binding:"required" example:"default"`
 	ProxyURL   string `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
-	WebhookURL string `json:"webhook_url,omitempty" example:"https://webhook.example.com/whatsapp"`
+	WebhookURL string `json:"webhook_url,omitempty" example:"https://webhook.example.com/meow"`
 	Events     string `json:"events,omitempty" example:"message,status"`
 }
 
@@ -30,9 +30,9 @@ type SessionInfo struct {
 	ID         string    `json:"id" example:"default"`
 	Name       string    `json:"name" example:"default"`
 	Status     string    `json:"status" example:"connected"`
-	WaJID      string    `json:"wa_jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	WaJID      string    `json:"wa_jid,omitempty" example:"5511999999999@s.meow.net"`
 	ProxyURL   string    `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
-	WebhookURL string    `json:"webhook_url,omitempty" example:"https://webhook.example.com/whatsapp"`
+	WebhookURL string    `json:"webhook_url,omitempty" example:"https://webhook.example.com/meow"`
 	Events     []string  `json:"events,omitempty" example:"message,status"`
 	ApiKey     string    `json:"api_key,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
 	CreatedAt  time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
@@ -88,12 +88,12 @@ type SessionErrorResponse struct {
 type CreateSessionResponse struct {
 	Success bool                      `json:"success" example:"true"`
 	Code    int                       `json:"code" example:"201"`
-	Data    CreateSessionResponseData `json:"data"`
+	Data    SessionCreateData `json:"data"`
 	Error   *SessionErrorResponse     `json:"error,omitempty"`
 }
 
 // CreateSessionResponseData contains the data for session creation response
-type CreateSessionResponseData struct {
+type SessionCreateData struct {
 	SessionID string       `json:"session_id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Action    string       `json:"action" example:"create"`
 	Status    string       `json:"status" example:"success"`
@@ -139,12 +139,12 @@ type SessionListResponseData struct {
 type ConnectSessionResponse struct {
 	Success bool                       `json:"success" example:"true"`
 	Code    int                        `json:"code" example:"200"`
-	Data    ConnectSessionResponseData `json:"data"`
+	Data    SessionConnectData `json:"data"`
 	Error   *SessionErrorResponse      `json:"error,omitempty"`
 }
 
 // ConnectSessionResponseData contains the data for session connection response
-type ConnectSessionResponseData struct {
+type SessionConnectData struct {
 	SessionID  string                 `json:"session_id" example:"default"`
 	Action     string                 `json:"action" example:"connect"`
 	Status     string                 `json:"status" example:"success"`
@@ -205,7 +205,7 @@ type SessionStatusResponseData struct {
 	Timestamp     time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 	Name          string    `json:"name" example:"default"`
 	SessionStatus string    `json:"session_status" example:"connected"`
-	WaJID         string    `json:"wa_jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	WaJID         string    `json:"wa_jid,omitempty" example:"5511999999999@s.meow.net"`
 	IsConnected   bool      `json:"is_connected" example:"true"`
 	ClientStatus  string    `json:"client_status" example:"connected"`
 	CreatedAt     time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
@@ -247,3 +247,4 @@ func NewSessionErrorResponse(code int, errorCode, message, details string) *Sess
 		},
 	}
 }
+

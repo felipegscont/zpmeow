@@ -1,4 +1,4 @@
-# 🏗️ ZPMeow Architecture
+# 🏗️ meow Architecture
 
 [![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-blue?style=flat-square)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 [![Go](https://img.shields.io/badge/Go-1.21+-00ADD8?style=flat-square&logo=go)](https://golang.org/)
@@ -6,9 +6,9 @@
 
 ## 📋 Overview
 
-ZPMeow is a WhatsApp API built with **Clean Architecture** principles, providing a robust and scalable solution for WhatsApp integration. The architecture follows a 4-layer approach with clear separation of concerns and dependency inversion.
+meow is a meow API built with **Clean Architecture** principles, providing a robust and scalable solution for meow integration. The architecture follows a 4-layer approach with clear separation of concerns and dependency inversion.
 
-**🎯 Current Status**: 85% of WhatsApp methods implemented and tested, with comprehensive test coverage validating the architecture's robustness.
+**🎯 Current Status**: 85% of meow methods implemented and tested, with comprehensive test coverage validating the architecture's robustness.
 
 ## 🎯 Core Principles
 
@@ -38,7 +38,7 @@ The architecture's effectiveness has been validated through comprehensive testin
 ## 📁 Project Structure
 
 ```
-zpmeow/
+meow/
 ├── Dockerfile                         # Container configuration
 ├── Makefile                           # Build automation
 ├── docker-compose.yml                 # Development environment
@@ -97,12 +97,12 @@ zpmeow/
 │   │   │       ├── messaging.go       # Messaging repository
 │   │   │       └── webhooks.go        # Webhooks repository
 │   │   ├── whatsmeow/
-│   │   │   ├── client.go              # WhatsApp client
+│   │   │   ├── client.go              # meow client
 │   │   │   ├── manager.go             # Client manager
 │   │   │   ├── events.go              # Event handlers
 │   │   │   ├── messages.go            # Message handling
-│   │   │   ├── service.go             # WhatsApp service implementation
-│   │   │   └── utils.go               # WhatsApp utilities
+│   │   │   ├── service.go             # meow service implementation
+│   │   │   └── utils.go               # meow utilities
 │   │   ├── webhooks/
 │   │   │   ├── client.go              # HTTP client for webhooks
 │   │   │   ├── service.go             # Webhook service implementation
@@ -121,8 +121,11 @@ zpmeow/
 │   │   │   │   └── response.go        # HTTP responses
 │   │   │   └── routes/                # Route configuration
 │   │   │       └── router.go          # Main router
-│   │   ├── config/
-│   │   │   └── config.go              # Application configuration
+│   ├── config/                        # 🔧 Configuration Module (Centralized)
+│   │   ├── config.go                  # Main configuration structures
+│   │   ├── interfaces.go              # Configuration interfaces
+│   │   ├── defaults.go                # Default configurations
+│   │   └── README.md                  # Configuration documentation
 │   │   └── logging/
 │   │       ├── logger.go              # Logger interface
 │   │       └── zap.go                 # Zap logger implementation
@@ -204,10 +207,10 @@ zpmeow/
 
 **Key Components**:
 - `database/`: Database operations and models
-- `whatsmeow/`: WhatsApp client integration
+- `whatsmeow/`: meow client integration
 - `web/`: HTTP API implementation
 - `webhooks/`: Webhook client
-- `config/`: Configuration management
+- `config/`: Centralized configuration management
 - `logging/`: Logging implementation
 
 ### 4. Shared Layer (Cross-cutting Concerns)
@@ -232,15 +235,26 @@ HTTP Request → Handler → UseCase → Domain ← Infrastructure
 
 ## 🎯 Key Design Decisions
 
+### Centralized Configuration System
+- **Location**: `internal/config/`
+- **Structure**: Domain-separated configuration with interfaces
+- **Features**: Typed, validated, environment-aware configuration
+- **Benefits**:
+  - ✅ All configurations in one place
+  - ✅ Type safety and validation
+  - ✅ Easy testing with interfaces
+  - ✅ Environment-specific defaults
+  - ✅ No more hardcoded values scattered across codebase
+
 ### Database Abstraction
 - **Interface**: `internal/domain/sessions/repository.go`
 - **Implementation**: `internal/infra/database/repository/sessions.go`
 - **Benefit**: Easy to swap PostgreSQL for MySQL, MongoDB, etc.
 
-### WhatsApp Integration
+### meow Integration
 - **Abstraction**: Domain service interfaces
 - **Implementation**: `internal/infra/whatsmeow/`
-- **Benefit**: Can switch WhatsApp libraries without affecting business logic
+- **Benefit**: Can switch meow libraries without affecting business logic
 
 ### HTTP API
 - **Handlers**: `internal/infra/web/handlers/`
@@ -271,9 +285,9 @@ HTTP Request → Handler → UseCase → Domain ← Infrastructure
 ```go
 // ✅ Clean imports (no aliases needed)
 import (
-    "zpmeow/internal/domain/sessions"
-    "zpmeow/internal/usecase/sessions"
-    "zpmeow/internal/infra/web/handlers"
+    "meow/internal/domain/sessions"
+    "meow/internal/usecase/sessions"
+    "meow/internal/infra/web/handlers"
 )
 ```
 
@@ -304,14 +318,14 @@ import (
 - **Basic Messaging**: Text messages, media sending (images, audio, video, documents)
 - **Webhook System**: Registration and notification framework
 - **Database Layer**: PostgreSQL with migrations
-- **Configuration**: Environment-based configuration
+- **Configuration**: Centralized, typed, and validated configuration system
 - **Logging**: Structured logging with Zap
 - **Health Checks**: Basic health and ping endpoints
 
 ### 🔄 Partially Implemented
 - **Chat Operations**: Presence, reactions, downloads (stub implementations)
 - **User Operations**: User info, contacts, avatar (stub implementations)
-- **WhatsApp Integration**: Core functionality present, some features pending
+- **meow Integration**: Core functionality present, some features pending
 
 ### ✅ Implemented
 - **Newsletter Operations**: All 14 newsletter endpoints fully implemented and tested
@@ -328,4 +342,4 @@ import (
 - Multiple handlers are consolidated in `messaging.go` for related functionality
 - The architecture supports easy addition of missing features through existing interfaces
 
-This architecture ensures ZPMeow is maintainable, testable, and ready for future growth while maintaining clean separation of concerns throughout the codebase.
+This architecture ensures meow is maintainable, testable, and ready for future growth while maintaining clean separation of concerns throughout the codebase.

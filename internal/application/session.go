@@ -5,38 +5,47 @@ import (
 	"fmt"
 	"strings"
 
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/interfaces/dto"
-	"zpmeow/internal/shared/validation"
+	"meow/internal/domain/session"
+	"meow/internal/interfaces/dto"
+	"meow/internal/shared/validation"
 
 	"github.com/google/uuid"
 )
 
-type SessionService struct {
+type SessionApp struct {
 	sessionRepo    session.Repository
-	sessionService session.DomainService
+	sessionService session.Service
 	validator      *validation.Validator
 }
 
-func NewSessionService(
+func NewSessionApp(
 	sessionRepo session.Repository,
-	sessionService session.DomainService,
+	sessionService session.Service,
 	validator *validation.Validator,
-) *SessionService {
-	return &SessionService{
+) *SessionApp {
+	return &SessionApp{
 		sessionRepo:    sessionRepo,
 		sessionService: sessionService,
 		validator:      validator,
 	}
 }
 
-func (s *SessionService) CreateSessionWithRequest(ctx context.Context, req *dto.CreateSessionRequest) (*session.Session, error) {
+func (s *SessionApp) CreateSessionWithRequest(ctx context.Context, req *dto.CreateSessionRequest) (*session.Session, error) {
 	if err := s.validator.Validate(req); err != nil {
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	sessionEntity := session.NewSession(uuid.New().String(), req.Name)
-	sessionEntity.ProxyURL = req.ProxyURL
+	sessionEntity, err := session.NewSession(uuid.New().String(), req.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session entity: %w", err)
+	}
+
+	if req.ProxyURL != "" {
+		if err := sessionEntity.SetProxyURL(req.ProxyURL); err != nil {
+			return nil, fmt.Errorf("invalid proxy URL: %w", err)
+		}
+	}
+
 	sessionEntity.WebhookURL = req.WebhookURL
 	if req.Events != "" {
 		sessionEntity.Events = []string{req.Events}
@@ -53,7 +62,7 @@ func (s *SessionService) CreateSessionWithRequest(ctx context.Context, req *dto.
 	return sessionEntity, nil
 }
 
-func (s *SessionService) GetSession(ctx context.Context, sessionIDOrName string) (*session.Session, error) {
+func (s *SessionApp) GetSession(ctx context.Context, sessionIDOrName string) (*session.Session, error) {
 	if sessionIDOrName == "" {
 		return nil, fmt.Errorf("session ID or name is required")
 	}
@@ -93,7 +102,7 @@ func (s *SessionService) GetSession(ctx context.Context, sessionIDOrName string)
 	return nil, fmt.Errorf("session not found")
 }
 
-func (s *SessionService) GetSessionByDeviceJID(ctx context.Context, deviceJID string) (*session.Session, error) {
+func (s *SessionApp) GetSessionByDeviceJID(ctx context.Context, deviceJID string) (*session.Session, error) {
 	if deviceJID == "" {
 		return nil, fmt.Errorf("device JID is required")
 	}
@@ -101,7 +110,7 @@ func (s *SessionService) GetSessionByDeviceJID(ctx context.Context, deviceJID st
 	return s.sessionRepo.GetByDeviceJID(ctx, deviceJID)
 }
 
-func (s *SessionService) ListSessionEntities(ctx context.Context) ([]*session.Session, error) {
+func (s *SessionApp) ListSessionEntities(ctx context.Context) ([]*session.Session, error) {
 	sessions, err := s.sessionRepo.GetAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
@@ -110,11 +119,11 @@ func (s *SessionService) ListSessionEntities(ctx context.Context) ([]*session.Se
 	return sessions, nil
 }
 
-func (s *SessionService) GetAllSessions(ctx context.Context) ([]*session.Session, error) {
+func (s *SessionApp) GetAllSessions(ctx context.Context) ([]*session.Session, error) {
 	return s.ListSessionEntities(ctx)
 }
 
-func (s *SessionService) ConnectSession(ctx context.Context, sessionIDOrName string) (*session.Session, error) {
+func (s *SessionApp) ConnectSession(ctx context.Context, sessionIDOrName string) (*session.Session, error) {
 	if sessionIDOrName == "" {
 		return nil, fmt.Errorf("session ID or name is required")
 	}
@@ -145,7 +154,7 @@ func (s *SessionService) ConnectSession(ctx context.Context, sessionIDOrName str
 	return sessionEntity, nil
 }
 
-func (s *SessionService) DeleteSession(ctx context.Context, sessionIDOrName string) error {
+func (s *SessionApp) DeleteSession(ctx context.Context, sessionIDOrName string) error {
 	if sessionIDOrName == "" {
 		return fmt.Errorf("session ID or name is required")
 	}
@@ -159,14 +168,14 @@ func (s *SessionService) DeleteSession(ctx context.Context, sessionIDOrName stri
 		return fmt.Errorf("session cannot be deleted in current status: %s", sessionEntity.Status)
 	}
 
-	if err := s.sessionRepo.Delete(ctx, sessionEntity.ID); err != nil {
+	if err := s.sessionRepo.Delete(ctx, sessionEntity.ID.Value()); err != nil {
 		return fmt.Errorf("failed to delete session: %w", err)
 	}
 
 	return nil
 }
 
-func (s *SessionService) RegenerateApiKey(ctx context.Context, sessionIDOrName string) (string, error) {
+func (s *SessionApp) RegenerateApiKey(ctx context.Context, sessionIDOrName string) (string, error) {
 	if sessionIDOrName == "" {
 		return "", fmt.Errorf("session ID or name is required")
 	}

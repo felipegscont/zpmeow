@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"zpmeow/internal/infrastructure/logging"
+	"meow/internal/infrastructure/logging"
 )
 
 // ============================================================================
@@ -40,7 +40,7 @@ type HealthData struct {
 	Status  string `json:"status" example:"ok"`
 	Message string `json:"message" example:"Service is healthy"`
 	Version string `json:"version,omitempty" example:"1.0.0"`
-	Service string `json:"service" example:"zpmeow"`
+	Service string `json:"service" example:"meow"`
 }
 
 // HealthErrorResponse represents error information for health operations
@@ -63,7 +63,7 @@ func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, ver
 			Status:  status,
 			Message: message,
 			Version: version,
-			Service: "zpmeow",
+			Service: "meow",
 		},
 	}
 

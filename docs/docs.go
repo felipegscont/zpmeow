@@ -11,9 +11,9 @@ const docTemplate = `{
         "title": "{{.Title}}",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
-            "name": "zpmeow API Support",
-            "url": "https://github.com/your-username/zpmeow",
-            "email": "support@zpmeow.com"
+            "name": "meow API Support",
+            "url": "https://github.com/your-username/meow",
+            "email": "support@meow.com"
         },
         "license": {
             "name": "MIT",
@@ -1066,7 +1066,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Check if phone numbers are registered on WhatsApp",
+                "description": "Check if phone numbers are registered on meow",
                 "consumes": [
                     "application/json"
                 ],
@@ -1076,7 +1076,7 @@ const docTemplate = `{
                 "tags": [
                     "Contacts"
                 ],
-                "summary": "Check contacts on WhatsApp",
+                "summary": "Check contacts on meow",
                 "parameters": [
                     {
                         "type": "string",
@@ -1182,7 +1182,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get all contacts from contact's WhatsApp",
+                "description": "Get all contacts from contact's meow",
                 "consumes": [
                     "application/json"
                 ],
@@ -1347,7 +1347,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new WhatsApp group with specified name and participants",
+                "description": "Create a new meow group with specified name and participants",
                 "consumes": [
                     "application/json"
                 ],
@@ -1731,7 +1731,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Join a WhatsApp group using an invite link",
+                "description": "Join a meow group using an invite link",
                 "consumes": [
                     "application/json"
                 ],
@@ -1859,7 +1859,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Join a WhatsApp group using specific invite details",
+                "description": "Join a meow group using specific invite details",
                 "consumes": [
                     "application/json"
                 ],
@@ -1923,7 +1923,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Leave a WhatsApp group",
+                "description": "Leave a meow group",
                 "consumes": [
                     "application/json"
                 ],
@@ -2449,7 +2449,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.UpdateGroupRequestParticipantsRequest"
+                            "$ref": "#/definitions/dto.UpdateGroupRequestsReq"
                         }
                     }
                 ],
@@ -2511,7 +2511,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetGroupRequestParticipantsRequest"
+                            "$ref": "#/definitions/dto.GetGroupRequestsReq"
                         }
                     }
                 ],
@@ -3182,7 +3182,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send an audio message to a WhatsApp contact",
+                "description": "Send an audio message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3240,7 +3240,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a button message to a WhatsApp contact (not yet implemented)",
+                "description": "Send a button message to a meow contact (not yet implemented)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3277,7 +3277,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a contact message to a WhatsApp contact",
+                "description": "Send a contact message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3335,7 +3335,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a document message to a WhatsApp contact",
+                "description": "Send a document message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3393,7 +3393,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send an image message to a WhatsApp contact",
+                "description": "Send an image message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3451,7 +3451,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a list message to a WhatsApp contact (not yet implemented)",
+                "description": "Send a list message to a meow contact (not yet implemented)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3488,7 +3488,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a location message to a WhatsApp contact",
+                "description": "Send a location message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3604,7 +3604,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a media message (image, video, audio, document) to a WhatsApp contact",
+                "description": "Send a media message (image, video, audio, document) to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3662,7 +3662,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a poll message to a WhatsApp contact (not yet implemented)",
+                "description": "Send a poll message to a meow contact (not yet implemented)",
                 "consumes": [
                     "application/json"
                 ],
@@ -3699,7 +3699,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a sticker message to a WhatsApp contact",
+                "description": "Send a sticker message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3757,7 +3757,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a text message to a WhatsApp contact",
+                "description": "Send a text message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -3815,7 +3815,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a video message to a WhatsApp contact",
+                "description": "Send a video message to a meow contact",
                 "consumes": [
                     "application/json"
                 ],
@@ -4068,7 +4068,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Create a new WhatsApp newsletter",
+                "description": "Create a new meow newsletter",
                 "consumes": [
                     "application/json"
                 ],
@@ -4086,28 +4086,103 @@ const docTemplate = `{
                         "name": "sessionId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Newsletter creation request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.CreateNewsletterRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "201": {
                         "description": "Newsletter created successfully",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.CreateNewsletterResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.CreateNewsletterResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.CreateNewsletterResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/session/{sessionId}/newsletter/upload": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Upload media files (image, video, audio, document) for use in newsletter messages. Returns MediaHandle required for sending media messages.",
+                "consumes": [
+                    "multipart/form-data"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Upload media for newsletter",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Media file to upload",
+                        "name": "file",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Media type (image, video, audio, document)",
+                        "name": "media_type",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Media uploaded successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadNewsletterMediaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - Invalid file or parameters",
+                        "schema": {
+                            "$ref": "#/definitions/dto.StandardResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found or not connected",
+                        "schema": {
+                            "$ref": "#/definitions/dto.StandardResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     }
                 }
@@ -4141,7 +4216,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Newsletter ID",
+                        "description": "Newsletter JID",
                         "name": "newsletterId",
                         "in": "path",
                         "required": true
@@ -4151,229 +4226,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Newsletter information retrieved",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.NewsletterInfoResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.NewsletterInfoResponse"
                         }
                     },
                     "404": {
                         "description": "Newsletter not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.NewsletterInfoResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update newsletter information (name, description, etc.)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Newsletters"
-                ],
-                "summary": "Update newsletter",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Newsletter ID",
-                        "name": "newsletterId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Newsletter updated successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Newsletter not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete a newsletter permanently",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Newsletters"
-                ],
-                "summary": "Delete newsletter",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Newsletter ID",
-                        "name": "newsletterId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Newsletter deleted successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Newsletter not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/session/{sessionId}/newsletter/{newsletterId}/metrics": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get analytics and metrics for a newsletter (subscribers, engagement, etc.)",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Newsletters"
-                ],
-                "summary": "Get newsletter metrics",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Newsletter ID",
-                        "name": "newsletterId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Time period for metrics (day, week, month, year)",
-                        "name": "period",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Metrics retrieved successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Newsletter not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.NewsletterInfoResponse"
                         }
                     }
                 }
@@ -4386,7 +4257,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a message to all newsletter subscribers",
+                "description": "Send a text or media message to newsletter subscribers. For media messages, MediaHandle is required.",
                 "consumes": [
                     "application/json"
                 ],
@@ -4407,39 +4278,44 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Newsletter ID",
+                        "description": "Newsletter ID (format: {id}@newsletter)",
                         "name": "newsletterId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "description": "Message content (text or media)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendNewsletterMessageRequest"
+                        }
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Message sent successfully",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.SendNewsletterMessageResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad request",
+                        "description": "Bad request - Invalid parameters or missing MediaHandle for media",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.SendNewsletterMessageResponse"
                         }
                     },
                     "404": {
-                        "description": "Newsletter not found",
+                        "description": "Newsletter not found or session not connected",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.SendNewsletterMessageResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.SendNewsletterMessageResponse"
                         }
                     }
                 }
@@ -4473,7 +4349,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Newsletter ID",
+                        "description": "Newsletter JID",
                         "name": "newsletterId",
                         "in": "path",
                         "required": true
@@ -4483,107 +4359,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Subscribed successfully",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     },
                     "404": {
                         "description": "Newsletter not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
-            }
-        },
-        "/session/{sessionId}/newsletter/{newsletterId}/subscribers": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get a list of all subscribers for a newsletter",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Newsletters"
-                ],
-                "summary": "Get newsletter subscribers",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Newsletter ID",
-                        "name": "newsletterId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit number of results (default: 100)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Offset for pagination (default: 0)",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Subscribers retrieved successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "404": {
-                        "description": "Newsletter not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     }
                 }
@@ -4617,7 +4411,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Newsletter ID",
+                        "description": "Newsletter JID",
                         "name": "newsletterId",
                         "in": "path",
                         "required": true
@@ -4627,29 +4421,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Unsubscribed successfully",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     },
                     "404": {
                         "description": "Newsletter not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.StandardResponse"
                         }
                     }
                 }
@@ -4662,7 +4452,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a list of all newsletters for a session",
+                "description": "Get a list of all subscribed newsletters for a session",
                 "consumes": [
                     "application/json"
                 ],
@@ -4680,40 +4470,25 @@ const docTemplate = `{
                         "name": "sessionId",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Limit number of results (default: 50)",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "description": "Offset for pagination (default: 0)",
-                        "name": "offset",
-                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "Newsletters retrieved successfully",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.NewsletterListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.NewsletterListResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/dto.NewsletterListResponse"
                         }
                     }
                 }
@@ -5120,7 +4895,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Register a webhook URL to receive WhatsApp events",
+                "description": "Register a webhook URL to receive meow events",
                 "consumes": [
                     "application/json"
                 ],
@@ -5291,7 +5066,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Creates a new WhatsApp session and starts the client",
+                "description": "Creates a new meow session and starts the client",
                 "consumes": [
                     "application/json"
                 ],
@@ -5301,7 +5076,7 @@ const docTemplate = `{
                 "tags": [
                     "Sessions"
                 ],
-                "summary": "Create a new WhatsApp session",
+                "summary": "Create a new meow session",
                 "parameters": [
                     {
                         "description": "Session creation request",
@@ -5342,7 +5117,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Retrieves a list of all WhatsApp sessions",
+                "description": "Retrieves a list of all meow sessions",
                 "consumes": [
                     "application/json"
                 ],
@@ -5376,7 +5151,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Initiates connection to WhatsApp and returns QR code if needed. Accepts session ID or name.",
+                "description": "Initiates connection to meow and returns QR code if needed. Accepts session ID or name.",
                 "consumes": [
                     "application/json"
                 ],
@@ -5386,7 +5161,7 @@ const docTemplate = `{
                 "tags": [
                     "Sessions"
                 ],
-                "summary": "Connect a session to WhatsApp",
+                "summary": "Connect a session to meow",
                 "parameters": [
                     {
                         "type": "string",
@@ -5431,7 +5206,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Deletes a WhatsApp session and stops the client",
+                "description": "Deletes a meow session and stops the client",
                 "consumes": [
                     "application/json"
                 ],
@@ -5486,7 +5261,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Disconnects the session from WhatsApp without deleting it",
+                "description": "Disconnects the session from meow without deleting it",
                 "consumes": [
                     "application/json"
                 ],
@@ -5496,7 +5271,7 @@ const docTemplate = `{
                 "tags": [
                     "Sessions"
                 ],
-                "summary": "Disconnect a session from WhatsApp",
+                "summary": "Disconnect a session from meow",
                 "parameters": [
                     {
                         "type": "string",
@@ -5596,7 +5371,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Pairs a phone number with the session for WhatsApp connection",
+                "description": "Pairs a phone number with the session for meow connection",
                 "consumes": [
                     "application/json"
                 ],
@@ -5786,7 +5561,7 @@ const docTemplate = `{
                 },
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 }
             }
         },
@@ -5808,11 +5583,11 @@ const docTemplate = `{
             "properties": {
                 "avatar_url": {
                     "type": "string",
-                    "example": "https://pps.whatsapp.net/..."
+                    "example": "https://pps.meow.net/..."
                 },
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "phone": {
                     "type": "string",
@@ -5978,7 +5753,7 @@ const docTemplate = `{
                 },
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "last_message": {
                     "type": "string",
@@ -6274,13 +6049,13 @@ const docTemplate = `{
         "dto.ContactCheckResult": {
             "type": "object",
             "properties": {
-                "is_in_whatsapp": {
+                "is_in_meow": {
                     "type": "boolean",
                     "example": true
                 },
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "query": {
                     "type": "string",
@@ -6370,7 +6145,7 @@ const docTemplate = `{
                 },
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "name": {
                     "type": "string",
@@ -6538,6 +6313,60 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.CreateNewsletterRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "Newsletter description"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "My Newsletter"
+                },
+                "picture": {
+                    "description": "Base64 encoded image",
+                    "type": "string"
+                }
+            }
+        },
+        "dto.CreateNewsletterResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.CreateNewsletterResult"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.CreateNewsletterResult": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "jid": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "server_id": {
+                    "type": "string"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.CreateSessionRequest": {
             "type": "object",
             "required": [
@@ -6558,7 +6387,7 @@ const docTemplate = `{
                 },
                 "webhook_url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 }
             }
         },
@@ -6608,6 +6437,7 @@ const docTemplate = `{
         "dto.DeleteMessageRequest": {
             "type": "object",
             "required": [
+                "message_id",
                 "phone"
             ],
             "properties": {
@@ -6615,6 +6445,10 @@ const docTemplate = `{
                     "description": "true = delete for everyone, false = delete for me",
                     "type": "boolean",
                     "example": true
+                },
+                "message_id": {
+                    "type": "string",
+                    "example": "3EB0D098B5FD4BF3BC4327"
                 },
                 "phone": {
                     "type": "string",
@@ -6683,10 +6517,15 @@ const docTemplate = `{
         "dto.EditMessageRequest": {
             "type": "object",
             "required": [
+                "message_id",
                 "new_text",
                 "phone"
             ],
             "properties": {
+                "message_id": {
+                    "type": "string",
+                    "example": "3EB0D098B5FD4BF3BC4327"
+                },
                 "new_text": {
                     "type": "string",
                     "example": "Edited message text"
@@ -6729,7 +6568,7 @@ const docTemplate = `{
             "properties": {
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 }
             }
         },
@@ -6793,7 +6632,7 @@ const docTemplate = `{
                 },
                 "inviter": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 }
             }
         },
@@ -6809,7 +6648,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetGroupRequestParticipantsRequest": {
+        "dto.GetGroupRequestsReq": {
             "type": "object",
             "required": [
                 "group_jid"
@@ -6829,7 +6668,7 @@ const docTemplate = `{
             "properties": {
                 "invite_link": {
                     "type": "string",
-                    "example": "https://chat.whatsapp.com/ABC123"
+                    "example": "https://chat.meow.com/ABC123"
                 }
             }
         },
@@ -6933,7 +6772,7 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 },
                 "webhook_id": {
                     "type": "string",
@@ -6959,7 +6798,7 @@ const docTemplate = `{
                 },
                 "invite_link": {
                     "type": "string",
-                    "example": "https://chat.whatsapp.com/ABC123"
+                    "example": "https://chat.meow.com/ABC123"
                 },
                 "message": {
                     "type": "string",
@@ -7005,7 +6844,7 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[\"5511999999999@s.whatsapp.net\"]"
+                        "[\"5511999999999@s.meow.net\"]"
                     ]
                 },
                 "announce": {
@@ -7034,7 +6873,7 @@ const docTemplate = `{
                 },
                 "owner": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "participants": {
                     "type": "array",
@@ -7042,8 +6881,8 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[\"5511999999999@s.whatsapp.net\"",
-                        " \"5511888888888@s.whatsapp.net\"]"
+                        "[\"5511999999999@s.meow.net\"",
+                        " \"5511888888888@s.meow.net\"]"
                     ]
                 },
                 "size": {
@@ -7094,7 +6933,7 @@ const docTemplate = `{
             "properties": {
                 "invite_link": {
                     "type": "string",
-                    "example": "https://chat.whatsapp.com/ABC123"
+                    "example": "https://chat.meow.com/ABC123"
                 }
             }
         },
@@ -7121,7 +6960,7 @@ const docTemplate = `{
                 },
                 "inviter": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 }
             }
         },
@@ -7249,7 +7088,7 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 },
                 "webhook_id": {
                     "type": "string",
@@ -7643,11 +7482,91 @@ const docTemplate = `{
                 },
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "muted": {
                     "type": "boolean",
                     "example": true
+                }
+            }
+        },
+        "dto.NewsletterInfo": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "jid": {
+                    "type": "string"
+                },
+                "muted": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "owner_jid": {
+                    "type": "string"
+                },
+                "picture": {
+                    "type": "string"
+                },
+                "subscribers": {
+                    "type": "integer"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "verified": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.NewsletterInfoResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.NewsletterInfo"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.NewsletterList": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "newsletters": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.NewsletterInfo"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "dto.NewsletterListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.NewsletterList"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
                 }
             }
         },
@@ -7719,7 +7638,7 @@ const docTemplate = `{
             "properties": {
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "pinned": {
                     "type": "boolean",
@@ -7795,6 +7714,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "emoji",
+                "message_id",
                 "phone"
             ],
             "properties": {
@@ -7802,6 +7722,10 @@ const docTemplate = `{
                     "description": "Use \"remove\" to remove reaction",
                     "type": "string",
                     "example": "👍"
+                },
+                "message_id": {
+                    "type": "string",
+                    "example": "3EB0D098B5FD4BF3BC4327"
                 },
                 "phone": {
                     "type": "string",
@@ -7838,7 +7762,7 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 }
             }
         },
@@ -7886,7 +7810,7 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 },
                 "webhook_id": {
                     "type": "string",
@@ -8052,6 +7976,47 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
+                }
+            }
+        },
+        "dto.SendNewsletterMessageRequest": {
+            "type": "object",
+            "properties": {
+                "caption": {
+                    "type": "string",
+                    "example": "Image caption"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "Hello newsletter!"
+                },
+                "media_handle": {
+                    "type": "string",
+                    "example": "media_handle_from_upload"
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "image"
+                }
+            }
+        },
+        "dto.SendNewsletterMessageResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message_id": {
+                    "type": "string"
+                },
+                "server_id": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
                 }
             }
         },
@@ -8242,11 +8207,11 @@ const docTemplate = `{
                 },
                 "wa_jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "webhook_url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 }
             }
         },
@@ -8420,7 +8385,7 @@ const docTemplate = `{
                 },
                 "wa_jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 }
             }
         },
@@ -8478,7 +8443,7 @@ const docTemplate = `{
             "properties": {
                 "jid": {
                     "type": "string",
-                    "example": "5511999999999@s.whatsapp.net"
+                    "example": "5511999999999@s.meow.net"
                 },
                 "timer": {
                     "description": "\"off\", \"24h\", \"7d\", \"90d\"",
@@ -8646,6 +8611,20 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.StandardResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
         "dto.StickerMessagePayload": {
             "type": "object",
             "properties": {
@@ -8780,7 +8759,7 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.UpdateGroupRequestParticipantsRequest": {
+        "dto.UpdateGroupRequestsReq": {
             "type": "object",
             "required": [
                 "action",
@@ -8859,7 +8838,7 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 }
             }
         },
@@ -8907,7 +8886,7 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 },
                 "webhook_id": {
                     "type": "string",
@@ -8933,6 +8912,46 @@ const docTemplate = `{
                 "session_id": {
                     "type": "string",
                     "example": "default"
+                }
+            }
+        },
+        "dto.UploadNewsletterMediaResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.UploadNewsletterMediaResult"
+                },
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "dto.UploadNewsletterMediaResult": {
+            "type": "object",
+            "properties": {
+                "direct_path": {
+                    "type": "string"
+                },
+                "file_hash": {
+                    "type": "string"
+                },
+                "file_length": {
+                    "type": "integer"
+                },
+                "handle": {
+                    "type": "string"
+                },
+                "media_key": {
+                    "type": "string"
+                },
+                "object_id": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         },
@@ -9006,7 +9025,7 @@ const docTemplate = `{
                 },
                 "url": {
                     "type": "string",
-                    "example": "https://webhook.example.com/whatsapp"
+                    "example": "https://webhook.example.com/meow"
                 },
                 "webhook_id": {
                     "type": "string",
@@ -9073,7 +9092,7 @@ const docTemplate = `{
                 },
                 "service": {
                     "type": "string",
-                    "example": "zpmeow"
+                    "example": "meow"
                 },
                 "status": {
                     "type": "string",
@@ -9136,8 +9155,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/",
 	Schemes:          []string{"http", "https"},
-	Title:            "zpmeow WhatsApp API",
-	Description:      "A WhatsApp API server built with Go, inspired by wuzapi",
+	Title:            "meow meow API",
+	Description:      "A meow API server built with Go, inspired by meow",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

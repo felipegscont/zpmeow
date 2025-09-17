@@ -20,10 +20,10 @@ var (
 	ErrSessionCannotDisconnect = errors.New("session cannot be disconnected in current state")
 	ErrSessionCannotDelete     = errors.New("session cannot be deleted in current state")
 
-	ErrWhatsAppServiceUnavailable = errors.New("WhatsApp service unavailable")
-	ErrQRCodeGenerationFailed     = errors.New("QR code generation failed")
-	ErrPairingFailed              = errors.New("phone pairing failed")
-	ErrConnectionFailed           = errors.New("connection failed")
+	ErrmeowServiceUnavailable = errors.New("meow service unavailable")
+	ErrQRCodeGenerationFailed = errors.New("QR code generation failed")
+	ErrPairingFailed          = errors.New("phone pairing failed")
+	ErrConnectionFailed       = errors.New("connection failed")
 
 	// Device Management Errors
 	ErrDeviceAlreadyInUse                    = errors.New("device is already in use by another session")

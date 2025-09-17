@@ -34,13 +34,13 @@ services:
 
   dbgate:
     image: dbgate/dbgate:latest
-    container_name: zpmeow-dbgate
+    container_name: meow-dbgate
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
       CONNECTIONS: con1
-      LABEL_con1: zpmeow PostgreSQL
+      LABEL_con1: meow PostgreSQL
       SERVER_con1: postgres
       USER_con1: ${DB_USER}
       PASSWORD_con1: ${DB_PASSWORD}

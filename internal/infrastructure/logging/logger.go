@@ -5,19 +5,21 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
-	"sync"
 	"time"
 
-	"zpmeow/internal/infrastructure/config"
-
+	"github.com/mattn/go-colorable"
+	"github.com/mattn/go-isatty"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	waLog "go.mau.fi/whatsmeow/util/log"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
+// Logger interface for structured logging
 type Logger interface {
+	// Core logging methods
 	Debug(msg string)
 	Debugf(format string, args ...interface{})
 	Info(msg string)
@@ -28,24 +30,40 @@ type Logger interface {
 	Errorf(format string, args ...interface{})
 	Fatal(msg string)
 	Fatalf(format string, args ...interface{})
-	With() LoggerContext
-	WithField(key string, value interface{}) Logger
-	WithFields(fields map[string]interface{}) Logger
+
+	// Structured logging with context
+	With() LogContext
 	Sub(module string) Logger
 }
 
-type LoggerContext interface {
-	Str(key, val string) LoggerContext
-	Int(key string, i int) LoggerContext
-	Bool(key string, b bool) LoggerContext
-	Err(err error) LoggerContext
-	Dur(key string, d time.Duration) LoggerContext
-	Time(key string, t time.Time) LoggerContext
-	Interface(key string, i interface{}) LoggerContext
+// LogContext interface for building structured log entries
+type LogContext interface {
+	Str(key, val string) LogContext
+	Int(key string, val int) LogContext
+	Bool(key string, val bool) LogContext
+	Dur(key string, val time.Duration) LogContext
+	Time(key string, val time.Time) LogContext
+	Err(err error) LogContext
 	Logger() Logger
 }
 
-type Config interface {
+// ZerologLogger implements Logger interface using zerolog
+type ZerologLogger struct {
+	logger zerolog.Logger
+	module string
+}
+
+// ZerologContext implements LogContext interface
+type ZerologContext struct {
+	context zerolog.Context
+	base    *ZerologLogger
+}
+
+// Global logger instance
+var globalLogger Logger
+
+// LoggerConfig holds configuration for the logger
+type LoggerConfig interface {
 	GetLevel() string
 	GetFormat() string
 	GetConsoleColor() bool
@@ -58,362 +76,249 @@ type Config interface {
 	GetFileFormat() string
 }
 
-type zerologLogger struct {
-	logger zerolog.Logger
-	module string
-}
-
-type zerologContext struct {
-	ctx zerolog.Context
-}
-
-func Initialize(config Config) Logger {
-
-	level, err := zerolog.ParseLevel(strings.ToLower(config.GetLevel()))
-	if err != nil {
-		level = zerolog.InfoLevel
-	}
+// Initialize creates and configures the global logger
+func Initialize(config LoggerConfig) Logger {
+	// Set global log level
+	level := parseLogLevel(config.GetLevel())
 	zerolog.SetGlobalLevel(level)
+
+	// Configure time format
+	zerolog.TimeFieldFormat = time.RFC3339
 
 	var writers []io.Writer
 
-	if config.GetFormat() == "console" {
+	// Console output with TTY detection
+	if config.GetFormat() == "console" || config.GetFormat() == "" {
+		// Detect TTY and configure output writer
+		var out io.Writer = os.Stdout
+
+		// Windows compatibility
+		if runtime.GOOS == "windows" {
+			out = colorable.NewColorableStdout()
+		}
+
+		// Detect if we should use colors
+		useColor := shouldUseColor(out, config.GetConsoleColor())
+
 		consoleWriter := zerolog.ConsoleWriter{
-			Out:        os.Stdout,
-			TimeFormat: "2006-01-02 15:04:05",
-			NoColor:    !config.GetConsoleColor(),
+			Out:        out,
+			TimeFormat: "02-01-2006 15:04:05",
+			NoColor:    !useColor,
 		}
-
-		consoleWriter.FormatLevel = func(i interface{}) string {
-			if i == nil {
-				return ""
-			}
-			level := strings.ToUpper(i.(string))
-			if !config.GetConsoleColor() {
-				return level
-			}
-
-			switch level {
-			case "DEBUG":
-				return "\x1b[36m" + level + "\x1b[0m" // Cyan
-			case "INFO":
-				return "\x1b[32m" + level + "\x1b[0m" // Green
-			case "WARN":
-				return "\x1b[33m" + level + "\x1b[0m" // Yellow
-			case "ERROR":
-				return "\x1b[31m" + level + "\x1b[0m" // Red
-			case "FATAL":
-				return "\x1b[35m" + level + "\x1b[0m" // Magenta
-			default:
-				return level
-			}
-		}
-
 		writers = append(writers, consoleWriter)
-	} else {
-
-		writers = append(writers, os.Stdout)
 	}
 
+	// File output with JSON format
 	if config.GetFileEnabled() {
-
+		// Ensure log directory exists
 		logDir := filepath.Dir(config.GetFilePath())
 		if err := os.MkdirAll(logDir, 0755); err != nil {
 			fmt.Printf("Failed to create log directory: %v\n", err)
-		} else {
-			fileWriter := &lumberjack.Logger{
-				Filename:   config.GetFilePath(),
-				MaxSize:    config.GetFileMaxSize(),
-				MaxBackups: config.GetFileMaxBackups(),
-				MaxAge:     config.GetFileMaxAge(),
-				Compress:   config.GetFileCompress(),
-			}
-
-			if config.GetFileFormat() == "console" {
-
-				consoleFileWriter := zerolog.ConsoleWriter{
-					Out:        fileWriter,
-					TimeFormat: "2006-01-02 15:04:05",
-					NoColor:    true,
-				}
-				writers = append(writers, consoleFileWriter)
-			} else {
-
-				writers = append(writers, fileWriter)
-			}
 		}
+
+		fileWriter := &lumberjack.Logger{
+			Filename:   config.GetFilePath(),
+			MaxSize:    config.GetFileMaxSize(),
+			MaxBackups: config.GetFileMaxBackups(),
+			MaxAge:     config.GetFileMaxAge(),
+			Compress:   config.GetFileCompress(),
+		}
+		writers = append(writers, fileWriter)
 	}
 
+	// Create multi-writer for dual output
 	var writer io.Writer
 	if len(writers) == 1 {
 		writer = writers[0]
+	} else if len(writers) > 1 {
+		writer = io.MultiWriter(writers...)
 	} else {
-		writer = zerolog.MultiLevelWriter(writers...)
+		writer = os.Stdout
 	}
 
+	// Create logger with context
 	logger := zerolog.New(writer).With().
 		Timestamp().
-		Caller().
 		Logger()
 
-	log.Logger = logger
-
-	return &zerologLogger{
+	globalLogger = &ZerologLogger{
 		logger: logger,
-		module: "app",
-	}
-}
-
-func (l *zerologLogger) Debug(msg string) {
-	l.logger.Debug().Str("module", l.module).Msg(msg)
-}
-
-func (l *zerologLogger) Debugf(format string, args ...interface{}) {
-	l.logger.Debug().Str("module", l.module).Msgf(format, args...)
-}
-
-func (l *zerologLogger) Info(msg string) {
-	l.logger.Info().Str("module", l.module).Msg(msg)
-}
-
-func (l *zerologLogger) Infof(format string, args ...interface{}) {
-	l.logger.Info().Str("module", l.module).Msgf(format, args...)
-}
-
-func (l *zerologLogger) Warn(msg string) {
-	l.logger.Warn().Str("module", l.module).Msg(msg)
-}
-
-func (l *zerologLogger) Warnf(format string, args ...interface{}) {
-	l.logger.Warn().Str("module", l.module).Msgf(format, args...)
-}
-
-func (l *zerologLogger) Error(msg string) {
-	l.logger.Error().Str("module", l.module).Msg(msg)
-}
-
-func (l *zerologLogger) Errorf(format string, args ...interface{}) {
-	l.logger.Error().Str("module", l.module).Msgf(format, args...)
-}
-
-func (l *zerologLogger) Fatal(msg string) {
-	l.logger.Fatal().Str("module", l.module).Msg(msg)
-}
-
-func (l *zerologLogger) Fatalf(format string, args ...interface{}) {
-	l.logger.Fatal().Str("module", l.module).Msgf(format, args...)
-}
-
-func (l *zerologLogger) With() LoggerContext {
-	return &zerologContext{
-		ctx: l.logger.With().Str("module", l.module),
-	}
-}
-
-func (l *zerologLogger) WithField(key string, value interface{}) Logger {
-	return &zerologLogger{
-		logger: l.logger.With().Str("module", l.module).Interface(key, value).Logger(),
-		module: l.module,
-	}
-}
-
-func (l *zerologLogger) WithFields(fields map[string]interface{}) Logger {
-	ctx := l.logger.With().Str("module", l.module)
-	for k, v := range fields {
-		ctx = ctx.Interface(k, v)
-	}
-	return &zerologLogger{
-		logger: ctx.Logger(),
-		module: l.module,
-	}
-}
-
-func (l *zerologLogger) Sub(module string) Logger {
-	var fullModule string
-	if l.module != "" {
-		fullModule = fmt.Sprintf("%s/%s", l.module, module)
-	} else {
-		fullModule = module
+		module: "main",
 	}
 
-	return &zerologLogger{
-		logger: l.logger,
-		module: fullModule,
-	}
+	return globalLogger
 }
 
-func (c *zerologContext) Str(key, val string) LoggerContext {
-	return &zerologContext{ctx: c.ctx.Str(key, val)}
-}
-
-func (c *zerologContext) Int(key string, i int) LoggerContext {
-	return &zerologContext{ctx: c.ctx.Int(key, i)}
-}
-
-func (c *zerologContext) Bool(key string, b bool) LoggerContext {
-	return &zerologContext{ctx: c.ctx.Bool(key, b)}
-}
-
-func (c *zerologContext) Err(err error) LoggerContext {
-	return &zerologContext{ctx: c.ctx.Err(err)}
-}
-
-func (c *zerologContext) Dur(key string, d time.Duration) LoggerContext {
-	return &zerologContext{ctx: c.ctx.Dur(key, d)}
-}
-
-func (c *zerologContext) Time(key string, t time.Time) LoggerContext {
-	return &zerologContext{ctx: c.ctx.Time(key, t)}
-}
-
-func (c *zerologContext) Interface(key string, i interface{}) LoggerContext {
-	return &zerologContext{ctx: c.ctx.Interface(key, i)}
-}
-
-func (c *zerologContext) Logger() Logger {
-	return &zerologLogger{
-		logger: c.ctx.Logger(),
-		module: "",
-	}
-}
-
-var globalLogger Logger
-
+// GetLogger returns the global logger instance
 func GetLogger() Logger {
 	if globalLogger == nil {
-		globalLogger = Initialize(config.DefaultLoggerConfig())
+		// Fallback to default logger
+		globalLogger = &ZerologLogger{
+			logger: log.Logger,
+			module: "default",
+		}
 	}
 	return globalLogger
 }
 
+// SetLogger sets the global logger instance
 func SetLogger(logger Logger) {
 	globalLogger = logger
 }
 
-type waLogAdapter struct {
-	logger  Logger
-	sampler *logSampler
+// GetWALogger creates a meow-compatible logger
+func GetWALogger(module string) waLog.Logger {
+	return NewWALogger(module)
 }
 
-type logSampler struct {
-	mu             sync.RWMutex
-	lastLogged     map[string]time.Time
-	sampleInterval time.Duration
-}
-
-func newLogSampler() *logSampler {
-	return &logSampler{
-		lastLogged:     make(map[string]time.Time),
-		sampleInterval: 30 * time.Second, // Sample frequent logs every 30 seconds
-	}
-}
-
-func (s *logSampler) shouldSample(msg string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	key := s.createSampleKey(msg)
-
-	now := time.Now()
-	if lastTime, exists := s.lastLogged[key]; exists {
-		if now.Sub(lastTime) < s.sampleInterval {
-			return false // Skip this log (too frequent)
-		}
+// shouldUseColor determines if colors should be used based on TTY detection and FORCE_COLOR
+func shouldUseColor(out io.Writer, configColor bool) bool {
+	// Check FORCE_COLOR environment variable first
+	if forceColor := os.Getenv("FORCE_COLOR"); forceColor != "" {
+		return forceColor != "0" && forceColor != "false"
 	}
 
-	s.lastLogged[key] = now
-	return true
-}
-
-func (s *logSampler) createSampleKey(msg string) string {
-	if strings.Contains(msg, "xmlns=\"w:p\"") {
-		return "keepalive"
-	}
-	if strings.Contains(msg, "<iq ") && strings.Contains(msg, "type=\"get\"") {
-		return "iq_get"
-	}
-	if strings.Contains(msg, "<iq ") && strings.Contains(msg, "type=\"result\"") {
-		return "iq_result"
-	}
-	if strings.Contains(msg, "Stored message secret key") {
-		return "message_secret"
-	}
-	if strings.Contains(msg, "Decrypting message") {
-		return "decrypt_message"
+	// If config explicitly disables color, respect it
+	if !configColor {
+		return false
 	}
 
-	if len(msg) > 50 {
-		return msg[:50]
-	}
-	return msg
-}
-
-func NewWALogAdapter(logger Logger) waLog.Logger {
-	return &waLogAdapter{
-		logger:  logger,
-		sampler: newLogSampler(),
-	}
-}
-
-func (w *waLogAdapter) Warnf(msg string, args ...interface{}) {
-	w.logger.Warnf(msg, args...)
-}
-
-func (w *waLogAdapter) Errorf(msg string, args ...interface{}) {
-	w.logger.Errorf(msg, args...)
-}
-
-func (w *waLogAdapter) Infof(msg string, args ...interface{}) {
-	if w.shouldSkipLog(msg) {
-		return
-	}
-	if !w.sampler.shouldSample(msg) {
-		return
-	}
-	w.logger.Infof(msg, args...)
-}
-
-func (w *waLogAdapter) Debugf(msg string, args ...interface{}) {
-	if w.shouldSkipLog(msg) {
-		return
-	}
-	if !w.sampler.shouldSample(msg) {
-		return
-	}
-	w.logger.Debugf(msg, args...)
-}
-
-func (w *waLogAdapter) Sub(module string) waLog.Logger {
-	return &waLogAdapter{
-		logger:  w.logger.Sub(module),
-		sampler: w.sampler, // Share the same sampler instance
-	}
-}
-
-func (w *waLogAdapter) shouldSkipLog(msg string) bool {
-	if strings.Contains(msg, "<iq ") || strings.Contains(msg, "<ib ") ||
-		strings.Contains(msg, "<message ") || strings.Contains(msg, "<receipt ") ||
-		strings.Contains(msg, "<ack ") || strings.Contains(msg, "<success ") {
-		return true
+	// Check if output is a TTY
+	if f, ok := out.(*os.File); ok {
+		return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
 	}
 
-	if strings.Contains(msg, "xmlns=\"w:p\"") ||
-		strings.Contains(msg, "type=\"get\"") ||
-		strings.Contains(msg, "type=\"result\"") {
-		return true
-	}
-
-	if strings.Contains(msg, "No sessions or sender keys found to migrate") {
-		return true
-	}
-
-	if strings.Contains(msg, "Database has") && strings.Contains(msg, "prekeys") {
-		return true
+	// For colorable writer (Windows), check the underlying file
+	if runtime.GOOS == "windows" {
+		// Try to get the underlying file descriptor
+		return isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
 	}
 
 	return false
 }
 
-func GetWALogger(module string) waLog.Logger {
-	return NewWALogAdapter(GetLogger().Sub(module))
+// parseLogLevel converts string level to zerolog.Level
+func parseLogLevel(level string) zerolog.Level {
+	switch strings.ToLower(level) {
+	case "debug":
+		return zerolog.DebugLevel
+	case "info":
+		return zerolog.InfoLevel
+	case "warn", "warning":
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
+	case "panic":
+		return zerolog.PanicLevel
+	default:
+		return zerolog.InfoLevel
+	}
+}
+
+// ZerologLogger implementation
+func (l *ZerologLogger) Debug(msg string) {
+	l.logger.Debug().Msg(msg)
+}
+
+func (l *ZerologLogger) Debugf(format string, args ...interface{}) {
+	l.logger.Debug().Msgf(format, args...)
+}
+
+func (l *ZerologLogger) Info(msg string) {
+	l.logger.Info().Msg(msg)
+}
+
+func (l *ZerologLogger) Infof(format string, args ...interface{}) {
+	l.logger.Info().Msgf(format, args...)
+}
+
+func (l *ZerologLogger) Warn(msg string) {
+	l.logger.Warn().Msg(msg)
+}
+
+func (l *ZerologLogger) Warnf(format string, args ...interface{}) {
+	l.logger.Warn().Msgf(format, args...)
+}
+
+func (l *ZerologLogger) Error(msg string) {
+	l.logger.Error().Msg(msg)
+}
+
+func (l *ZerologLogger) Errorf(format string, args ...interface{}) {
+	l.logger.Error().Msgf(format, args...)
+}
+
+func (l *ZerologLogger) Fatal(msg string) {
+	l.logger.Fatal().Msg(msg)
+}
+
+func (l *ZerologLogger) Fatalf(format string, args ...interface{}) {
+	l.logger.Fatal().Msgf(format, args...)
+}
+
+func (l *ZerologLogger) With() LogContext {
+	ctx := l.logger.With()
+	return &ZerologContext{
+		context: ctx,
+		base:    l,
+	}
+}
+
+func (l *ZerologLogger) Sub(module string) Logger {
+	fullModule := l.module
+	if module != "" {
+		if l.module != "" {
+			fullModule = l.module + "." + module
+		} else {
+			fullModule = module
+		}
+	}
+	return &ZerologLogger{
+		logger: l.logger,
+		module: fullModule,
+	}
+}
+
+// ZerologContext implementation
+func (c *ZerologContext) Str(key, val string) LogContext {
+	// Truncate long values for console readability
+	if len(val) > 50 && (strings.Contains(key, "id") || strings.Contains(key, "uuid") || strings.Contains(key, "hash")) {
+		val = TruncateID(val)
+	}
+	c.context = c.context.Str(key, val)
+	return c
+}
+
+func (c *ZerologContext) Int(key string, val int) LogContext {
+	c.context = c.context.Int(key, val)
+	return c
+}
+
+func (c *ZerologContext) Bool(key string, val bool) LogContext {
+	c.context = c.context.Bool(key, val)
+	return c
+}
+
+func (c *ZerologContext) Dur(key string, val time.Duration) LogContext {
+	c.context = c.context.Dur(key, val)
+	return c
+}
+
+func (c *ZerologContext) Time(key string, val time.Time) LogContext {
+	c.context = c.context.Time(key, val)
+	return c
+}
+
+func (c *ZerologContext) Err(err error) LogContext {
+	c.context = c.context.Err(err)
+	return c
+}
+
+func (c *ZerologContext) Logger() Logger {
+	return &ZerologLogger{
+		logger: c.context.Logger(),
+		module: c.base.module,
+	}
 }

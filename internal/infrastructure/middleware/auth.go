@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/infrastructure/config"
-	"zpmeow/internal/infrastructure/logging"
+	"meow/internal/config"
+	"meow/internal/domain/session"
+	"meow/internal/infrastructure/logging"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +37,7 @@ func (a *AuthMiddleware) AuthenticateGlobal() gin.HandlerFunc {
 			return
 		}
 
-		if apiKey == a.config.GlobalAPIKey {
+		if apiKey == a.config.GetAuth().GetGlobalAPIKey() {
 			a.logger.Debug("Global API key authenticated successfully")
 			c.Set("auth_type", "global")
 			c.Set("api_key", apiKey)
@@ -61,7 +61,7 @@ func (a *AuthMiddleware) AuthenticateSession() gin.HandlerFunc {
 			return
 		}
 
-		if apiKey == a.config.GlobalAPIKey {
+		if apiKey == a.config.GetAuth().GetGlobalAPIKey() {
 			a.logger.Debug("Global API key authenticated for session access")
 			c.Set("auth_type", "global")
 			c.Set("api_key", apiKey)
@@ -82,7 +82,7 @@ func (a *AuthMiddleware) AuthenticateSession() gin.HandlerFunc {
 			return
 		}
 
-		a.logger.Debug("Session API key authenticated successfully for session: " + session.ID + " (" + session.Name + ")")
+		a.logger.Debug("Session API key authenticated successfully for session: " + session.ID.Value() + " (" + session.Name.Value() + ")")
 		c.Set("auth_type", "session")
 		c.Set("api_key", apiKey)
 		c.Set("session_id", session.ID)
@@ -101,7 +101,7 @@ func (a *AuthMiddleware) AuthenticateAny() gin.HandlerFunc {
 			return
 		}
 
-		if apiKey == a.config.GlobalAPIKey {
+		if apiKey == a.config.GetAuth().GetGlobalAPIKey() {
 			a.logger.Debug("Global API key authenticated")
 			c.Set("auth_type", "global")
 			c.Set("api_key", apiKey)
@@ -122,7 +122,7 @@ func (a *AuthMiddleware) AuthenticateAny() gin.HandlerFunc {
 			return
 		}
 
-		a.logger.Debug("Session API key authenticated for session: " + session.ID + " (" + session.Name + ")")
+		a.logger.Debug("Session API key authenticated for session: " + session.ID.Value() + " (" + session.Name.Value() + ")")
 		c.Set("auth_type", "session")
 		c.Set("api_key", apiKey)
 		c.Set("session_id", session.ID)

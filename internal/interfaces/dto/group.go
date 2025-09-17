@@ -21,13 +21,13 @@ type GetGroupInfoRequest struct {
 
 // JoinGroupRequest represents the request to join a group via invite link
 type JoinGroupRequest struct {
-	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.whatsapp.com/ABC123"`
+	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.meow.com/ABC123"`
 }
 
 // JoinGroupWithInviteRequest represents the request to join a group via specific invite
 type JoinGroupWithInviteRequest struct {
 	GroupJID   string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.meow.net"`
 	Code       string `json:"code" binding:"required" example:"ABC123DEF456"`
 	Expiration int64  `json:"expiration" binding:"required" example:"1640995200"`
 }
@@ -45,13 +45,13 @@ type GetInviteLinkRequest struct {
 
 // GetInviteInfoRequest represents the request to get invite info from link
 type GetInviteInfoRequest struct {
-	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.whatsapp.com/ABC123"`
+	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.meow.com/ABC123"`
 }
 
 // GetGroupInfoFromInviteRequest represents the request to get group info from specific invite
-type GetGroupInfoFromInviteRequest struct {
+type GroupInviteInfoReq struct {
 	GroupJID   string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.meow.net"`
 	Code       string `json:"code" binding:"required" example:"ABC123DEF456"`
 	Expiration int64  `json:"expiration" binding:"required" example:"1640995200"`
 }
@@ -106,24 +106,24 @@ type SetGroupEphemeralRequest struct {
 }
 
 // SetGroupJoinApprovalRequest represents the request to set group join approval mode
-type SetGroupJoinApprovalRequest struct {
+type GroupJoinApprovalReq struct {
 	GroupJID        string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	RequireApproval bool   `json:"require_approval" binding:"required" example:"true"`
 }
 
 // SetGroupMemberAddModeRequest represents the request to set group member add mode
-type SetGroupMemberAddModeRequest struct {
+type GroupMemberModeReq struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Mode     string `json:"mode" binding:"required" example:"admin" enum:"all,admin"`
 }
 
-// GetGroupRequestParticipantsRequest represents the request to get group request participants
-type GetGroupRequestParticipantsRequest struct {
+// GetGroupRequestsReq represents the request to get group request participants
+type GetGroupRequestsReq struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 }
 
-// UpdateGroupRequestParticipantsRequest represents the request to update group request participants
-type UpdateGroupRequestParticipantsRequest struct {
+// UpdateGroupRequestsReq represents the request to update group request participants
+type UpdateGroupRequestsReq struct {
 	GroupJID     string   `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Action       string   `json:"action" binding:"required" example:"approve"`
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
@@ -138,9 +138,9 @@ type GroupInfo struct {
 	JID          string   `json:"jid" example:"120363025246125486@g.us"`
 	Name         string   `json:"name" example:"My Group"`
 	Topic        string   `json:"topic,omitempty" example:"Group topic description"`
-	Participants []string `json:"participants" example:"[\"5511999999999@s.whatsapp.net\", \"5511888888888@s.whatsapp.net\"]"`
-	Admins       []string `json:"admins" example:"[\"5511999999999@s.whatsapp.net\"]"`
-	Owner        string   `json:"owner" example:"5511999999999@s.whatsapp.net"`
+	Participants []string `json:"participants" example:"[\"5511999999999@s.meow.net\", \"5511888888888@s.meow.net\"]"`
+	Admins       []string `json:"admins" example:"[\"5511999999999@s.meow.net\"]"`
+	Owner        string   `json:"owner" example:"5511999999999@s.meow.net"`
 	CreatedAt    int64    `json:"created_at" example:"1640995200"`
 	Size         int      `json:"size" example:"2"`
 	Announce     bool     `json:"announce" example:"false"`
@@ -168,7 +168,7 @@ type GroupData struct {
 	Timestamp  time.Time   `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 	Group      *GroupInfo  `json:"group,omitempty"`
 	Groups     []GroupInfo `json:"groups,omitempty"`
-	InviteLink string      `json:"invite_link,omitempty" example:"https://chat.whatsapp.com/ABC123"`
+	InviteLink string      `json:"invite_link,omitempty" example:"https://chat.meow.com/ABC123"`
 	Message    string      `json:"message,omitempty" example:"Operation completed successfully"`
 }
 
@@ -267,7 +267,7 @@ type GetInviteLinkResponseData struct {
 	Status     string    `json:"status" example:"success"`
 	Timestamp  time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 	GroupJID   string    `json:"group_jid" example:"120363025246125486@g.us"`
-	InviteLink string    `json:"invite_link" example:"https://chat.whatsapp.com/ABC123"`
+	InviteLink string    `json:"invite_link" example:"https://chat.meow.com/ABC123"`
 }
 
 // ============================================================================
@@ -429,8 +429,8 @@ func validateGroupJID(groupJID string) bool {
 	return len(groupJID) > 5 && groupJID[len(groupJID)-5:] == "@g.us"
 }
 
-// Validate validates a GetGroupRequestParticipantsRequest
-func (r *GetGroupRequestParticipantsRequest) Validate() error {
+// Validate validates a GetGroupRequestsReq
+func (r *GetGroupRequestsReq) Validate() error {
 	if r.GroupJID == "" {
 		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
 	}
@@ -440,8 +440,8 @@ func (r *GetGroupRequestParticipantsRequest) Validate() error {
 	return nil
 }
 
-// Validate validates an UpdateGroupRequestParticipantsRequest
-func (r *UpdateGroupRequestParticipantsRequest) Validate() error {
+// Validate validates an UpdateGroupRequestsReq
+func (r *UpdateGroupRequestsReq) Validate() error {
 	if r.GroupJID == "" {
 		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
 	}

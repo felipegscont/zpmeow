@@ -3,7 +3,7 @@ package middleware
 import (
 	"strings"
 
-	"zpmeow/internal/infrastructure/logging"
+	"meow/internal/infrastructure/logging"
 
 	"github.com/gin-gonic/gin"
 )

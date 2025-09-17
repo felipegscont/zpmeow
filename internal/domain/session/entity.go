@@ -26,12 +26,12 @@ func (s Status) IsValid() bool {
 }
 
 type Session struct {
-	ID         string
-	Name       string
+	ID         SessionID
+	Name       SessionName
 	WaJID      string
 	Status     Status
 	QRCode     string
-	ProxyURL   string
+	ProxyURL   ProxyURL
 	WebhookURL string
 	Events     []string
 	ApiKey     string
@@ -39,16 +39,27 @@ type Session struct {
 	UpdatedAt  time.Time
 }
 
-func NewSession(id, name string) *Session {
+func NewSession(id, name string) (*Session, error) {
+	sessionID, err := NewSessionID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	sessionName, err := NewSessionName(name)
+	if err != nil {
+		return nil, err
+	}
+
 	now := time.Now()
 	return &Session{
-		ID:        id,
-		Name:      strings.TrimSpace(name),
+		ID:        sessionID,
+		Name:      sessionName,
 		Status:    StatusDisconnected,
+		ProxyURL:  ProxyURL{}, // Empty proxy URL
 		ApiKey:    uuid.New().String(),
 		CreatedAt: now,
 		UpdatedAt: now,
-	}
+	}, nil
 }
 
 func (s *Session) IsConnected() bool {
@@ -76,7 +87,7 @@ func (s *Session) HasQRCode() bool {
 }
 
 func (s *Session) HasProxy() bool {
-	return strings.TrimSpace(s.ProxyURL) != ""
+	return !s.ProxyURL.IsEmpty()
 }
 
 func (s *Session) IsAuthenticated() bool {
@@ -101,9 +112,14 @@ func (s *Session) SetWaJID(jid string) {
 	s.updateTimestamp()
 }
 
-func (s *Session) SetProxyURL(proxyURL string) {
-	s.ProxyURL = strings.TrimSpace(proxyURL)
+func (s *Session) SetProxyURL(proxyURL string) error {
+	proxy, err := NewProxyURL(proxyURL)
+	if err != nil {
+		return err
+	}
+	s.ProxyURL = proxy
 	s.updateTimestamp()
+	return nil
 }
 
 func (s *Session) ClearQRCode() {
@@ -112,7 +128,7 @@ func (s *Session) ClearQRCode() {
 }
 
 func (s *Session) ClearProxy() {
-	s.ProxyURL = ""
+	s.ProxyURL = ProxyURL{} // Empty proxy URL
 	s.updateTimestamp()
 }
 
@@ -162,11 +178,17 @@ func (s *Session) Validate() error {
 }
 
 func (s *Session) validateID() error {
-	return ValidateSessionID(s.ID)
+	if s.ID.IsEmpty() {
+		return ErrInvalidSessionID
+	}
+	return nil
 }
 
 func (s *Session) validateName() error {
-	return ValidateSessionName(s.Name)
+	if s.Name.IsEmpty() {
+		return ErrInvalidSessionName
+	}
+	return nil
 }
 
 func (s *Session) validateStatus() error {

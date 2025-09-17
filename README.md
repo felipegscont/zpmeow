@@ -1,19 +1,19 @@
-# 🐱 ZPMeow - WhatsApp API Gateway
+# 🐱 meow - meow API Gateway
 
-[![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/Go-1.24.0-00ADD8?style=for-the-badge&logo=go)](https://golang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![API Status](https://img.shields.io/badge/API-85%25%20Complete-brightgreen?style=for-the-badge)](API.md)
-[![WhatsApp](https://img.shields.io/badge/WhatsApp-Business%20Ready-25D366?style=for-the-badge&logo=whatsapp)](https://whatsapp.com/)
+[![meow](https://img.shields.io/badge/meow-Business%20Ready-25D366?style=for-the-badge&logo=meow)](https://meow.com/)
 
-> **Uma API REST completa e robusta para WhatsApp Business, construída com Go e whatsmeow**
+> **Uma API REST completa e robusta para meow Business, construída com Go e whatsmeow**
 
 ## 🚀 **Visão Geral**
 
-ZPMeow é uma API REST moderna e completa que permite integração total com o WhatsApp através da biblioteca whatsmeow. Com **85% dos métodos implementados e funcionando**, oferece uma solução robusta para automação e integração comercial.
+meow é uma API REST moderna e completa que permite integração total com o meow através da biblioteca whatsmeow. Com **85% dos métodos implementados e funcionando**, oferece uma solução robusta para automação e integração comercial.
 
 ### ✨ **Características Principais**
 
-- 🔥 **85% dos métodos WhatsApp implementados**
+- 🔥 **85% dos métodos meow implementados**
 - 📱 **Suporte completo a mensagens multimídia**
 - 👥 **Gestão avançada de grupos e comunidades**
 - 📰 **Sistema completo de newsletters**
@@ -73,7 +73,7 @@ ZPMeow é uma API REST moderna e completa que permite integração total com o W
 ## 🛠️ **Tecnologias**
 
 - **Backend**: Go 1.21+
-- **WhatsApp**: [whatsmeow](https://github.com/tulir/whatsmeow)
+- **meow**: [whatsmeow](https://github.com/tulir/whatsmeow)
 - **Web Framework**: Gin
 - **Database**: SQLite (padrão) / PostgreSQL / MySQL
 - **Documentação**: Swagger/OpenAPI
@@ -86,8 +86,8 @@ ZPMeow é uma API REST moderna e completa que permite integração total com o W
 
 ```bash
 # Clone o repositório
-git clone https://github.com/seu-usuario/zpmeow.git
-cd zpmeow
+git clone https://github.com/seu-usuario/meow.git
+cd meow
 
 # Inicie com Docker Compose
 docker-compose up -d
@@ -99,8 +99,8 @@ docker-compose up -d
 
 ```bash
 # Pré-requisitos: Go 1.21+
-git clone https://github.com/seu-usuario/zpmeow.git
-cd zpmeow
+git clone https://github.com/seu-usuario/meow.git
+cd meow
 
 # Instale dependências
 go mod download
@@ -135,7 +135,7 @@ curl -X POST http://localhost:8080/session/minha-sessao/message/send/text \
   -H "Authorization: Bearer your-api-key" \
   -d '{
     "phone": "5511999999999",
-    "body": "Olá! Mensagem enviada via ZPMeow API 🐱"
+    "body": "Olá! Mensagem enviada via meow API 🐱"
   }'
 ```
 
@@ -189,7 +189,7 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 🙏 **Agradecimentos**
 
-- [whatsmeow](https://github.com/tulir/whatsmeow) - Biblioteca WhatsApp para Go
+- [whatsmeow](https://github.com/tulir/whatsmeow) - Biblioteca meow para Go
 - [Gin](https://github.com/gin-gonic/gin) - Framework web HTTP
 - [Swagger](https://swagger.io/) - Documentação da API
 
@@ -199,6 +199,6 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 **Feito com ❤️ e Go**
 
-[⭐ Star no GitHub](https://github.com/seu-usuario/zpmeow) • [🐛 Reportar Bug](https://github.com/seu-usuario/zpmeow/issues) • [💡 Solicitar Feature](https://github.com/seu-usuario/zpmeow/issues)
+[⭐ Star no GitHub](https://github.com/seu-usuario/meow) • [🐛 Reportar Bug](https://github.com/seu-usuario/meow/issues) • [💡 Solicitar Feature](https://github.com/seu-usuario/meow/issues)
 
 </div>

@@ -6,24 +6,24 @@ import (
 	"strings"
 	"time"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 // ChatHandler handles chat-related HTTP requests
 type ChatHandler struct {
-	sessionService *application.SessionService
-	wameowService  *wameow.MeowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 }
 
 // NewChatHandler creates a new chat handler
-func NewChatHandler(sessionService *application.SessionService, wameowService *wameow.MeowService) *ChatHandler {
+func NewChatHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ChatHandler {
 	return &ChatHandler{
 		sessionService: sessionService,
-		wameowService:  wameowService,
+		wmeowService:    wmeowService,
 	}
 }
 
@@ -66,9 +66,9 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 		return
 	}
 
-	// Set presence via wameow service
+	// Set presence via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.SetPresence(ctx, sessionID, req.Phone, req.State, req.Media)
+	err := h.wmeowService.SetPresence(ctx, sessionID, req.Phone, req.State, req.Media)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
 			http.StatusInternalServerError,
@@ -181,9 +181,9 @@ func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 		return
 	}
 
-	// Download media via wameow service
+	// Download media via meow service
 	ctx := c.Request.Context()
-	data, mimeType, err := h.wameowService.DownloadMedia(ctx, sessionID, req.MessageID)
+	data, mimeType, err := h.wmeowService.DownloadMedia(ctx, sessionID, req.MessageID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
 			http.StatusInternalServerError,
@@ -340,9 +340,9 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	// Set disappearing timer via wameow service
+	// Set disappearing timer via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.SetDisappearingTimer(ctx, sessionID, req.JID, timer)
+	err := h.wmeowService.SetDisappearingTimer(ctx, sessionID, req.JID, timer)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
 			http.StatusInternalServerError,
@@ -401,9 +401,9 @@ func (h *ChatHandler) ListChats(c *gin.Context) {
 		return
 	}
 
-	// List chats via wameow service
+	// List chats via meow service
 	ctx := c.Request.Context()
-	chats, err := h.wameowService.ListChats(ctx, sessionID, req.Type)
+	chats, err := h.wmeowService.ListChats(ctx, sessionID, req.Type)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewListChatsErrorResponse(
 			http.StatusInternalServerError,
@@ -473,9 +473,9 @@ func (h *ChatHandler) GetChatInfo(c *gin.Context) {
 		return
 	}
 
-	// Get chat info via wameow service
+	// Get chat info via meow service
 	ctx := c.Request.Context()
-	chatInfo, err := h.wameowService.GetChatInfo(ctx, sessionID, req.JID)
+	chatInfo, err := h.wmeowService.GetChatInfo(ctx, sessionID, req.JID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGetChatInfoErrorResponse(
 			http.StatusInternalServerError,
@@ -542,9 +542,9 @@ func (h *ChatHandler) PinChat(c *gin.Context) {
 		return
 	}
 
-	// Pin/unpin chat via wameow service
+	// Pin/unpin chat via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.PinChat(ctx, sessionID, req.JID, req.Pinned)
+	err := h.wmeowService.PinChat(ctx, sessionID, req.JID, req.Pinned)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
 			http.StatusInternalServerError,
@@ -626,9 +626,9 @@ func (h *ChatHandler) MuteChat(c *gin.Context) {
 		}
 	}
 
-	// Mute/unmute chat via wameow service
+	// Mute/unmute chat via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.MuteChat(ctx, sessionID, req.JID, req.Muted, duration)
+	err := h.wmeowService.MuteChat(ctx, sessionID, req.JID, req.Muted, duration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
 			http.StatusInternalServerError,
@@ -687,9 +687,9 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 		return
 	}
 
-	// Archive/unarchive chat via wameow service
+	// Archive/unarchive chat via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.ArchiveChat(ctx, sessionID, req.JID, req.Archived)
+	err := h.wmeowService.ArchiveChat(ctx, sessionID, req.JID, req.Archived)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewChatErrorResponse(
 			http.StatusInternalServerError,

@@ -3,24 +3,24 @@ package handlers
 import (
 	"net/http"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 // CommunityHandler handles community-related HTTP requests
 type CommunityHandler struct {
-	sessionService *application.SessionService
-	wameowService  *wameow.MeowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 }
 
 // NewCommunityHandler creates a new community handler
-func NewCommunityHandler(sessionService *application.SessionService, wameowService *wameow.MeowService) *CommunityHandler {
+func NewCommunityHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *CommunityHandler {
 	return &CommunityHandler{
 		sessionService: sessionService,
-		wameowService:  wameowService,
+		wmeowService:    wmeowService,
 	}
 }
 
@@ -91,9 +91,9 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Link group using wameow service
+	// Link group using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.LinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
+	err = h.wmeowService.LinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewCommunityErrorResponse(
 			http.StatusInternalServerError,
@@ -168,9 +168,9 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Unlink group using wameow service
+	// Unlink group using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.UnlinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
+	err = h.wmeowService.UnlinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewCommunityErrorResponse(
 			http.StatusInternalServerError,
@@ -245,9 +245,9 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 		return
 	}
 
-	// Get subgroups using wameow service
+	// Get subgroups using meow service
 	ctx := c.Request.Context()
-	subGroups, err := h.wameowService.GetSubGroups(ctx, sessionID, req.CommunityJID)
+	subGroups, err := h.wmeowService.GetSubGroups(ctx, sessionID, req.CommunityJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewCommunityErrorResponse(
 			http.StatusInternalServerError,
@@ -322,9 +322,9 @@ func (h *CommunityHandler) GetLinkedGroupsParticipants(c *gin.Context) {
 		return
 	}
 
-	// Get linked groups participants using wameow service
+	// Get linked groups participants using meow service
 	ctx := c.Request.Context()
-	participants, err := h.wameowService.GetLinkedGroupsParticipants(ctx, sessionID, req.CommunityJID)
+	participants, err := h.wmeowService.GetLinkedGroupsParticipants(ctx, sessionID, req.CommunityJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewCommunityErrorResponse(
 			http.StatusInternalServerError,

@@ -11,7 +11,7 @@ var (
 	sessionNameRegex     = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
-type DomainService interface {
+type Service interface {
 	CanConnect(session *Session) bool
 	CanDisconnect(session *Session) bool
 	CanDelete(session *Session) bool
@@ -30,35 +30,35 @@ type DomainService interface {
 	ValidateDeviceConnection(session *Session, deviceJID string) error
 }
 
-type SessionService struct{}
+type DomainService struct{}
 
-func NewSessionService() *SessionService {
-	return &SessionService{}
+func NewService() *DomainService {
+	return &DomainService{}
 }
 
-func (s *SessionService) CanConnect(session *Session) bool {
+func (s *DomainService) CanConnect(session *Session) bool {
 	return session.IsDisconnected() || session.HasError() || session.IsConnecting()
 }
 
-func (s *SessionService) CanDisconnect(session *Session) bool {
+func (s *DomainService) CanDisconnect(session *Session) bool {
 	return session.IsConnected() || session.IsConnecting()
 }
 
-func (s *SessionService) CanDelete(session *Session) bool {
+func (s *DomainService) CanDelete(session *Session) bool {
 	return session.IsDisconnected()
 }
 
-func (s *SessionService) ValidateStatusTransition(current, newStatus Status) error {
+func (s *DomainService) ValidateStatusTransition(current, newStatus Status) error {
 	return ValidateSessionStatus(current, newStatus)
 }
 
-func (s *SessionService) ValidateSessionConfiguration(session *Session) error {
+func (s *DomainService) ValidateSessionConfiguration(session *Session) error {
 	if err := session.Validate(); err != nil {
 		return err
 	}
 
 	if session.HasProxy() {
-		if err := ValidateProxyURL(session.ProxyURL); err != nil {
+		if err := ValidateProxyURL(session.ProxyURL.Value()); err != nil {
 			return err
 		}
 	}
@@ -70,19 +70,19 @@ func (s *SessionService) ValidateSessionConfiguration(session *Session) error {
 	return nil
 }
 
-func (s *SessionService) CanRegenerateApiKey(session *Session) bool {
+func (s *DomainService) CanRegenerateApiKey(session *Session) bool {
 	return !session.IsConnected()
 }
 
-func (s *SessionService) CanSetProxy(session *Session) bool {
+func (s *DomainService) CanSetProxy(session *Session) bool {
 	return !session.IsConnected()
 }
 
-func (s *SessionService) CanSubscribeToEvents(session *Session) bool {
+func (s *DomainService) CanSubscribeToEvents(session *Session) bool {
 	return true
 }
 
-func (s *SessionService) ValidateDeviceConnection(session *Session, deviceJID string) error {
+func (s *DomainService) ValidateDeviceConnection(session *Session, deviceJID string) error {
 	// A session can only be connected if it has a device JID
 	if session.IsConnected() && deviceJID == "" {
 		return ErrSessionCannotBeConnectedWithoutDevice

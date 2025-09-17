@@ -1,10 +1,10 @@
-# 🐱 ZPMeow API Documentation
+# 🐱 meow API Documentation
 
 [![API Status](https://img.shields.io/badge/API-85%25%20Complete-brightgreen?style=flat-square)](README.md)
 [![Tests](https://img.shields.io/badge/Tests-Passed-success?style=flat-square)](README.md)
-[![WhatsApp](https://img.shields.io/badge/WhatsApp-Business%20Ready-25D366?style=flat-square&logo=whatsapp)](https://whatsapp.com/)
+[![meow](https://img.shields.io/badge/meow-Business%20Ready-25D366?style=flat-square&logo=meow)](https://meow.com/)
 
-> **API REST completa para WhatsApp Business - 85% dos métodos implementados e testados**
+> **API REST completa para meow Business - 85% dos métodos implementados e testados**
 
 ## 🚀 **Status da API**
 
@@ -21,7 +21,7 @@
 - ✅ **CreateNewsletter** - Criar newsletters
 - ✅ **NewsletterToggleMute** - Mute/unmute newsletters
 
-## 📱 WhatsApp API Endpoints
+## 📱 meow API Endpoints
 
 ### 🔐 Authentication
 All endpoints require authentication via the `Authorization` header:
@@ -95,7 +95,7 @@ Delete a message for yourself or everyone.
 ### 📝 Send Text Message
 **POST** `/session/{sessionId}/message/send/text`
 
-Send a text message to a WhatsApp contact.
+Send a text message to a meow contact.
 
 **Request Body:**
 ```json
@@ -112,7 +112,7 @@ Send a text message to a WhatsApp contact.
   "code": 200,
   "data": {
     "key": {
-      "remoteJid": "5511999999999@s.whatsapp.net",
+      "remoteJid": "5511999999999@s.meow.net",
       "id": "3EB0123456789ABCDEF",
       "fromMe": true
     },
@@ -154,7 +154,7 @@ Send an image with optional caption.
   "code": 200,
   "data": {
     "key": {
-      "remoteJid": "5511999999999@s.whatsapp.net",
+      "remoteJid": "5511999999999@s.meow.net",
       "id": "3EB0123456789ABCDEF",
       "fromMe": true
     },
@@ -195,7 +195,7 @@ Send an audio file with optional PTT (Push-to-Talk) mode.
   "code": 200,
   "data": {
     "key": {
-      "remoteJid": "5511999999999@s.whatsapp.net",
+      "remoteJid": "5511999999999@s.meow.net",
       "id": "3EB0123456789ABCDEF",
       "fromMe": true
     },
@@ -236,7 +236,7 @@ Send a video file with optional caption.
   "code": 200,
   "data": {
     "key": {
-      "remoteJid": "5511999999999@s.whatsapp.net",
+      "remoteJid": "5511999999999@s.meow.net",
       "id": "3EB0123456789ABCDEF",
       "fromMe": true
     },
@@ -278,7 +278,7 @@ Send a document file with filename.
   "code": 200,
   "data": {
     "key": {
-      "remoteJid": "5511999999999@s.whatsapp.net",
+      "remoteJid": "5511999999999@s.meow.net",
       "id": "3EB0123456789ABCDEF",
       "fromMe": true
     },
@@ -317,7 +317,7 @@ Send a sticker (WebP format recommended).
   "code": 200,
   "data": {
     "key": {
-      "remoteJid": "5511999999999@s.whatsapp.net",
+      "remoteJid": "5511999999999@s.meow.net",
       "id": "3EB0123456789ABCDEF",
       "fromMe": true
     },
@@ -505,7 +505,7 @@ Get all available sessions.
       "id": "8e30680e-c96b-4361-bf00-4e62b17dae8f",
       "name": "default",
       "status": "connected",
-      "wa_jid": "5511999999999:84@s.whatsapp.net"
+      "wa_jid": "5511999999999:84@s.meow.net"
     }
   ]
 }
@@ -523,7 +523,7 @@ Get session connection status.
   "code": 200,
   "data": {
     "status": "connected",
-    "wa_jid": "5511999999999:84@s.whatsapp.net"
+    "wa_jid": "5511999999999:84@s.meow.net"
   }
 }
 ```
@@ -531,12 +531,12 @@ Get session connection status.
 ### 🔗 Connect Session
 **POST** `/sessions/{id}/connect`
 
-Connect a session to WhatsApp.
+Connect a session to meow.
 
 ### 🔌 Disconnect Session
 **POST** `/sessions/{id}/disconnect`
 
-Disconnect a session from WhatsApp.
+Disconnect a session from meow.
 
 ---
 
@@ -574,7 +574,7 @@ Configure webhooks to receive real-time events:
   "event": "message",
   "session_id": "default",
   "data": {
-    "from": "5511999999999@s.whatsapp.net",
+    "from": "5511999999999@s.meow.net",
     "message": "Hello!",
     "timestamp": 1757961000
   }
@@ -608,11 +608,11 @@ Configure webhooks to receive real-time events:
 - Implement proper error handling and retry logic
 - Monitor your webhook endpoints for reliability
 
-### 📱 WhatsApp Compliance
-- Respect WhatsApp's terms of service
+### 📱 meow Compliance
+- Respect meow's terms of service
 - Don't send spam or unsolicited messages
 - Implement proper user consent mechanisms
-- Follow WhatsApp Business API guidelines
+- Follow meow Business API guidelines
 
 ---
 
@@ -625,7 +625,7 @@ Configure webhooks to receive real-time events:
 {
   "error": {
     "code": "SESSION_NOT_CONNECTED",
-    "message": "Session is not connected to WhatsApp"
+    "message": "Session is not connected to meow"
   }
 }
 ```
@@ -669,13 +669,13 @@ Configure webhooks to receive real-time events:
 ## 📞 Support
 
 For technical support and questions:
-- 📧 Email: support@zpmeow.com
-- 📚 Documentation: https://docs.zpmeow.com
-- 🐛 Issues: https://github.com/zpmeow/zpmeow/issues
+- 📧 Email: support@meow.com
+- 📚 Documentation: https://docs.meow.com
+- 🐛 Issues: https://github.com/meow/meow/issues
 
 ---
 
 ## 📄 License
 
-This API documentation is part of ZPMeow WhatsApp API.
-© 2025 ZPMeow. All rights reserved.
+This API documentation is part of meow meow API.
+© 2025 meow. All rights reserved.

@@ -1,7 +1,3 @@
 package validation
 
-type Validator = BaseValidator
-
-func NewValidator() *Validator {
-	return NewBaseValidator()
-}
+// Removed - using Validator directly from base_validation.go

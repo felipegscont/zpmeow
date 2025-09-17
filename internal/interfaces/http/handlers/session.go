@@ -8,11 +8,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/infrastructure/logging"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/domain/session"
+	"meow/internal/infrastructure/logging"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 )
 
 // ============================================================================
@@ -20,15 +20,15 @@ import (
 // ============================================================================
 
 type SessionHandler struct {
-	sessionService *application.SessionService
-	meowService    wameow.WameowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 	logger         logging.Logger
 }
 
-func NewSessionHandler(sessionService *application.SessionService, meowService wameow.WameowService) *SessionHandler {
+func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *SessionHandler {
 	return &SessionHandler{
 		sessionService: sessionService,
-		meowService:    meowService,
+		wmeowService:    wmeowService,
 		logger:         logging.GetLogger().Sub("session-handler"),
 	}
 }
@@ -124,11 +124,11 @@ func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode
 // convertToSessionInfo converts domain session to SessionInfo DTO
 func (h *SessionHandler) convertToSessionInfo(session *session.Session) *dto.SessionInfo {
 	sessionInfo := &dto.SessionInfo{
-		ID:         session.ID,
-		Name:       session.Name,
+		ID:         session.ID.Value(),
+		Name:       session.Name.Value(),
 		Status:     string(session.Status),
 		WaJID:      session.WaJID,
-		ProxyURL:   session.ProxyURL,
+		ProxyURL:   session.ProxyURL.Value(),
 		WebhookURL: session.WebhookURL,
 		Events:     session.Events, // Now properly handling as array
 		ApiKey:     session.ApiKey,
@@ -157,7 +157,7 @@ func (h *SessionHandler) logError(operation string, err error) {
 // GetSessions godoc
 //
 //	@Summary		Get all sessions
-//	@Description	Retrieves a list of all WhatsApp sessions
+//	@Description	Retrieves a list of all meow sessions
 //	@Tags			Sessions
 //	@Accept			json
 //	@Produce		json
@@ -221,8 +221,8 @@ func (h *SessionHandler) GetSession(c *gin.Context) {
 
 // CreateSession godoc
 //
-//	@Summary		Create a new WhatsApp session
-//	@Description	Creates a new WhatsApp session and starts the client
+//	@Summary		Create a new meow session
+//	@Description	Creates a new meow session and starts the client
 //	@Tags			Sessions
 //	@Accept			json
 //	@Produce		json
@@ -254,8 +254,8 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 	response := &dto.CreateSessionResponse{
 		Success: true,
 		Code:    http.StatusCreated,
-		Data: dto.CreateSessionResponseData{
-			SessionID: session.ID,
+		Data: dto.SessionCreateData{
+			SessionID: session.ID.Value(),
 			Action:    "create",
 			Status:    "success",
 			Timestamp: time.Now(),
@@ -264,13 +264,13 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, response)
-	h.logSuccess("Create session", session.ID)
+	h.logSuccess("Create session", session.ID.Value())
 }
 
 // DeleteSession godoc
 //
 //	@Summary		Delete a session
-//	@Description	Deletes a WhatsApp session and stops the client
+//	@Description	Deletes a meow session and stops the client
 //	@Tags			Sessions
 //	@Accept			json
 //	@Produce		json
@@ -297,9 +297,9 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 		return
 	}
 
-	// Stop the WhatsApp client first
-	if err := h.meowService.StopClient(session.ID); err != nil {
-		h.logger.Errorf("Failed to stop client for session %s: %v", session.ID, err)
+	// Stop the meow client first
+	if err := h.wmeowService.StopClient(session.ID.Value()); err != nil {
+		h.logger.Errorf("Failed to stop client for session %s: %v", session.ID.Value(), err)
 		// Continue with deletion even if stop fails
 	}
 
@@ -318,8 +318,8 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 
 // ConnectSession godoc
 //
-//	@Summary		Connect a session to WhatsApp
-//	@Description	Initiates connection to WhatsApp and returns QR code if needed. Accepts session ID or name.
+//	@Summary		Connect a session to meow
+//	@Description	Initiates connection to meow and returns QR code if needed. Accepts session ID or name.
 //	@Tags			Sessions
 //	@Accept			json
 //	@Produce		json
@@ -353,25 +353,25 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 		if err == nil && existingSession.ID != session.ID {
 			h.sendErrorResponse(c, http.StatusConflict, "DEVICE_ALREADY_IN_USE",
 				fmt.Sprintf("Device %s is already in use by session %s (%s)", session.WaJID, existingSession.ID, existingSession.Name),
-				"Each WhatsApp device can only be used by one session at a time")
+				"Each meow device can only be used by one session at a time")
 			return
 		}
 	}
 
 	// Start the client if not already started
-	if err := h.meowService.StartClient(session.ID); err != nil {
-		h.logError("start client for session "+session.ID, err)
+	if err := h.wmeowService.StartClient(session.ID.Value()); err != nil {
+		h.logError("start client for session "+session.ID.Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "START_CLIENT_FAILED", "Failed to start client", err.Error())
 		return
 	}
 
 	// Get QR code if not connected
 	var qrCode string
-	isConnected := h.meowService.IsClientConnected(session.ID)
+	isConnected := h.wmeowService.IsClientConnected(session.ID.Value())
 	if !isConnected {
-		qrCode, err = h.meowService.GetQRCode(session.ID)
+		qrCode, err = h.wmeowService.GetQRCode(session.ID.Value())
 		if err != nil {
-			h.logger.Errorf("Failed to get QR code for session %s: %v", session.ID, err)
+			h.logger.Errorf("Failed to get QR code for session %s: %v", session.ID.Value(), err)
 		}
 	}
 
@@ -386,8 +386,8 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 	response := &dto.ConnectSessionResponse{
 		Success: true,
 		Code:    http.StatusOK,
-		Data: dto.ConnectSessionResponseData{
-			SessionID:  session.ID,
+		Data: dto.SessionConnectData{
+			SessionID:  session.ID.Value(),
 			Action:     "connect",
 			Status:     "success",
 			Timestamp:  time.Now(),
@@ -403,8 +403,8 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 
 // DisconnectSession godoc
 //
-//	@Summary		Disconnect a session from WhatsApp
-//	@Description	Disconnects the session from WhatsApp without deleting it
+//	@Summary		Disconnect a session from meow
+//	@Description	Disconnects the session from meow without deleting it
 //	@Tags			Sessions
 //	@Accept			json
 //	@Produce		json
@@ -431,9 +431,9 @@ func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 		return
 	}
 
-	// Stop the WhatsApp client
-	if err := h.meowService.StopClient(session.ID); err != nil {
-		h.logError("stop client for session "+session.ID, err)
+	// Stop the meow client
+	if err := h.wmeowService.StopClient(session.ID.Value()); err != nil {
+		h.logError("stop client for session "+session.ID.Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "STOP_CLIENT_FAILED", "Failed to disconnect session", err.Error())
 		return
 	}
@@ -445,7 +445,7 @@ func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 // PairPhone godoc
 //
 //	@Summary		Pair phone number with session
-//	@Description	Pairs a phone number with the session for WhatsApp connection
+//	@Description	Pairs a phone number with the session for meow connection
 //	@Tags			Sessions
 //	@Accept			json
 //	@Produce		json
@@ -479,9 +479,9 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 	}
 
 	// Pair phone via MeowService
-	pairCode, err := h.meowService.PairPhone(session.ID, req.PhoneNumber)
+	pairCode, err := h.wmeowService.PairPhone(session.ID.Value(), req.PhoneNumber)
 	if err != nil {
-		h.logError("pair phone for session "+session.ID, err)
+		h.logError("pair phone for session "+session.ID.Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "PHONE_PAIRING_FAILED", "Failed to pair phone", err.Error())
 		return
 	}
@@ -535,8 +535,8 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 	}
 
 	// Get client status from MeowService
-	clientStatus := h.meowService.GetClientStatus(session.ID)
-	isConnected := h.meowService.IsClientConnected(session.ID)
+	clientStatus := h.wmeowService.GetClientStatus(session.ID.Value())
+	isConnected := h.wmeowService.IsClientConnected(session.ID.Value())
 
 	// Create standardized response
 	response := &dto.SessionStatusResponse{
@@ -547,7 +547,7 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 			Action:        "status",
 			Status:        "success",
 			Timestamp:     time.Now(),
-			Name:          session.Name,
+			Name:          session.Name.Value(),
 			SessionStatus: string(session.Status),
 			WaJID:         session.WaJID,
 			IsConnected:   isConnected,
@@ -597,17 +597,17 @@ func (h *SessionHandler) UpdateSessionWebhook(c *gin.Context) {
 		return
 	}
 
-	// Update webhook in WameowService
-	if err := h.meowService.UpdateSessionWebhook(session.ID, req.URL); err != nil {
-		h.logError("update webhook for session "+session.ID, err)
+	// Update webhook in wmeowService
+	if err := h.wmeowService.UpdateSessionWebhook(session.ID.Value(), req.URL); err != nil {
+		h.logError("update webhook for session "+session.ID.Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "WEBHOOK_UPDATE_FAILED", "Failed to update webhook", err.Error())
 		return
 	}
 
 	// Update events subscription
 	if len(req.Events) > 0 {
-		if err := h.meowService.UpdateSessionSubscriptions(session.ID, req.Events); err != nil {
-			h.logError("update events subscription for session "+session.ID, err)
+		if err := h.wmeowService.UpdateSessionSubscriptions(session.ID.Value(), req.Events); err != nil {
+			h.logError("update events subscription for session "+session.ID.Value(), err)
 			h.sendErrorResponse(c, http.StatusInternalServerError, "EVENTS_UPDATE_FAILED", "Failed to update events subscription", err.Error())
 			return
 		}

@@ -8,36 +8,40 @@ import (
 	"strings"
 	"time"
 
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/infrastructure/database"
+	"meow/internal/domain/session"
+	"meow/internal/infrastructure/database"
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
-type SessionRepo struct {
+type PostgresRepo struct {
 	db *sqlx.DB
 }
 
-func NewSessionRepo(db *sqlx.DB) session.Repository {
-	return &SessionRepo{
+func NewPostgresRepo(db *sqlx.DB) session.Repository {
+	return &PostgresRepo{
 		db: db,
 	}
 }
 
-func (r *SessionRepo) Create(ctx context.Context, session *session.Session) error {
-	if session.ID == "" {
-		session.ID = uuid.New().String()
+func (r *PostgresRepo) Create(ctx context.Context, sessionEntity *session.Session) error {
+	if sessionEntity.ID.IsEmpty() {
+		newID, err := session.NewSessionID(uuid.New().String())
+		if err != nil {
+			return fmt.Errorf("failed to create session ID: %w", err)
+		}
+		sessionEntity.ID = newID
 	}
 
-	eventsJSON, err := json.Marshal(session.Events)
+	eventsJSON, err := json.Marshal(sessionEntity.Events)
 	if err != nil {
 		return fmt.Errorf("failed to marshal events: %w", err)
 	}
 
 	now := time.Now()
-	session.CreatedAt = now
-	session.UpdatedAt = now
+	sessionEntity.CreatedAt = now
+	sessionEntity.UpdatedAt = now
 
 	query := `
 		INSERT INTO sessions (id, name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at)
@@ -45,21 +49,21 @@ func (r *SessionRepo) Create(ctx context.Context, session *session.Session) erro
 	`
 
 	// Ensure consistency: connected field should only be true if status is "connected" AND device_jid is not empty
-	isConnected := string(session.Status) == "connected" && session.WaJID != ""
+	isConnected := string(sessionEntity.Status) == "connected" && sessionEntity.WaJID != ""
 
 	_, err = r.db.ExecContext(ctx, query,
-		session.ID,
-		session.Name,
-		session.WaJID,
-		string(session.Status),
-		session.QRCode,
-		session.ProxyURL,
-		session.WebhookURL,
+		sessionEntity.ID.Value(),
+		sessionEntity.Name.Value(),
+		sessionEntity.WaJID,
+		string(sessionEntity.Status),
+		sessionEntity.QRCode,
+		sessionEntity.ProxyURL.Value(),
+		sessionEntity.WebhookURL,
 		string(eventsJSON),
 		isConnected, // connected field with validation
-		session.ApiKey,
-		session.CreatedAt,
-		session.UpdatedAt,
+		sessionEntity.ApiKey,
+		sessionEntity.CreatedAt,
+		sessionEntity.UpdatedAt,
 	)
 
 	if err != nil {
@@ -72,7 +76,7 @@ func (r *SessionRepo) Create(ctx context.Context, session *session.Session) erro
 	return nil
 }
 
-func (r *SessionRepo) GetByID(ctx context.Context, id string) (*session.Session, error) {
+func (r *PostgresRepo) GetByID(ctx context.Context, id string) (*session.Session, error) {
 	var model database.SessionModel
 	query := `
 		SELECT id, name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at
@@ -90,7 +94,7 @@ func (r *SessionRepo) GetByID(ctx context.Context, id string) (*session.Session,
 	return r.modelToDomain(&model)
 }
 
-func (r *SessionRepo) GetByName(ctx context.Context, name string) (*session.Session, error) {
+func (r *PostgresRepo) GetByName(ctx context.Context, name string) (*session.Session, error) {
 	var model database.SessionModel
 	query := `
 		SELECT id, name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at
@@ -108,7 +112,7 @@ func (r *SessionRepo) GetByName(ctx context.Context, name string) (*session.Sess
 	return r.modelToDomain(&model)
 }
 
-func (r *SessionRepo) GetAll(ctx context.Context) ([]*session.Session, error) {
+func (r *PostgresRepo) GetAll(ctx context.Context) ([]*session.Session, error) {
 	var models []database.SessionModel
 	query := `
 		SELECT id, name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at
@@ -132,7 +136,7 @@ func (r *SessionRepo) GetAll(ctx context.Context) ([]*session.Session, error) {
 	return sessions, nil
 }
 
-func (r *SessionRepo) Update(ctx context.Context, session *session.Session) error {
+func (r *PostgresRepo) Update(ctx context.Context, session *session.Session) error {
 	eventsJSON, err := json.Marshal(session.Events)
 	if err != nil {
 		return fmt.Errorf("failed to marshal events: %w", err)
@@ -151,12 +155,12 @@ func (r *SessionRepo) Update(ctx context.Context, session *session.Session) erro
 	isConnected := string(session.Status) == "connected" && session.WaJID != ""
 
 	result, err := r.db.ExecContext(ctx, query,
-		session.ID,
-		session.Name,
+		session.ID.Value(),
+		session.Name.Value(),
 		session.WaJID,
 		string(session.Status),
 		session.QRCode,
-		session.ProxyURL,
+		session.ProxyURL.Value(),
 		session.WebhookURL,
 		string(eventsJSON),
 		isConnected, // connected field with validation
@@ -183,7 +187,7 @@ func (r *SessionRepo) Update(ctx context.Context, session *session.Session) erro
 	return nil
 }
 
-func (r *SessionRepo) Delete(ctx context.Context, id string) error {
+func (r *PostgresRepo) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM sessions WHERE id = $1`
 
 	result, err := r.db.ExecContext(ctx, query, id)
@@ -203,7 +207,7 @@ func (r *SessionRepo) Delete(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *SessionRepo) List(ctx context.Context, limit, offset int, status string) ([]*session.Session, int, error) {
+func (r *PostgresRepo) List(ctx context.Context, limit, offset int, status string) ([]*session.Session, int, error) {
 	var models []database.SessionModel
 	var totalCount int
 
@@ -253,7 +257,7 @@ func (r *SessionRepo) List(ctx context.Context, limit, offset int, status string
 	return sessions, totalCount, nil
 }
 
-func (r *SessionRepo) GetActive(ctx context.Context) ([]*session.Session, error) {
+func (r *PostgresRepo) GetActive(ctx context.Context) ([]*session.Session, error) {
 	var models []database.SessionModel
 	query := `
 		SELECT id, name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at
@@ -277,7 +281,7 @@ func (r *SessionRepo) GetActive(ctx context.Context) ([]*session.Session, error)
 	return sessions, nil
 }
 
-func (r *SessionRepo) GetInactive(ctx context.Context) ([]*session.Session, error) {
+func (r *PostgresRepo) GetInactive(ctx context.Context) ([]*session.Session, error) {
 	var models []database.SessionModel
 	query := `
 		SELECT id, name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at
@@ -301,7 +305,7 @@ func (r *SessionRepo) GetInactive(ctx context.Context) ([]*session.Session, erro
 	return sessions, nil
 }
 
-func (r *SessionRepo) GetByApiKey(ctx context.Context, apiKey string) (*session.Session, error) {
+func (r *PostgresRepo) GetByApiKey(ctx context.Context, apiKey string) (*session.Session, error) {
 	var model database.SessionModel
 	query := `
 		SELECT id, name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at
@@ -320,7 +324,7 @@ func (r *SessionRepo) GetByApiKey(ctx context.Context, apiKey string) (*session.
 }
 
 // GetByDeviceJID gets a session by device JID
-func (r *SessionRepo) GetByDeviceJID(ctx context.Context, deviceJID string) (*session.Session, error) {
+func (r *PostgresRepo) GetByDeviceJID(ctx context.Context, deviceJID string) (*session.Session, error) {
 	if deviceJID == "" {
 		return nil, fmt.Errorf("device JID cannot be empty")
 	}
@@ -343,7 +347,7 @@ func (r *SessionRepo) GetByDeviceJID(ctx context.Context, deviceJID string) (*se
 }
 
 // ValidateDeviceUniqueness validates that a device JID is not already in use by another session
-func (r *SessionRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, deviceJID string) error {
+func (r *PostgresRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, deviceJID string) error {
 	if deviceJID == "" {
 		return nil // Empty device JID is allowed (not connected yet)
 	}
@@ -366,7 +370,7 @@ func (r *SessionRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, d
 	return nil
 }
 
-func (r *SessionRepo) modelToDomain(model *database.SessionModel) (*session.Session, error) {
+func (r *PostgresRepo) modelToDomain(model *database.SessionModel) (*session.Session, error) {
 	var events []string
 	if model.Events != "" && model.Events != "null" {
 		err := json.Unmarshal([]byte(model.Events), &events)
@@ -377,13 +381,29 @@ func (r *SessionRepo) modelToDomain(model *database.SessionModel) (*session.Sess
 
 	status := session.Status(model.Status)
 
+	// Create value objects
+	sessionID, err := session.NewSessionID(model.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session ID: %w", err)
+	}
+
+	sessionName, err := session.NewSessionName(model.Name)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create session name: %w", err)
+	}
+
+	proxyURL, err := session.NewProxyURL(model.ProxyURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create proxy URL: %w", err)
+	}
+
 	return &session.Session{
-		ID:         model.ID,
-		Name:       model.Name,
+		ID:         sessionID,
+		Name:       sessionName,
 		WaJID:      model.DeviceJID,
 		Status:     status,
 		QRCode:     model.QRCode,
-		ProxyURL:   model.ProxyURL,
+		ProxyURL:   proxyURL,
 		WebhookURL: model.WebhookURL,
 		Events:     events,
 		ApiKey:     model.ApiKey,

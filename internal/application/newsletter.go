@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/interfaces/dto"
-	"zpmeow/internal/shared/validation"
+	"meow/internal/domain/session"
+	"meow/internal/interfaces/dto"
+	"meow/internal/shared/validation"
 )
 
-// NewsletterService implements newsletter use cases following Clean Architecture
-type NewsletterService struct {
-	wameowService interface {
+// NewsletterApp implements newsletter use cases following Clean Architecture
+type NewsletterApp struct {
+	meowService interface {
 		CreateNewsletter(ctx context.Context, sessionID, name, description string) (interface{}, error)
 		GetNewsletter(ctx context.Context, sessionID, newsletterJID string) (interface{}, error)
 		ListNewsletters(ctx context.Context, sessionID string) (interface{}, error)
@@ -31,14 +31,14 @@ type NewsletterService struct {
 	validator   *validation.Validator
 }
 
-// NewNewsletterService creates a new NewsletterService instance
-func NewNewsletterService(
-	wameowService interface{},
+// NewNewsletterApp creates a new NewsletterApp instance
+func NewNewsletterApp(
+	meowService interface{},
 	sessionRepo session.Repository,
 	validator *validation.Validator,
-) *NewsletterService {
-	return &NewsletterService{
-		wameowService: wameowService.(interface {
+) *NewsletterApp {
+	return &NewsletterApp{
+		meowService: meowService.(interface {
 			CreateNewsletter(ctx context.Context, sessionID, name, description string) (interface{}, error)
 			GetNewsletter(ctx context.Context, sessionID, newsletterJID string) (interface{}, error)
 			ListNewsletters(ctx context.Context, sessionID string) (interface{}, error)
@@ -60,12 +60,12 @@ func NewNewsletterService(
 }
 
 // CreateNewsletter creates a new newsletter using DTO
-func (s *NewsletterService) CreateNewsletter(ctx context.Context, sessionID string, req *dto.CreateNewsletterRequest) (interface{}, error) {
+func (s *NewsletterApp) CreateNewsletter(ctx context.Context, sessionID string, req *dto.CreateNewsletterRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.CreateNewsletter(ctx, sessionID, req.Name, req.Description)
+	result, err := s.meowService.CreateNewsletter(ctx, sessionID, req.Name, req.Description)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create newsletter: %w", err)
 	}
@@ -75,12 +75,12 @@ func (s *NewsletterService) CreateNewsletter(ctx context.Context, sessionID stri
 }
 
 // GetNewsletter gets newsletter information using DTO
-func (s *NewsletterService) GetNewsletter(ctx context.Context, sessionID string, req *dto.GetNewsletterInfoRequest) (interface{}, error) {
+func (s *NewsletterApp) GetNewsletter(ctx context.Context, sessionID string, req *dto.GetNewsletterInfoRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.GetNewsletter(ctx, sessionID, req.JID)
+	result, err := s.meowService.GetNewsletter(ctx, sessionID, req.JID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get newsletter: %w", err)
 	}
@@ -89,12 +89,12 @@ func (s *NewsletterService) GetNewsletter(ctx context.Context, sessionID string,
 }
 
 // ListNewsletters lists all newsletters
-func (s *NewsletterService) ListNewsletters(ctx context.Context, sessionID string) (interface{}, error) {
+func (s *NewsletterApp) ListNewsletters(ctx context.Context, sessionID string) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.ListNewsletters(ctx, sessionID)
+	result, err := s.meowService.ListNewsletters(ctx, sessionID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list newsletters: %w", err)
 	}
@@ -103,12 +103,12 @@ func (s *NewsletterService) ListNewsletters(ctx context.Context, sessionID strin
 }
 
 // SubscribeToNewsletter subscribes to a newsletter using DTO
-func (s *NewsletterService) SubscribeToNewsletter(ctx context.Context, sessionID string, newsletterJID string) error {
+func (s *NewsletterApp) SubscribeToNewsletter(ctx context.Context, sessionID string, newsletterJID string) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
-	err := s.wameowService.SubscribeToNewsletter(ctx, sessionID, newsletterJID)
+	err := s.meowService.SubscribeToNewsletter(ctx, sessionID, newsletterJID)
 	if err != nil {
 		return fmt.Errorf("failed to subscribe to newsletter: %w", err)
 	}
@@ -121,7 +121,7 @@ func (s *NewsletterService) SubscribeToNewsletter(ctx context.Context, sessionID
 
 // Helper methods
 
-func (s *NewsletterService) validateSession(ctx context.Context, sessionID string) error {
+func (s *NewsletterApp) validateSession(ctx context.Context, sessionID string) error {
 	sessionEntity, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return fmt.Errorf("session not found: %w", err)

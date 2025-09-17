@@ -1,28 +1,28 @@
 package application
 
 import (
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/domain/session"
+	"meow/internal/interfaces/dto"
 )
 
-// ConversionService handles conversions between domain entities and DTOs
-type ConversionService struct{}
+// Converter handles conversions between domain entities and DTOs
+type Converter struct{}
 
-// NewConversionService creates a new conversion service
-func NewConversionService() *ConversionService {
-	return &ConversionService{}
+// NewConverter creates a new conversion service
+func NewConverter() *Converter {
+	return &Converter{}
 }
 
 // Session Conversions
 
 // SessionToInfo converts a session entity to session info DTO
-func (c *ConversionService) SessionToInfo(session *session.Session) dto.SessionInfo {
+func (c *Converter) SessionToInfo(session *session.Session) dto.SessionInfo {
 	return dto.SessionInfo{
-		ID:         session.ID,
-		Name:       session.Name,
+		ID:         session.ID.Value(),
+		Name:       session.Name.Value(),
 		Status:     string(session.Status),
 		WaJID:      session.WaJID,
-		ProxyURL:   session.ProxyURL,
+		ProxyURL:   session.ProxyURL.Value(),
 		WebhookURL: session.WebhookURL,
 		Events:     session.Events,
 		CreatedAt:  session.CreatedAt,
@@ -31,7 +31,7 @@ func (c *ConversionService) SessionToInfo(session *session.Session) dto.SessionI
 }
 
 // SessionsToInfoList converts a list of session entities to session info DTOs
-func (c *ConversionService) SessionsToInfoList(sessions []*session.Session) []dto.SessionInfo {
+func (c *Converter) SessionsToInfoList(sessions []*session.Session) []dto.SessionInfo {
 	result := make([]dto.SessionInfo, len(sessions))
 	for i, s := range sessions {
 		result[i] = c.SessionToInfo(s)

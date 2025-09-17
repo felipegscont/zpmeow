@@ -4,9 +4,9 @@ import (
 	"fmt"
 )
 
-type ErrorUtils struct{}
+type ErrorHelper struct{}
 
-func (eu *ErrorUtils) WrapError(err error, context string) error {
+func (eu *ErrorHelper) WrapError(err error, context string) error {
 	if err == nil {
 		return nil
 	}
@@ -25,4 +25,4 @@ func NewValidationError(message string) error {
 	return &ValidationError{message: message}
 }
 
-var Error = &ErrorUtils{}
+var Error = &ErrorHelper{}

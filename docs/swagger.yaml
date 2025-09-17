@@ -6,7 +6,7 @@ definitions:
         example: true
         type: boolean
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
     required:
     - jid
@@ -23,10 +23,10 @@ definitions:
   dto.AvatarInfo:
     properties:
       avatar_url:
-        example: https://pps.whatsapp.net/...
+        example: https://pps.meow.net/...
         type: string
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       phone:
         example: "5511999999999"
@@ -143,7 +143,7 @@ definitions:
         example: false
         type: boolean
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       last_message:
         example: Hello!
@@ -350,11 +350,11 @@ definitions:
     type: object
   dto.ContactCheckResult:
     properties:
-      is_in_whatsapp:
+      is_in_meow:
         example: true
         type: boolean
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       query:
         example: "5511999999999"
@@ -418,7 +418,7 @@ definitions:
         example: false
         type: boolean
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       name:
         example: João Silva
@@ -535,6 +535,42 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
     type: object
+  dto.CreateNewsletterRequest:
+    properties:
+      description:
+        example: Newsletter description
+        type: string
+      name:
+        example: My Newsletter
+        type: string
+      picture:
+        description: Base64 encoded image
+        type: string
+    required:
+    - name
+    type: object
+  dto.CreateNewsletterResponse:
+    properties:
+      data:
+        $ref: '#/definitions/dto.CreateNewsletterResult'
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dto.CreateNewsletterResult:
+    properties:
+      description:
+        type: string
+      jid:
+        type: string
+      name:
+        type: string
+      server_id:
+        type: string
+      timestamp:
+        type: string
+    type: object
   dto.CreateSessionRequest:
     properties:
       events:
@@ -547,7 +583,7 @@ definitions:
         example: http://proxy.example.com:8080
         type: string
       webhook_url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
     required:
     - name
@@ -588,10 +624,14 @@ definitions:
         description: true = delete for everyone, false = delete for me
         example: true
         type: boolean
+      message_id:
+        example: 3EB0D098B5FD4BF3BC4327
+        type: string
       phone:
         example: "5511999999999"
         type: string
     required:
+    - message_id
     - phone
     type: object
   dto.DeleteWebhookResponse:
@@ -636,6 +676,9 @@ definitions:
     type: object
   dto.EditMessageRequest:
     properties:
+      message_id:
+        example: 3EB0D098B5FD4BF3BC4327
+        type: string
       new_text:
         example: Edited message text
         type: string
@@ -643,6 +686,7 @@ definitions:
         example: "5511999999999"
         type: string
     required:
+    - message_id
     - new_text
     - phone
     type: object
@@ -666,7 +710,7 @@ definitions:
   dto.GetChatInfoRequest:
     properties:
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
     required:
     - jid
@@ -708,7 +752,7 @@ definitions:
         example: 120363025246125486@g.us
         type: string
       inviter:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
     required:
     - code
@@ -724,7 +768,7 @@ definitions:
     required:
     - group_jid
     type: object
-  dto.GetGroupRequestParticipantsRequest:
+  dto.GetGroupRequestsReq:
     properties:
       group_jid:
         example: 120363025246125486@g.us
@@ -735,7 +779,7 @@ definitions:
   dto.GetInviteInfoRequest:
     properties:
       invite_link:
-        example: https://chat.whatsapp.com/ABC123
+        example: https://chat.meow.com/ABC123
         type: string
     required:
     - invite_link
@@ -809,7 +853,7 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
       url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
       webhook_id:
         example: webhook_123456789
@@ -827,7 +871,7 @@ definitions:
           $ref: '#/definitions/dto.GroupInfo'
         type: array
       invite_link:
-        example: https://chat.whatsapp.com/ABC123
+        example: https://chat.meow.com/ABC123
         type: string
       message:
         example: Operation completed successfully
@@ -858,7 +902,7 @@ definitions:
     properties:
       admins:
         example:
-        - '["5511999999999@s.whatsapp.net"]'
+        - '["5511999999999@s.meow.net"]'
         items:
           type: string
         type: array
@@ -881,12 +925,12 @@ definitions:
         example: My Group
         type: string
       owner:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       participants:
         example:
-        - '["5511999999999@s.whatsapp.net"'
-        - ' "5511888888888@s.whatsapp.net"]'
+        - '["5511999999999@s.meow.net"'
+        - ' "5511888888888@s.meow.net"]'
         items:
           type: string
         type: array
@@ -920,7 +964,7 @@ definitions:
   dto.JoinGroupRequest:
     properties:
       invite_link:
-        example: https://chat.whatsapp.com/ABC123
+        example: https://chat.meow.com/ABC123
         type: string
     required:
     - invite_link
@@ -937,7 +981,7 @@ definitions:
         example: 120363025246125486@g.us
         type: string
       inviter:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
     required:
     - code
@@ -1031,7 +1075,7 @@ definitions:
         example: active
         type: string
       url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
       webhook_id:
         example: webhook_123456789
@@ -1303,13 +1347,65 @@ definitions:
         example: 8h
         type: string
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       muted:
         example: true
         type: boolean
     required:
     - jid
+    type: object
+  dto.NewsletterInfo:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      jid:
+        type: string
+      muted:
+        type: boolean
+      name:
+        type: string
+      owner_jid:
+        type: string
+      picture:
+        type: string
+      subscribers:
+        type: integer
+      updated_at:
+        type: string
+      verified:
+        type: boolean
+    type: object
+  dto.NewsletterInfoResponse:
+    properties:
+      data:
+        $ref: '#/definitions/dto.NewsletterInfo'
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dto.NewsletterList:
+    properties:
+      count:
+        type: integer
+      newsletters:
+        items:
+          $ref: '#/definitions/dto.NewsletterInfo'
+        type: array
+      total:
+        type: integer
+    type: object
+  dto.NewsletterListResponse:
+    properties:
+      data:
+        $ref: '#/definitions/dto.NewsletterList'
+      error:
+        type: string
+      success:
+        type: boolean
     type: object
   dto.PairPhoneRequest:
     properties:
@@ -1356,7 +1452,7 @@ definitions:
   dto.PinChatRequest:
     properties:
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       pinned:
         example: true
@@ -1418,11 +1514,15 @@ definitions:
         description: Use "remove" to remove reaction
         example: "\U0001F44D"
         type: string
+      message_id:
+        example: 3EB0D098B5FD4BF3BC4327
+        type: string
       phone:
         example: "5511999999999"
         type: string
     required:
     - emoji
+    - message_id
     - phone
     type: object
   dto.RegisterWebhookRequest:
@@ -1442,7 +1542,7 @@ definitions:
         example: default
         type: string
       url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
     required:
     - events
@@ -1480,7 +1580,7 @@ definitions:
         example: active
         type: string
       url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
       webhook_id:
         example: webhook_123456789
@@ -1602,6 +1702,34 @@ definitions:
     - media_type
     - media_url
     - phone
+    type: object
+  dto.SendNewsletterMessageRequest:
+    properties:
+      caption:
+        example: Image caption
+        type: string
+      content:
+        example: Hello newsletter!
+        type: string
+      media_handle:
+        example: media_handle_from_upload
+        type: string
+      media_type:
+        example: image
+        type: string
+    type: object
+  dto.SendNewsletterMessageResponse:
+    properties:
+      error:
+        type: string
+      message_id:
+        type: string
+      server_id:
+        type: string
+      success:
+        type: boolean
+      timestamp:
+        type: string
     type: object
   dto.SendStickerRequest:
     properties:
@@ -1737,10 +1865,10 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
       wa_jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       webhook_url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
     type: object
   dto.SessionInfoResponse:
@@ -1862,7 +1990,7 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
       wa_jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
     type: object
   dto.SetAllPrivacySettingsRequest:
@@ -1904,7 +2032,7 @@ definitions:
   dto.SetDisappearingTimerRequest:
     properties:
       jid:
-        example: 5511999999999@s.whatsapp.net
+        example: 5511999999999@s.meow.net
         type: string
       timer:
         description: '"off", "24h", "7d", "90d"'
@@ -2026,6 +2154,15 @@ definitions:
     required:
     - state
     type: object
+  dto.StandardResponse:
+    properties:
+      error:
+        type: string
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
   dto.StickerMessagePayload:
     properties:
       url:
@@ -2120,7 +2257,7 @@ definitions:
     - action
     - jid
     type: object
-  dto.UpdateGroupRequestParticipantsRequest:
+  dto.UpdateGroupRequestsReq:
     properties:
       action:
         example: approve
@@ -2176,7 +2313,7 @@ definitions:
         example: active
         type: string
       url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
     type: object
   dto.UpdateWebhookResponse:
@@ -2210,7 +2347,7 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
       url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
       webhook_id:
         example: webhook_123456789
@@ -2230,6 +2367,32 @@ definitions:
     required:
     - media_type
     - session_id
+    type: object
+  dto.UploadNewsletterMediaResponse:
+    properties:
+      data:
+        $ref: '#/definitions/dto.UploadNewsletterMediaResult'
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dto.UploadNewsletterMediaResult:
+    properties:
+      direct_path:
+        type: string
+      file_hash:
+        type: string
+      file_length:
+        type: integer
+      handle:
+        type: string
+      media_key:
+        type: string
+      object_id:
+        type: string
+      url:
+        type: string
     type: object
   dto.VideoMessagePayload:
     properties:
@@ -2281,7 +2444,7 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
       url:
-        example: https://webhook.example.com/whatsapp
+        example: https://webhook.example.com/meow
         type: string
       webhook_id:
         example: webhook_123456789
@@ -2327,7 +2490,7 @@ definitions:
         example: Service is healthy
         type: string
       service:
-        example: zpmeow
+        example: meow
         type: string
       status:
         example: ok
@@ -2362,15 +2525,15 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    email: support@zpmeow.com
-    name: zpmeow API Support
-    url: https://github.com/your-username/zpmeow
-  description: A WhatsApp API server built with Go, inspired by wuzapi
+    email: support@meow.com
+    name: meow API Support
+    url: https://github.com/your-username/meow
+  description: A meow API server built with Go, inspired by meow
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: zpmeow WhatsApp API
+  title: meow meow API
   version: "1.0"
 paths:
   /health:
@@ -3042,7 +3205,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Check if phone numbers are registered on WhatsApp
+      description: Check if phone numbers are registered on meow
       parameters:
       - description: Session ID
         in: path
@@ -3072,7 +3235,7 @@ paths:
             $ref: '#/definitions/dto.ContactResponse'
       security:
       - ApiKeyAuth: []
-      summary: Check contacts on WhatsApp
+      summary: Check contacts on meow
       tags:
       - Contacts
   /session/{sessionId}/contacts/info:
@@ -3116,7 +3279,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get all contacts from contact's WhatsApp
+      description: Get all contacts from contact's meow
       parameters:
       - description: Session ID
         in: path
@@ -3221,7 +3384,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new WhatsApp group with specified name and participants
+      description: Create a new meow group with specified name and participants
       parameters:
       - description: Session ID
         in: path
@@ -3467,7 +3630,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Join a WhatsApp group using an invite link
+      description: Join a meow group using an invite link
       parameters:
       - description: Session ID
         in: path
@@ -3549,7 +3712,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Join a WhatsApp group using specific invite details
+      description: Join a meow group using specific invite details
       parameters:
       - description: Session ID
         in: path
@@ -3590,7 +3753,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Leave a WhatsApp group
+      description: Leave a meow group
       parameters:
       - description: Session ID
         in: path
@@ -3923,7 +4086,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.GetGroupRequestParticipantsRequest'
+          $ref: '#/definitions/dto.GetGroupRequestsReq'
       produces:
       - application/json
       responses:
@@ -3963,7 +4126,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.UpdateGroupRequestParticipantsRequest'
+          $ref: '#/definitions/dto.UpdateGroupRequestsReq'
       produces:
       - application/json
       responses:
@@ -4525,7 +4688,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send an audio message to a WhatsApp contact
+      description: Send an audio message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4562,7 +4725,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a button message to a WhatsApp contact (not yet implemented)
+      description: Send a button message to a meow contact (not yet implemented)
       parameters:
       - description: Session ID
         in: path
@@ -4585,7 +4748,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a contact message to a WhatsApp contact
+      description: Send a contact message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4622,7 +4785,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a document message to a WhatsApp contact
+      description: Send a document message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4659,7 +4822,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send an image message to a WhatsApp contact
+      description: Send an image message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4696,7 +4859,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a list message to a WhatsApp contact (not yet implemented)
+      description: Send a list message to a meow contact (not yet implemented)
       parameters:
       - description: Session ID
         in: path
@@ -4719,7 +4882,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a location message to a WhatsApp contact
+      description: Send a location message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4793,7 +4956,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a media message (image, video, audio, document) to a WhatsApp
+      description: Send a media message (image, video, audio, document) to a meow
         contact
       parameters:
       - description: Session ID
@@ -4831,7 +4994,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a poll message to a WhatsApp contact (not yet implemented)
+      description: Send a poll message to a meow contact (not yet implemented)
       parameters:
       - description: Session ID
         in: path
@@ -4854,7 +5017,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a sticker message to a WhatsApp contact
+      description: Send a sticker message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4891,7 +5054,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a text message to a WhatsApp contact
+      description: Send a text message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4928,7 +5091,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a video message to a WhatsApp contact
+      description: Send a video message to a meow contact
       parameters:
       - description: Session ID
         in: path
@@ -4965,80 +5128,40 @@ paths:
     post:
       consumes:
       - application/json
-      description: Create a new WhatsApp newsletter
+      description: Create a new meow newsletter
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
+      - description: Newsletter creation request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.CreateNewsletterRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Newsletter created successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.CreateNewsletterResponse'
         "400":
           description: Bad request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.CreateNewsletterResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.CreateNewsletterResponse'
       security:
       - ApiKeyAuth: []
       summary: Create newsletter
       tags:
       - Newsletters
   /session/{sessionId}/newsletter/{newsletterId}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a newsletter permanently
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Newsletter ID
-        in: path
-        name: newsletterId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Newsletter deleted successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Newsletter not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Delete newsletter
-      tags:
-      - Newsletters
     get:
       consumes:
       - application/json
@@ -5049,7 +5172,7 @@ paths:
         name: sessionId
         required: true
         type: string
-      - description: Newsletter ID
+      - description: Newsletter JID
         in: path
         name: newsletterId
         required: true
@@ -5060,159 +5183,67 @@ paths:
         "200":
           description: Newsletter information retrieved
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.NewsletterInfoResponse'
         "400":
           description: Bad request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.NewsletterInfoResponse'
         "404":
           description: Newsletter not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.NewsletterInfoResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.NewsletterInfoResponse'
       security:
       - ApiKeyAuth: []
       summary: Get newsletter information
-      tags:
-      - Newsletters
-    put:
-      consumes:
-      - application/json
-      description: Update newsletter information (name, description, etc.)
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Newsletter ID
-        in: path
-        name: newsletterId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Newsletter updated successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Newsletter not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Update newsletter
-      tags:
-      - Newsletters
-  /session/{sessionId}/newsletter/{newsletterId}/metrics:
-    get:
-      consumes:
-      - application/json
-      description: Get analytics and metrics for a newsletter (subscribers, engagement,
-        etc.)
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Newsletter ID
-        in: path
-        name: newsletterId
-        required: true
-        type: string
-      - description: Time period for metrics (day, week, month, year)
-        in: query
-        name: period
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Metrics retrieved successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Newsletter not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Get newsletter metrics
       tags:
       - Newsletters
   /session/{sessionId}/newsletter/{newsletterId}/send:
     post:
       consumes:
       - application/json
-      description: Send a message to all newsletter subscribers
+      description: Send a text or media message to newsletter subscribers. For media
+        messages, MediaHandle is required.
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Newsletter ID
+      - description: 'Newsletter ID (format: {id}@newsletter)'
         in: path
         name: newsletterId
         required: true
         type: string
+      - description: Message content (text or media)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendNewsletterMessageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Message sent successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.SendNewsletterMessageResponse'
         "400":
-          description: Bad request
+          description: Bad request - Invalid parameters or missing MediaHandle for
+            media
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.SendNewsletterMessageResponse'
         "404":
-          description: Newsletter not found
+          description: Newsletter not found or session not connected
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.SendNewsletterMessageResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.SendNewsletterMessageResponse'
       security:
       - ApiKeyAuth: []
       summary: Send newsletter message
@@ -5229,7 +5260,7 @@ paths:
         name: sessionId
         required: true
         type: string
-      - description: Newsletter ID
+      - description: Newsletter JID
         in: path
         name: newsletterId
         required: true
@@ -5240,78 +5271,22 @@ paths:
         "200":
           description: Subscribed successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
         "400":
           description: Bad request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
         "404":
           description: Newsletter not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
       security:
       - ApiKeyAuth: []
       summary: Subscribe to newsletter
-      tags:
-      - Newsletters
-  /session/{sessionId}/newsletter/{newsletterId}/subscribers:
-    get:
-      consumes:
-      - application/json
-      description: Get a list of all subscribers for a newsletter
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Newsletter ID
-        in: path
-        name: newsletterId
-        required: true
-        type: string
-      - description: 'Limit number of results (default: 100)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Offset for pagination (default: 0)'
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Subscribers retrieved successfully
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad request
-          schema:
-            additionalProperties: true
-            type: object
-        "404":
-          description: Newsletter not found
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - ApiKeyAuth: []
-      summary: Get newsletter subscribers
       tags:
       - Newsletters
   /session/{sessionId}/newsletter/{newsletterId}/unsubscribe:
@@ -5325,7 +5300,7 @@ paths:
         name: sessionId
         required: true
         type: string
-      - description: Newsletter ID
+      - description: Newsletter JID
         in: path
         name: newsletterId
         required: true
@@ -5336,65 +5311,96 @@ paths:
         "200":
           description: Unsubscribed successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
         "400":
           description: Bad request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
         "404":
           description: Newsletter not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.StandardResponse'
       security:
       - ApiKeyAuth: []
       summary: Unsubscribe from newsletter
       tags:
       - Newsletters
-  /session/{sessionId}/newsletters:
-    get:
+  /session/{sessionId}/newsletter/upload:
+    post:
       consumes:
-      - application/json
-      description: Get a list of all newsletters for a session
+      - multipart/form-data
+      description: Upload media files (image, video, audio, document) for use in newsletter
+        messages. Returns MediaHandle required for sending media messages.
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: 'Limit number of results (default: 50)'
-        in: query
-        name: limit
-        type: integer
-      - description: 'Offset for pagination (default: 0)'
-        in: query
-        name: offset
-        type: integer
+      - description: Media file to upload
+        in: formData
+        name: file
+        required: true
+        type: file
+      - description: Media type (image, video, audio, document)
+        in: formData
+        name: media_type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Media uploaded successfully
+          schema:
+            $ref: '#/definitions/dto.UploadNewsletterMediaResponse'
+        "400":
+          description: Bad request - Invalid file or parameters
+          schema:
+            $ref: '#/definitions/dto.StandardResponse'
+        "404":
+          description: Session not found or not connected
+          schema:
+            $ref: '#/definitions/dto.StandardResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.StandardResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Upload media for newsletter
+      tags:
+      - Newsletters
+  /session/{sessionId}/newsletters:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all subscribed newsletters for a session
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: Newsletters retrieved successfully
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.NewsletterListResponse'
         "400":
           description: Bad request
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.NewsletterListResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/dto.NewsletterListResponse'
       security:
       - ApiKeyAuth: []
       summary: List newsletters
@@ -5661,7 +5667,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Register a webhook URL to receive WhatsApp events
+      description: Register a webhook URL to receive meow events
       parameters:
       - description: Session ID
         in: path
@@ -5770,8 +5776,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Initiates connection to WhatsApp and returns QR code if needed.
-        Accepts session ID or name.
+      description: Initiates connection to meow and returns QR code if needed. Accepts
+        session ID or name.
       parameters:
       - description: Session ID or Name
         in: path
@@ -5799,14 +5805,14 @@ paths:
             $ref: '#/definitions/dto.SessionResponse'
       security:
       - ApiKeyAuth: []
-      summary: Connect a session to WhatsApp
+      summary: Connect a session to meow
       tags:
       - Sessions
   /sessions/{id}/delete:
     delete:
       consumes:
       - application/json
-      description: Deletes a WhatsApp session and stops the client
+      description: Deletes a meow session and stops the client
       parameters:
       - description: Session ID
         in: path
@@ -5841,7 +5847,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Disconnects the session from WhatsApp without deleting it
+      description: Disconnects the session from meow without deleting it
       parameters:
       - description: Session ID
         in: path
@@ -5869,7 +5875,7 @@ paths:
             $ref: '#/definitions/dto.SessionResponse'
       security:
       - ApiKeyAuth: []
-      summary: Disconnect a session from WhatsApp
+      summary: Disconnect a session from meow
       tags:
       - Sessions
   /sessions/{id}/info:
@@ -5912,7 +5918,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Pairs a phone number with the session for WhatsApp connection
+      description: Pairs a phone number with the session for meow connection
       parameters:
       - description: Session ID
         in: path
@@ -6029,7 +6035,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new WhatsApp session and starts the client
+      description: Creates a new meow session and starts the client
       parameters:
       - description: Session creation request
         in: body
@@ -6054,14 +6060,14 @@ paths:
             $ref: '#/definitions/dto.SessionResponse'
       security:
       - ApiKeyAuth: []
-      summary: Create a new WhatsApp session
+      summary: Create a new meow session
       tags:
       - Sessions
   /sessions/list:
     get:
       consumes:
       - application/json
-      description: Retrieves a list of all WhatsApp sessions
+      description: Retrieves a list of all meow sessions
       produces:
       - application/json
       responses:

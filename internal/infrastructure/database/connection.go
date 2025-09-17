@@ -2,9 +2,8 @@ package database
 
 import (
 	"fmt"
-	"time"
 
-	"zpmeow/internal/infrastructure/config"
+	"meow/internal/config"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -14,14 +13,15 @@ import (
 )
 
 func Connect(cfg *config.Config) (*sqlx.DB, error) {
-	db, err := sqlx.Connect("postgres", cfg.DBUrl)
+	dbConfig := cfg.GetDatabase()
+	db, err := sqlx.Connect("postgres", dbConfig.GetURL())
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	db.SetMaxOpenConns(dbConfig.GetMaxOpenConns())
+	db.SetMaxIdleConns(dbConfig.GetMaxIdleConns())
+	db.SetConnMaxLifetime(dbConfig.GetConnMaxLifetime())
 
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
@@ -31,7 +31,7 @@ func Connect(cfg *config.Config) (*sqlx.DB, error) {
 }
 
 func RunMigrations(cfg *config.Config) error {
-	db, err := sqlx.Connect("postgres", cfg.DBUrl)
+	db, err := sqlx.Connect("postgres", cfg.GetDatabaseURL())
 	if err != nil {
 		return fmt.Errorf("failed to connect to database for migrations: %w", err)
 	}

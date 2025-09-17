@@ -10,22 +10,22 @@ import (
 	"github.com/gin-gonic/gin"
 	waTypes "go.mau.fi/whatsmeow/types"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 )
 
 // PrivacyHandler handles privacy-related HTTP requests
 type PrivacyHandler struct {
-	sessionService *application.SessionService
-	wameowService  wameow.WameowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 }
 
 // NewPrivacyHandler creates a new privacy handler
-func NewPrivacyHandler(sessionService *application.SessionService, wameowService wameow.WameowService) *PrivacyHandler {
+func NewPrivacyHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *PrivacyHandler {
 	return &PrivacyHandler{
 		sessionService: sessionService,
-		wameowService:  wameowService,
+		wmeowService:    wmeowService,
 	}
 }
 
@@ -89,7 +89,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	defer cancel()
 
 	// Get current settings first
-	currentSettings, err := h.wameowService.GetPrivacySettings(ctx, sessionID)
+	currentSettings, err := h.wmeowService.GetPrivacySettings(ctx, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 			Success: false,
@@ -106,7 +106,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	updatedSettings := []string{}
 
 	if req.GroupAdd != nil {
-		_, err := h.wameowService.SetPrivacySetting(ctx, sessionID, "groupadd", *req.GroupAdd)
+		_, err := h.wmeowService.SetPrivacySetting(ctx, sessionID, "groupadd", *req.GroupAdd)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 				Success: false,
@@ -123,7 +123,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	}
 
 	if req.LastSeen != nil {
-		_, err := h.wameowService.SetPrivacySetting(ctx, sessionID, "last", *req.LastSeen)
+		_, err := h.wmeowService.SetPrivacySetting(ctx, sessionID, "last", *req.LastSeen)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 				Success: false,
@@ -140,7 +140,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	}
 
 	if req.Status != nil {
-		_, err := h.wameowService.SetPrivacySetting(ctx, sessionID, "status", *req.Status)
+		_, err := h.wmeowService.SetPrivacySetting(ctx, sessionID, "status", *req.Status)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 				Success: false,
@@ -157,7 +157,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	}
 
 	if req.Profile != nil {
-		_, err := h.wameowService.SetPrivacySetting(ctx, sessionID, "profile", *req.Profile)
+		_, err := h.wmeowService.SetPrivacySetting(ctx, sessionID, "profile", *req.Profile)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 				Success: false,
@@ -178,7 +178,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 		if *req.ReadReceipts {
 			value = "all"
 		}
-		_, err := h.wameowService.SetPrivacySetting(ctx, sessionID, "readreceipts", value)
+		_, err := h.wmeowService.SetPrivacySetting(ctx, sessionID, "readreceipts", value)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 				Success: false,
@@ -195,7 +195,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	}
 
 	if req.CallAdd != nil {
-		_, err := h.wameowService.SetPrivacySetting(ctx, sessionID, "calladd", *req.CallAdd)
+		_, err := h.wmeowService.SetPrivacySetting(ctx, sessionID, "calladd", *req.CallAdd)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 				Success: false,
@@ -212,7 +212,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	}
 
 	if req.Online != nil {
-		_, err := h.wameowService.SetPrivacySetting(ctx, sessionID, "online", *req.Online)
+		_, err := h.wmeowService.SetPrivacySetting(ctx, sessionID, "online", *req.Online)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 				Success: false,
@@ -273,7 +273,7 @@ func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 	defer cancel()
 
 	// Get blocklist
-	blocklist, err := h.wameowService.GetBlocklist(ctx, sessionID)
+	blocklist, err := h.wmeowService.GetBlocklist(ctx, sessionID)
 	if err != nil {
 		// Check for specific error types
 		if strings.Contains(err.Error(), "client not found") {
@@ -287,7 +287,7 @@ func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 				Error: &dto.PrivacyErrorResponse{
 					Code:    "SESSION_NOT_CONNECTED",
 					Message: "Session is not connected",
-					Details: "Please ensure the WhatsApp session is connected before performing this operation",
+					Details: "Please ensure the meow session is connected before performing this operation",
 				},
 			})
 		} else {
@@ -361,7 +361,7 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 	defer cancel()
 
 	// Update blocklist
-	updatedBlocklist, err := h.wameowService.UpdateBlocklist(ctx, sessionID, req.JID, req.Action)
+	updatedBlocklist, err := h.wmeowService.UpdateBlocklist(ctx, sessionID, req.JID, req.Action)
 	if err != nil {
 		// Check for specific error types
 		if strings.Contains(err.Error(), "client not found") {
@@ -375,7 +375,7 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 				Error: &dto.PrivacyErrorResponse{
 					Code:    "SESSION_NOT_CONNECTED",
 					Message: "Session is not connected",
-					Details: "Please ensure the WhatsApp session is connected before performing this operation",
+					Details: "Please ensure the meow session is connected before performing this operation",
 				},
 			})
 		} else {
@@ -396,7 +396,7 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 
 // Validation helper functions
 
-// validateJID validates if a string is a valid WhatsApp JID
+// validateJID validates if a string is a valid meow JID
 func validateJID(jidStr string) error {
 	if jidStr == "" {
 		return fmt.Errorf("JID cannot be empty")
@@ -499,7 +499,7 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 	defer cancel()
 
 	// Get all privacy settings
-	allSettings, err := h.wameowService.GetPrivacySettings(ctx, sessionID)
+	allSettings, err := h.wmeowService.GetPrivacySettings(ctx, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
 			Success: false,

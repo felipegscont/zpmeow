@@ -1,4 +1,4 @@
-module zpmeow
+module meow
 
 go 1.24.0
 
@@ -10,6 +10,8 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
+	github.com/mattn/go-colorable v0.1.14
+	github.com/mattn/go-isatty v0.0.20
 	github.com/mdp/qrterminal/v3 v3.2.1
 	github.com/rs/zerolog v1.34.0
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
@@ -60,8 +62,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mailru/easyjson v0.9.0 // indirect
-	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect

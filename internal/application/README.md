@@ -150,10 +150,10 @@ func (s *Service) UseCase(ctx context.Context, req *dto.Request) (*dto.Response,
 package main
 
 import (
-    "zpmeow/internal/application"
-    "zpmeow/internal/domain/session"
-    "zpmeow/internal/domain/message"
-    "zpmeow/internal/shared/validation"
+    "meow/internal/application"
+    "meow/internal/domain/session"
+    "meow/internal/domain/message"
+    "meow/internal/shared/validation"
 )
 
 func main() {

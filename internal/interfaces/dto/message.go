@@ -206,7 +206,7 @@ type SendMessageResponseData struct {
 	Status      string    `json:"status" example:"sent"`
 	Timestamp   time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 	ServerID    string    `json:"server_id,omitempty" example:"server_msg_123"`
-	Sender      string    `json:"sender,omitempty" example:"5511888888888@s.whatsapp.net"`
+	Sender      string    `json:"sender,omitempty" example:"5511888888888@s.meow.net"`
 }
 
 // SendMessageResponse represents legacy send message response
@@ -337,16 +337,16 @@ type LocationMessagePayload struct {
 // INTERNAL HELPER FUNCTIONS
 // ============================================================================
 
-// phoneToRemoteJid converts a phone number to WhatsApp JID format
+// phoneToRemoteJid converts a phone number to meow JID format
 func phoneToRemoteJid(phone string) string {
 	if phone == "" {
 		return ""
 	}
-	// If already contains @s.whatsapp.net, return as is
-	if strings.Contains(phone, "@s.whatsapp.net") {
+	// If already contains @s.meow.net, return as is
+	if strings.Contains(phone, "@s.meow.net") {
 		return phone
 	}
-	return phone + "@s.whatsapp.net"
+	return phone + "@s.meow.net"
 }
 
 // NewMessageResponse creates a new standardized message response

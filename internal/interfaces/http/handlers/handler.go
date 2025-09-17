@@ -10,9 +10,9 @@ type Handler interface {
 	RegisterRoutes(router *gin.Engine)
 }
 
-type BaseHandler struct{}
+type HTTPHandler struct{}
 
-func (h *BaseHandler) SendSuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
+func (h *HTTPHandler) SendSuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
 	c.JSON(statusCode, gin.H{
 		"status":  statusCode,
 		"message": message,
@@ -20,7 +20,7 @@ func (h *BaseHandler) SendSuccessResponse(c *gin.Context, statusCode int, messag
 	})
 }
 
-func (h *BaseHandler) SendErrorResponse(c *gin.Context, statusCode int, message string, err error) {
+func (h *HTTPHandler) SendErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	response := gin.H{
 		"status":  statusCode,
 		"message": message,
@@ -33,35 +33,35 @@ func (h *BaseHandler) SendErrorResponse(c *gin.Context, statusCode int, message 
 	c.JSON(statusCode, response)
 }
 
-func (h *BaseHandler) SendValidationErrorResponse(c *gin.Context, err error) {
+func (h *HTTPHandler) SendValidationErrorResponse(c *gin.Context, err error) {
 	h.SendErrorResponse(c, http.StatusBadRequest, "Validation error", err)
 }
 
-func (h *BaseHandler) SendInternalErrorResponse(c *gin.Context, err error) {
+func (h *HTTPHandler) SendInternalErrorResponse(c *gin.Context, err error) {
 	h.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", err)
 }
 
-func (h *BaseHandler) SendNotFoundResponse(c *gin.Context, message string) {
+func (h *HTTPHandler) SendNotFoundResponse(c *gin.Context, message string) {
 	h.SendErrorResponse(c, http.StatusNotFound, message, nil)
 }
 
-func (h *BaseHandler) SendUnauthorizedResponse(c *gin.Context, message string) {
+func (h *HTTPHandler) SendUnauthorizedResponse(c *gin.Context, message string) {
 	h.SendErrorResponse(c, http.StatusUnauthorized, message, nil)
 }
 
-func (h *BaseHandler) SendForbiddenResponse(c *gin.Context, message string) {
+func (h *HTTPHandler) SendForbiddenResponse(c *gin.Context, message string) {
 	h.SendErrorResponse(c, http.StatusForbidden, message, nil)
 }
 
-func (h *BaseHandler) SendConflictResponse(c *gin.Context, message string, err error) {
+func (h *HTTPHandler) SendConflictResponse(c *gin.Context, message string, err error) {
 	h.SendErrorResponse(c, http.StatusConflict, message, err)
 }
 
-func (h *BaseHandler) GetSessionIDFromPath(c *gin.Context) string {
+func (h *HTTPHandler) GetSessionIDFromPath(c *gin.Context) string {
 	return c.Param("sessionId")
 }
 
-func (h *BaseHandler) GetQueryParam(c *gin.Context, key, defaultValue string) string {
+func (h *HTTPHandler) GetQueryParam(c *gin.Context, key, defaultValue string) string {
 	value := c.Query(key)
 	if value == "" {
 		return defaultValue
@@ -69,7 +69,7 @@ func (h *BaseHandler) GetQueryParam(c *gin.Context, key, defaultValue string) st
 	return value
 }
 
-func (h *BaseHandler) GetQueryParamInt(c *gin.Context, key string, defaultValue int) int {
+func (h *HTTPHandler) GetQueryParamInt(c *gin.Context, key string, defaultValue int) int {
 	value := c.Query(key)
 	if value == "" {
 		return defaultValue
@@ -100,7 +100,7 @@ func parseIntOrDefault(value string, defaultValue int) int {
 	}
 }
 
-func (h *BaseHandler) BindJSON(c *gin.Context, obj interface{}) error {
+func (h *HTTPHandler) BindJSON(c *gin.Context, obj interface{}) error {
 	if err := c.ShouldBindJSON(obj); err != nil {
 		h.SendValidationErrorResponse(c, err)
 		return err
@@ -108,7 +108,7 @@ func (h *BaseHandler) BindJSON(c *gin.Context, obj interface{}) error {
 	return nil
 }
 
-func (h *BaseHandler) BindQuery(c *gin.Context, obj interface{}) error {
+func (h *HTTPHandler) BindQuery(c *gin.Context, obj interface{}) error {
 	if err := c.ShouldBindQuery(obj); err != nil {
 		h.SendValidationErrorResponse(c, err)
 		return err
@@ -116,7 +116,7 @@ func (h *BaseHandler) BindQuery(c *gin.Context, obj interface{}) error {
 	return nil
 }
 
-func (h *BaseHandler) BindURI(c *gin.Context, obj interface{}) error {
+func (h *HTTPHandler) BindURI(c *gin.Context, obj interface{}) error {
 	if err := c.ShouldBindUri(obj); err != nil {
 		h.SendValidationErrorResponse(c, err)
 		return err

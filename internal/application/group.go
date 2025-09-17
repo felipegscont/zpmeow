@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"zpmeow/internal/domain/session"
-	"zpmeow/internal/interfaces/dto"
-	"zpmeow/internal/shared/validation"
+	"meow/internal/domain/session"
+	"meow/internal/interfaces/dto"
+	"meow/internal/shared/validation"
 )
 
-// GroupService implements group use cases following Clean Architecture
-type GroupService struct {
-	wameowService interface {
+// GroupApp implements group use cases following Clean Architecture
+type GroupApp struct {
+	meowService interface {
 		CreateGroup(ctx context.Context, sessionID, name string, participants []string) (interface{}, error)
 		GetGroupInfo(ctx context.Context, sessionID, groupJID string) (interface{}, error)
 		ListGroups(ctx context.Context, sessionID string) (interface{}, error)
@@ -42,14 +42,14 @@ type GroupService struct {
 	validator   *validation.Validator
 }
 
-// NewGroupService creates a new GroupService instance
-func NewGroupService(
-	wameowService interface{},
+// NewGroupApp creates a new GroupApp instance
+func NewGroupApp(
+	meowService interface{},
 	sessionRepo session.Repository,
 	validator *validation.Validator,
-) *GroupService {
-	return &GroupService{
-		wameowService: wameowService.(interface {
+) *GroupApp {
+	return &GroupApp{
+		meowService: meowService.(interface {
 			CreateGroup(ctx context.Context, sessionID, name string, participants []string) (interface{}, error)
 			GetGroupInfo(ctx context.Context, sessionID, groupJID string) (interface{}, error)
 			ListGroups(ctx context.Context, sessionID string) (interface{}, error)
@@ -82,12 +82,12 @@ func NewGroupService(
 }
 
 // CreateGroup creates a new group using DTO
-func (s *GroupService) CreateGroup(ctx context.Context, sessionID string, req *dto.CreateGroupRequest) (interface{}, error) {
+func (s *GroupApp) CreateGroup(ctx context.Context, sessionID string, req *dto.CreateGroupRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.CreateGroup(ctx, sessionID, req.Name, req.Participants)
+	result, err := s.meowService.CreateGroup(ctx, sessionID, req.Name, req.Participants)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create group: %w", err)
 	}
@@ -97,30 +97,30 @@ func (s *GroupService) CreateGroup(ctx context.Context, sessionID string, req *d
 }
 
 // GetGroupInfo gets group information using DTO
-func (s *GroupService) GetGroupInfo(ctx context.Context, sessionID string, req *dto.GetGroupInfoRequest) (interface{}, error) {
+func (s *GroupApp) GetGroupInfo(ctx context.Context, sessionID string, req *dto.GetGroupInfoRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	return s.wameowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
+	return s.meowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 }
 
 // ListGroups lists all groups
-func (s *GroupService) ListGroups(ctx context.Context, sessionID string) (interface{}, error) {
+func (s *GroupApp) ListGroups(ctx context.Context, sessionID string) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	return s.wameowService.ListGroups(ctx, sessionID)
+	return s.meowService.ListGroups(ctx, sessionID)
 }
 
 // JoinGroup joins a group via invite link using DTO
-func (s *GroupService) JoinGroup(ctx context.Context, sessionID string, req *dto.JoinGroupRequest) (interface{}, error) {
+func (s *GroupApp) JoinGroup(ctx context.Context, sessionID string, req *dto.JoinGroupRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.JoinGroup(ctx, sessionID, req.InviteLink)
+	result, err := s.meowService.JoinGroup(ctx, sessionID, req.InviteLink)
 	if err != nil {
 		return nil, fmt.Errorf("failed to join group: %w", err)
 	}
@@ -130,12 +130,12 @@ func (s *GroupService) JoinGroup(ctx context.Context, sessionID string, req *dto
 }
 
 // JoinGroupWithInvite joins a group with invite details using DTO
-func (s *GroupService) JoinGroupWithInvite(ctx context.Context, sessionID string, req *dto.JoinGroupWithInviteRequest) (interface{}, error) {
+func (s *GroupApp) JoinGroupWithInvite(ctx context.Context, sessionID string, req *dto.JoinGroupWithInviteRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.JoinGroupWithInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
+	result, err := s.meowService.JoinGroupWithInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to join group with invite: %w", err)
 	}
@@ -145,12 +145,12 @@ func (s *GroupService) JoinGroupWithInvite(ctx context.Context, sessionID string
 }
 
 // LeaveGroup leaves a group using DTO
-func (s *GroupService) LeaveGroup(ctx context.Context, sessionID string, req *dto.LeaveGroupRequest) error {
+func (s *GroupApp) LeaveGroup(ctx context.Context, sessionID string, req *dto.LeaveGroupRequest) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
-	err := s.wameowService.LeaveGroup(ctx, sessionID, req.GroupJID)
+	err := s.meowService.LeaveGroup(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		return fmt.Errorf("failed to leave group: %w", err)
 	}
@@ -160,35 +160,35 @@ func (s *GroupService) LeaveGroup(ctx context.Context, sessionID string, req *dt
 }
 
 // GetInviteLink gets group invite link using DTO
-func (s *GroupService) GetInviteLink(ctx context.Context, sessionID string, req *dto.GetInviteLinkRequest) (string, error) {
+func (s *GroupApp) GetInviteLink(ctx context.Context, sessionID string, req *dto.GetInviteLinkRequest) (string, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return "", err
 	}
 
-	return s.wameowService.GetInviteLink(ctx, sessionID, req.GroupJID, req.Reset)
+	return s.meowService.GetInviteLink(ctx, sessionID, req.GroupJID, req.Reset)
 }
 
 // UpdateParticipants updates group participants using DTO
-func (s *GroupService) UpdateParticipants(ctx context.Context, sessionID string, req *dto.UpdateParticipantsRequest) error {
+func (s *GroupApp) UpdateParticipants(ctx context.Context, sessionID string, req *dto.UpdateParticipantsRequest) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
-	return s.wameowService.UpdateParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
+	return s.meowService.UpdateParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 }
 
 // SetGroupName sets group name using DTO
-func (s *GroupService) SetGroupName(ctx context.Context, sessionID string, req *dto.SetGroupNameRequest) error {
+func (s *GroupApp) SetGroupName(ctx context.Context, sessionID string, req *dto.SetGroupNameRequest) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
-	return s.wameowService.SetGroupName(ctx, sessionID, req.GroupJID, req.Name)
+	return s.meowService.SetGroupName(ctx, sessionID, req.GroupJID, req.Name)
 }
 
 // Helper methods
 
-func (s *GroupService) validateSession(ctx context.Context, sessionID string) error {
+func (s *GroupApp) validateSession(ctx context.Context, sessionID string) error {
 	sessionEntity, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		return fmt.Errorf("session not found: %w", err)

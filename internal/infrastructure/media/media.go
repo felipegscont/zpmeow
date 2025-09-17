@@ -514,7 +514,7 @@ func downloadMediaFromURL(ctx context.Context, mediaURL string, mediaType string
 		return nil, "", fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "ZpMeow/1.0")
+	req.Header.Set("User-Agent", "meow/1.0")
 
 	resp, err := client.Do(req)
 	if err != nil {

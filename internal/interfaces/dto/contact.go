@@ -8,7 +8,7 @@ import (
 // CONTACT REQUEST DTOs
 // ============================================================================
 
-// CheckContactRequest represents a request to check if contacts are on WhatsApp
+// CheckContactRequest represents a request to check if contacts are on meow
 type CheckContactRequest struct {
 	Phones []string `json:"phones" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
@@ -32,17 +32,17 @@ type SetContactPresenceRequest struct {
 // CONTACT DATA STRUCTURES
 // ============================================================================
 
-// ContactCheckResult represents the result of checking if a contact is on WhatsApp
+// ContactCheckResult represents the result of checking if a contact is on meow
 type ContactCheckResult struct {
 	Query        string `json:"query" example:"5511999999999"`
-	IsInWhatsapp bool   `json:"is_in_whatsapp" example:"true"`
-	JID          string `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	IsInmeow     bool   `json:"is_in_meow" example:"true"`
+	JID          string `json:"jid" example:"5511999999999@s.meow.net"`
 	VerifiedName string `json:"verified_name,omitempty" example:"João Silva"`
 }
 
 // ContactInfo represents detailed contact information
 type ContactInfo struct {
-	JID          string `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	JID          string `json:"jid" example:"5511999999999@s.meow.net"`
 	Name         string `json:"name,omitempty" example:"João Silva"`
 	DisplayName  string `json:"display_name,omitempty" example:"João Silva"`
 	VerifiedName string `json:"verified_name,omitempty" example:"João Silva Empresa"`
@@ -60,8 +60,8 @@ type ContactInfo struct {
 // AvatarInfo represents contact avatar information
 type AvatarInfo struct {
 	Phone     string    `json:"phone" example:"5511999999999"`
-	JID       string    `json:"jid" example:"5511999999999@s.whatsapp.net"`
-	AvatarURL string    `json:"avatar_url,omitempty" example:"https://pps.whatsapp.net/..."`
+	JID       string    `json:"jid" example:"5511999999999@s.meow.net"`
+	AvatarURL string    `json:"avatar_url,omitempty" example:"https://pps.meow.net/..."`
 	PictureID string    `json:"picture_id,omitempty" example:"pic_123"`
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T12:00:00Z"`
 }

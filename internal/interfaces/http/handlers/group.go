@@ -8,25 +8,25 @@ import (
 	"strings"
 	"time"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/infrastructure/media"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/infrastructure/media"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 // GroupHandler handles group-related HTTP requests
 type GroupHandler struct {
-	sessionService *application.SessionService
-	wameowService  *wameow.MeowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 }
 
 // NewGroupHandler creates a new group handler
-func NewGroupHandler(sessionService *application.SessionService, wameowService *wameow.MeowService) *GroupHandler {
+func NewGroupHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *GroupHandler {
 	return &GroupHandler{
 		sessionService: sessionService,
-		wameowService:  wameowService,
+		wmeowService:    wmeowService,
 	}
 }
 
@@ -43,13 +43,13 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) 
 		return "", err
 	}
 
-	return session.ID, nil
+	return session.ID.Value(), nil
 }
 
 // CreateGroup handles creating a group
 //
 //	@Summary		Create a new group
-//	@Description	Create a new WhatsApp group with specified name and participants
+//	@Description	Create a new meow group with specified name and participants
 //	@Tags			Groups
 //	@Accept			json
 //	@Produce		json
@@ -107,9 +107,9 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Create group using wameow service
+	// Create group using meow service
 	ctx := c.Request.Context()
-	groupInfo, err := h.wameowService.CreateGroup(ctx, sessionID, req.Name, req.Participants)
+	groupInfo, err := h.wmeowService.CreateGroup(ctx, sessionID, req.Name, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -120,8 +120,8 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow.GroupInfo to dto.GroupInfo
-	dtoGroupInfo := convertWameowGroupInfoToDTO(groupInfo)
+	// Convert meow.GroupInfo to dto.GroupInfo
+	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "create", dtoGroupInfo)
 	response.Code = http.StatusCreated
@@ -178,9 +178,9 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		return
 	}
 
-	// Get group info using wameow service
+	// Get group info using meow service
 	ctx := c.Request.Context()
-	groupInfo, err := h.wameowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
+	groupInfo, err := h.wmeowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -191,8 +191,8 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow.GroupInfo to dto.GroupInfo
-	dtoGroupInfo := convertWameowGroupInfoToDTO(groupInfo)
+	// Convert meow.GroupInfo to dto.GroupInfo
+	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "info", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
@@ -236,9 +236,9 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	// List groups using wameow service
+	// List groups using meow service
 	ctx := c.Request.Context()
-	groups, err := h.wameowService.ListGroups(ctx, sessionID)
+	groups, err := h.wmeowService.ListGroups(ctx, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -249,8 +249,8 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow.GroupInfo slice to dto.GroupInfo slice
-	dtoGroups := convertWameowGroupInfoSliceToDTO(groups)
+	// Convert meow.GroupInfo slice to dto.GroupInfo slice
+	dtoGroups := convertWmeowGroupInfoSliceToDTO(groups)
 
 	response := dto.NewGroupListResponse(sessionID, dtoGroups)
 	c.JSON(http.StatusOK, response)
@@ -259,7 +259,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 // JoinGroup handles joining a group via invite link
 //
 //	@Summary		Join group via invite link
-//	@Description	Join a WhatsApp group using an invite link
+//	@Description	Join a meow group using an invite link
 //	@Tags			Groups
 //	@Accept			json
 //	@Produce		json
@@ -306,9 +306,9 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Join group using wameow service
+	// Join group using meow service
 	ctx := c.Request.Context()
-	groupInfo, err := h.wameowService.JoinGroup(ctx, sessionID, req.InviteLink)
+	groupInfo, err := h.wmeowService.JoinGroup(ctx, sessionID, req.InviteLink)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -319,8 +319,8 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow.GroupInfo to dto.GroupInfo
-	dtoGroupInfo := convertWameowGroupInfoToDTO(groupInfo)
+	// Convert meow.GroupInfo to dto.GroupInfo
+	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "join", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
@@ -329,7 +329,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // JoinGroupWithInvite handles joining a group with specific invite
 //
 //	@Summary		Join group with specific invite
-//	@Description	Join a WhatsApp group using specific invite details
+//	@Description	Join a meow group using specific invite details
 //	@Tags			Groups
 //	@Accept			json
 //	@Produce		json
@@ -376,9 +376,9 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 		return
 	}
 
-	// Join group using wameow service
+	// Join group using meow service
 	ctx := c.Request.Context()
-	groupInfo, err := h.wameowService.JoinGroupWithInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
+	groupInfo, err := h.wmeowService.JoinGroupWithInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -389,8 +389,8 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow.GroupInfo to dto.GroupInfo
-	dtoGroupInfo := convertWameowGroupInfoToDTO(groupInfo)
+	// Convert meow.GroupInfo to dto.GroupInfo
+	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "join_with_invite", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
@@ -399,7 +399,7 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 // LeaveGroup handles leaving a group
 //
 //	@Summary		Leave group
-//	@Description	Leave a WhatsApp group
+//	@Description	Leave a meow group
 //	@Tags			Groups
 //	@Accept			json
 //	@Produce		json
@@ -446,9 +446,9 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 		return
 	}
 
-	// Leave group using wameow service
+	// Leave group using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.LeaveGroup(ctx, sessionID, req.GroupJID)
+	err = h.wmeowService.LeaveGroup(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -513,9 +513,9 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 		return
 	}
 
-	// Get invite link using wameow service
+	// Get invite link using meow service
 	ctx := c.Request.Context()
-	inviteLink, err := h.wameowService.GetInviteLink(ctx, sessionID, req.GroupJID, req.Reset)
+	inviteLink, err := h.wmeowService.GetInviteLink(ctx, sessionID, req.GroupJID, req.Reset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -537,8 +537,8 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 // HELPER FUNCTIONS
 // ============================================================================
 
-// convertWameowGroupInfoToDTO converts wameow.GroupInfo to dto.GroupInfo
-func convertWameowGroupInfoToDTO(groupInfo *wameow.GroupInfo) *dto.GroupInfo {
+// convertWmeowGroupInfoToDTO converts wmeow.GroupInfo to dto.GroupInfo
+func convertWmeowGroupInfoToDTO(groupInfo *wmeow.GroupInfo) *dto.GroupInfo {
 	if groupInfo == nil {
 		return nil
 	}
@@ -558,8 +558,8 @@ func convertWameowGroupInfoToDTO(groupInfo *wameow.GroupInfo) *dto.GroupInfo {
 	}
 }
 
-// convertWameowGroupInfoSliceToDTO converts slice of wameow.GroupInfo to slice of dto.GroupInfo
-func convertWameowGroupInfoSliceToDTO(groups []wameow.GroupInfo) []dto.GroupInfo {
+// convertWmeowGroupInfoSliceToDTO converts slice of wmeow.GroupInfo to slice of dto.GroupInfo
+func convertWmeowGroupInfoSliceToDTO(groups []wmeow.GroupInfo) []dto.GroupInfo {
 	var dtoGroups []dto.GroupInfo
 	for _, group := range groups {
 		dtoGroups = append(dtoGroups, dto.GroupInfo{
@@ -629,9 +629,9 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 		return
 	}
 
-	// Get invite info using wameow service
+	// Get invite info using meow service
 	ctx := c.Request.Context()
-	groupInfo, err := h.wameowService.GetInviteInfo(ctx, sessionID, req.InviteLink)
+	groupInfo, err := h.wmeowService.GetInviteInfo(ctx, sessionID, req.InviteLink)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -642,8 +642,8 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow.GroupInfo to dto.GroupInfo
-	dtoGroupInfo := convertWameowGroupInfoToDTO(groupInfo)
+	// Convert meow.GroupInfo to dto.GroupInfo
+	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "invite_info", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
@@ -688,7 +688,7 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 		return
 	}
 
-	var req dto.GetGroupInfoFromInviteRequest
+	var req dto.GroupInviteInfoReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -699,9 +699,9 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 		return
 	}
 
-	// Get group info from invite using wameow service
+	// Get group info from invite using meow service
 	ctx := c.Request.Context()
-	groupInfo, err := h.wameowService.GetGroupInfoFromInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
+	groupInfo, err := h.wmeowService.GetGroupInfoFromInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -712,8 +712,8 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 		return
 	}
 
-	// Convert wameow.GroupInfo to dto.GroupInfo
-	dtoGroupInfo := convertWameowGroupInfoToDTO(groupInfo)
+	// Convert meow.GroupInfo to dto.GroupInfo
+	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "invite_info_specific", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
@@ -780,9 +780,9 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 		return
 	}
 
-	// Update participants using wameow service
+	// Update participants using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.UpdateParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
+	err = h.wmeowService.UpdateParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -848,9 +848,9 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 		return
 	}
 
-	// Set group name using wameow service
+	// Set group name using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupName(ctx, sessionID, req.GroupJID, req.Name)
+	err = h.wmeowService.SetGroupName(ctx, sessionID, req.GroupJID, req.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -915,9 +915,9 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 		return
 	}
 
-	// Set group topic using wameow service
+	// Set group topic using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupTopic(ctx, sessionID, req.GroupJID, req.Topic)
+	err = h.wmeowService.SetGroupTopic(ctx, sessionID, req.GroupJID, req.Topic)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -994,9 +994,9 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 		return
 	}
 
-	// Set group photo using wameow service
+	// Set group photo using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupPhoto(ctx, sessionID, req.GroupJID, photoData)
+	err = h.wmeowService.SetGroupPhoto(ctx, sessionID, req.GroupJID, photoData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1061,9 +1061,9 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 		return
 	}
 
-	// Remove group photo using wameow service
+	// Remove group photo using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.RemoveGroupPhoto(ctx, sessionID, req.GroupJID)
+	err = h.wmeowService.RemoveGroupPhoto(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1128,9 +1128,9 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 		return
 	}
 
-	// Set group announce using wameow service
+	// Set group announce using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupAnnounce(ctx, sessionID, req.GroupJID, req.AnnounceOnly)
+	err = h.wmeowService.SetGroupAnnounce(ctx, sessionID, req.GroupJID, req.AnnounceOnly)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1195,9 +1195,9 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 		return
 	}
 
-	// Set group locked using wameow service
+	// Set group locked using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupLocked(ctx, sessionID, req.GroupJID, req.Locked)
+	err = h.wmeowService.SetGroupLocked(ctx, sessionID, req.GroupJID, req.Locked)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1262,9 +1262,9 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 		return
 	}
 
-	// Set group ephemeral using wameow service
+	// Set group ephemeral using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupEphemeral(ctx, sessionID, req.GroupJID, req.Ephemeral, req.Duration)
+	err = h.wmeowService.SetGroupEphemeral(ctx, sessionID, req.GroupJID, req.Ephemeral, req.Duration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1318,7 +1318,7 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 		return
 	}
 
-	var req dto.SetGroupJoinApprovalRequest
+	var req dto.GroupJoinApprovalReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -1329,9 +1329,9 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 		return
 	}
 
-	// Set group join approval mode using wameow service
+	// Set group join approval mode using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupJoinApprovalMode(ctx, sessionID, req.GroupJID, req.RequireApproval)
+	err = h.wmeowService.SetGroupJoinApprovalMode(ctx, sessionID, req.GroupJID, req.RequireApproval)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1385,7 +1385,7 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 		return
 	}
 
-	var req dto.SetGroupMemberAddModeRequest
+	var req dto.GroupMemberModeReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -1396,9 +1396,9 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 		return
 	}
 
-	// Set group member add mode using wameow service
+	// Set group member add mode using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.SetGroupMemberAddMode(ctx, sessionID, req.GroupJID, req.Mode)
+	err = h.wmeowService.SetGroupMemberAddMode(ctx, sessionID, req.GroupJID, req.Mode)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1421,7 +1421,7 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sessionId	path		string									true	"Session ID"
-//	@Param			request		body		dto.GetGroupRequestParticipantsRequest	true	"Get group request participants request"
+//	@Param			request		body		dto.GetGroupRequestsReq	true	"Get group request participants request"
 //	@Success		200			{object}	dto.GroupResponse
 //	@Failure		400			{object}	dto.GroupResponse
 //	@Failure		404			{object}	dto.GroupResponse
@@ -1452,7 +1452,7 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	var req dto.GetGroupRequestParticipantsRequest
+	var req dto.GetGroupRequestsReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -1474,9 +1474,9 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Get group request participants using wameow service
+	// Get group request participants using meow service
 	ctx := c.Request.Context()
-	participants, err := h.wameowService.GetGroupRequestParticipants(ctx, sessionID, req.GroupJID)
+	participants, err := h.wmeowService.GetGroupRequestParticipants(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1511,7 +1511,7 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sessionId	path		string										true	"Session ID"
-//	@Param			request		body		dto.UpdateGroupRequestParticipantsRequest	true	"Update group request participants request"
+//	@Param			request		body		dto.UpdateGroupRequestsReq	true	"Update group request participants request"
 //	@Success		200			{object}	dto.GroupResponse
 //	@Failure		400			{object}	dto.GroupResponse
 //	@Failure		404			{object}	dto.GroupResponse
@@ -1542,7 +1542,7 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	var req dto.UpdateGroupRequestParticipantsRequest
+	var req dto.UpdateGroupRequestsReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -1564,9 +1564,9 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Update group request participants using wameow service
+	// Update group request participants using meow service
 	ctx := c.Request.Context()
-	err = h.wameowService.UpdateGroupRequestParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
+	err = h.wmeowService.UpdateGroupRequestParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,

@@ -12,14 +12,14 @@ import (
 // RegisterWebhookRequest represents a request to register a webhook
 type RegisterWebhookRequest struct {
 	SessionID string   `json:"session_id" binding:"required" example:"default"`
-	URL       string   `json:"url" binding:"required" example:"https://webhook.example.com/whatsapp"`
+	URL       string   `json:"url" binding:"required" example:"https://webhook.example.com/meow"`
 	Events    []string `json:"events" binding:"required" example:"[\"message\", \"status\", \"connection\"]"`
 	Secret    string   `json:"secret,omitempty" example:"webhook_secret_key"`
 }
 
 // UpdateWebhookRequest represents a request to update a webhook
 type UpdateWebhookRequest struct {
-	URL    string   `json:"url,omitempty" example:"https://webhook.example.com/whatsapp"`
+	URL    string   `json:"url,omitempty" example:"https://webhook.example.com/meow"`
 	Events []string `json:"events,omitempty" example:"[\"message\", \"status\"]"`
 	Secret string   `json:"secret,omitempty" example:"new_webhook_secret_key"`
 	Status string   `json:"status,omitempty" example:"active"`
@@ -39,7 +39,7 @@ type TestWebhookRequest struct {
 type WebhookInfo struct {
 	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
 	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/whatsapp"`
+	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
 	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
 	Status    string    `json:"status" example:"active"`
 	Secret    string    `json:"secret,omitempty" example:"webhook_secret_key"`
@@ -58,8 +58,8 @@ type WebhookEventPayload struct {
 // MessageWebhookData represents message webhook event data
 type MessageWebhookData struct {
 	MessageID   string    `json:"message_id" example:"msg_123456789"`
-	ChatJID     string    `json:"chat_jid" example:"5511999999999@s.whatsapp.net"`
-	FromJID     string    `json:"from_jid" example:"5511888888888@s.whatsapp.net"`
+	ChatJID     string    `json:"chat_jid" example:"5511999999999@s.meow.net"`
+	FromJID     string    `json:"from_jid" example:"5511888888888@s.meow.net"`
 	MessageType string    `json:"message_type" example:"text"`
 	Content     string    `json:"content" example:"Hello, World!"`
 	MediaURL    string    `json:"media_url,omitempty" example:"https://example.com/image.jpg"`
@@ -70,7 +70,7 @@ type MessageWebhookData struct {
 // StatusWebhookData represents status webhook event data
 type StatusWebhookData struct {
 	MessageID string    `json:"message_id" example:"msg_123456789"`
-	ChatJID   string    `json:"chat_jid" example:"5511999999999@s.whatsapp.net"`
+	ChatJID   string    `json:"chat_jid" example:"5511999999999@s.meow.net"`
 	Status    string    `json:"status" example:"delivered"`
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 }
@@ -78,7 +78,7 @@ type StatusWebhookData struct {
 // ConnectionWebhookData represents connection webhook event data
 type ConnectionWebhookData struct {
 	Status    string    `json:"status" example:"connected"`
-	JID       string    `json:"jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	JID       string    `json:"jid,omitempty" example:"5511999999999@s.meow.net"`
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 }
 
@@ -146,7 +146,7 @@ type RegisterWebhookResponse struct {
 type RegisterWebhookResponseData struct {
 	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
 	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/whatsapp"`
+	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
 	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
 	Status    string    `json:"status" example:"active"`
 	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
@@ -163,7 +163,7 @@ type GetWebhookResponse struct {
 type GetWebhookResponseData struct {
 	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
 	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/whatsapp"`
+	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
 	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
 	Status    string    `json:"status" example:"active"`
 	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
@@ -181,7 +181,7 @@ type UpdateWebhookResponse struct {
 type UpdateWebhookResponseData struct {
 	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
 	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/whatsapp"`
+	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
 	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
 	Status    string    `json:"status" example:"active"`
 	UpdatedAt time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
@@ -198,7 +198,7 @@ type ListWebhooksResponse struct {
 type ListWebhooksResponseData struct {
 	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
 	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/whatsapp"`
+	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
 	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
 	Status    string    `json:"status" example:"active"`
 	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
@@ -231,6 +231,19 @@ type TestWebhookResponseData struct {
 	ResponseCode int    `json:"response_code" example:"200"`
 	ResponseTime int64  `json:"response_time_ms" example:"150"`
 	Error        string `json:"error,omitempty" example:""`
+}
+
+// SupportedEventsResponse represents supported events response
+type SupportedEventsResponse struct {
+	Status  int                  `json:"status" example:"200"`
+	Message string               `json:"message" example:"Supported events retrieved successfully"`
+	Data    SupportedEventsData  `json:"data"`
+}
+
+// SupportedEventsData represents supported events data
+type SupportedEventsData struct {
+	Events []string `json:"events" example:"[\"Message\", \"Receipt\", \"Connected\"]"`
+	Count  int      `json:"count" example:"65"`
 }
 
 // ============================================================================
@@ -281,3 +294,4 @@ func validateWebhookStatus(status string) bool {
 	}
 	return false
 }
+

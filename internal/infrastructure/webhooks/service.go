@@ -1,37 +1,44 @@
-package webhook
+package webhooks
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"zpmeow/internal/infrastructure/logging"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/infrastructure/logging"
+	"meow/internal/interfaces/dto"
 )
 
-type WebhookService struct {
+type Service struct {
 	httpClient    HTTPClient
 	retryStrategy *RetryStrategy
 	logger        logging.Logger
 }
 
-func NewWebhookService() *WebhookService {
-	return &WebhookService{
+func NewService() *Service {
+	retryConfig := &RetryConfig{
+		MaxRetries:        3,
+		InitialBackoff:    time.Second,
+		MaxBackoff:        30 * time.Second,
+		BackoffMultiplier: 2.0,
+	}
+
+	return &Service{
 		httpClient:    NewWebhookHTTPClient(30 * time.Second),
-		retryStrategy: NewRetryStrategy(DefaultRetryConfig()),
+		retryStrategy: NewRetryStrategy(retryConfig),
 		logger:        logging.GetLogger().Sub("webhook-service"),
 	}
 }
 
-func NewWebhookServiceWithConfig(timeout time.Duration, retryConfig *RetryConfig) *WebhookService {
-	return &WebhookService{
+func NewServiceWithConfig(timeout time.Duration, retryConfig *RetryConfig) *Service {
+	return &Service{
 		httpClient:    NewWebhookHTTPClient(timeout),
 		retryStrategy: NewRetryStrategy(retryConfig),
 		logger:        logging.GetLogger().Sub("webhook-service"),
 	}
 }
 
-func (w *WebhookService) SendWebhook(ctx context.Context, webhookURL, event, sessionID string, data interface{}) error {
+func (w *Service) SendWebhook(ctx context.Context, webhookURL, event, sessionID string, data interface{}) error {
 	if webhookURL == "" {
 		return fmt.Errorf("webhook URL is empty")
 	}
@@ -63,7 +70,7 @@ func (w *WebhookService) SendWebhook(ctx context.Context, webhookURL, event, ses
 	return nil
 }
 
-func (w *WebhookService) SendWebhookWithRetry(ctx context.Context, webhookURL, event, sessionID string, data interface{}) error {
+func (w *Service) SendWebhookWithRetry(ctx context.Context, webhookURL, event, sessionID string, data interface{}) error {
 	if webhookURL == "" {
 		return fmt.Errorf("webhook URL is empty")
 	}
@@ -91,7 +98,7 @@ func (w *WebhookService) SendWebhookWithRetry(ctx context.Context, webhookURL, e
 	}, operationName)
 }
 
-func (w *WebhookService) SendWebhookAsync(webhookURL, event, sessionID string, data interface{}) {
+func (w *Service) SendWebhookAsync(webhookURL, event, sessionID string, data interface{}) error {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
@@ -101,9 +108,10 @@ func (w *WebhookService) SendWebhookAsync(webhookURL, event, sessionID string, d
 			w.logger.Errorf("Async webhook failed: %v", err)
 		}
 	}()
+	return nil
 }
 
-func (w *WebhookService) SendWebhookWithHeaders(ctx context.Context, webhookURL, event, sessionID string, data interface{}, headers map[string]string) error {
+func (w *Service) SendWebhookWithHeaders(ctx context.Context, webhookURL, event, sessionID string, data interface{}, headers map[string]string) error {
 	if webhookURL == "" {
 		return fmt.Errorf("webhook URL is empty")
 	}
@@ -135,7 +143,7 @@ func (w *WebhookService) SendWebhookWithHeaders(ctx context.Context, webhookURL,
 	return nil
 }
 
-func (w *WebhookService) SendWebhookWithHeadersAndRetry(ctx context.Context, webhookURL, event, sessionID string, data interface{}, headers map[string]string) error {
+func (w *Service) SendWebhookWithHeadersAndRetry(ctx context.Context, webhookURL, event, sessionID string, data interface{}, headers map[string]string) error {
 	if webhookURL == "" {
 		return fmt.Errorf("webhook URL is empty")
 	}

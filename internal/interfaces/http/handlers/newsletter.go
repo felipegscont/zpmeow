@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow"
@@ -20,15 +20,15 @@ import (
 
 // NewsletterHandler handles newsletter-related HTTP requests
 type NewsletterHandler struct {
-	sessionService *application.SessionService
-	wameowService  *wameow.MeowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 }
 
 // NewNewsletterHandler creates a new newsletter handler
-func NewNewsletterHandler(sessionService *application.SessionService, wameowService *wameow.MeowService) *NewsletterHandler {
+func NewNewsletterHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *NewsletterHandler {
 	return &NewsletterHandler{
 		sessionService: sessionService,
-		wameowService:  wameowService,
+		wmeowService:    wmeowService,
 	}
 }
 
@@ -38,7 +38,7 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -71,7 +71,7 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 	}
 
 	// Get newsletter message updates
-	updates, err := h.wameowService.GetNewsletterMessageUpdates(c.Request.Context(), sessionID, newsletterJID, params)
+	updates, err := h.wmeowService.GetNewsletterMessageUpdates(c.Request.Context(), sessionID, newsletterJID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,
@@ -93,7 +93,7 @@ func (h *NewsletterHandler) MarkNewsletterViewed(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -126,7 +126,7 @@ func (h *NewsletterHandler) MarkNewsletterViewed(c *gin.Context) {
 	}
 
 	// Mark messages as viewed
-	err := h.wameowService.NewsletterMarkViewed(c.Request.Context(), sessionID, newsletterJID, serverIDs)
+	err := h.wmeowService.NewsletterMarkViewed(c.Request.Context(), sessionID, newsletterJID, serverIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,
@@ -147,7 +147,7 @@ func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -185,7 +185,7 @@ func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 	}
 
 	// Send reaction
-	err = h.wameowService.NewsletterSendReaction(
+	err = h.wmeowService.NewsletterSendReaction(
 		c.Request.Context(),
 		sessionID,
 		newsletterJID,
@@ -213,7 +213,7 @@ func (h *NewsletterHandler) ToggleNewsletterMute(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -232,7 +232,7 @@ func (h *NewsletterHandler) ToggleNewsletterMute(c *gin.Context) {
 	}
 
 	// Toggle mute
-	err := h.wameowService.NewsletterToggleMute(c.Request.Context(), sessionID, newsletterJID, req.Mute)
+	err := h.wmeowService.NewsletterToggleMute(c.Request.Context(), sessionID, newsletterJID, req.Mute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,
@@ -258,7 +258,7 @@ func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -267,7 +267,7 @@ func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 	}
 
 	// Subscribe to live updates
-	err := h.wameowService.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionID, newsletterJID)
+	err := h.wmeowService.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,
@@ -302,7 +302,7 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -359,7 +359,7 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 	}
 
 	// Upload media
-	resp, err := h.wameowService.UploadNewsletter(c.Request.Context(), sessionID, data, mediaType)
+	resp, err := h.wmeowService.UploadNewsletter(c.Request.Context(), sessionID, data, mediaType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,
@@ -383,7 +383,7 @@ func (h *NewsletterHandler) GetNewsletterByInvite(c *gin.Context) {
 	inviteKey := c.Param("inviteKey")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.NewsletterInfoResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -401,7 +401,7 @@ func (h *NewsletterHandler) GetNewsletterByInvite(c *gin.Context) {
 	}
 
 	// Get newsletter info by invite
-	info, err := h.wameowService.GetNewsletterInfoWithInvite(c.Request.Context(), sessionID, inviteKey)
+	info, err := h.wmeowService.GetNewsletterInfoWithInvite(c.Request.Context(), sessionID, inviteKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewsletterInfoResponse{
 			Success: false,
@@ -443,13 +443,13 @@ func (h *NewsletterHandler) resolveSessionID(c *gin.Context, sessionIDOrName str
 		return "", err
 	}
 
-	return session.ID, nil
+	return session.ID.Value(), nil
 }
 
 // CreateNewsletter handles creating a newsletter
 //
 //	@Summary		Create newsletter
-//	@Description	Create a new WhatsApp newsletter
+//	@Description	Create a new meow newsletter
 //	@Tags			Newsletters
 //	@Accept			json
 //	@Produce		json
@@ -474,7 +474,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	}
 
 	// Validate session is connected
-	if !h.wameowService.IsClientConnected(resolvedSessionID) {
+	if !h.wmeowService.IsClientConnected(resolvedSessionID) {
 		c.JSON(http.StatusBadRequest, dto.CreateNewsletterResponse{
 			Success: false,
 			Error:   "Session not connected",
@@ -512,7 +512,7 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	}
 
 	// Create newsletter
-	resp, err := h.wameowService.CreateNewsletter(c.Request.Context(), resolvedSessionID, params)
+	resp, err := h.wmeowService.CreateNewsletter(c.Request.Context(), resolvedSessionID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.CreateNewsletterResponse{
 			Success: false,
@@ -556,7 +556,7 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.NewsletterInfoResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -574,7 +574,7 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 	}
 
 	// Get newsletter info
-	info, err := h.wameowService.GetNewsletterInfo(c.Request.Context(), sessionID, newsletterJID)
+	info, err := h.wmeowService.GetNewsletterInfo(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewsletterInfoResponse{
 			Success: false,
@@ -628,7 +628,7 @@ func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.NewsletterListResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -637,7 +637,7 @@ func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 	}
 
 	// Get subscribed newsletters
-	newsletters, err := h.wameowService.GetSubscribedNewsletters(c.Request.Context(), sessionID)
+	newsletters, err := h.wmeowService.GetSubscribedNewsletters(c.Request.Context(), sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewsletterListResponse{
 			Success: false,
@@ -715,7 +715,7 @@ func (h *NewsletterHandler) SubscribeToNewsletter(c *gin.Context) {
 	}
 
 	// Follow newsletter
-	err = h.wameowService.FollowNewsletter(c.Request.Context(), sessionID, newsletterJID)
+	err = h.wmeowService.FollowNewsletter(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,
@@ -769,7 +769,7 @@ func (h *NewsletterHandler) UnsubscribeFromNewsletter(c *gin.Context) {
 	}
 
 	// Unfollow newsletter
-	err = h.wameowService.UnfollowNewsletter(c.Request.Context(), sessionID, newsletterJID)
+	err = h.wmeowService.UnfollowNewsletter(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,
@@ -806,7 +806,7 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.SendNewsletterMessageResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -877,7 +877,7 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 	}
 
 	// Send message to newsletter using the new implementation
-	resp, err := h.wameowService.SendNewsletterMessage(c.Request.Context(), sessionID, newsletterJID, message, req.MediaHandle)
+	resp, err := h.wmeowService.SendNewsletterMessage(c.Request.Context(), sessionID, newsletterJID, message, req.MediaHandle)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.SendNewsletterMessageResponse{
 			Success: false,
@@ -900,7 +900,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	newsletterJID := c.Param("newsletterId")
 
 	// Validate session exists and is connected
-	if !h.wameowService.IsClientConnected(sessionID) {
+	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
 			Error:   "Session not found or not connected",
@@ -933,7 +933,7 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	}
 
 	// Get newsletter messages
-	messages, err := h.wameowService.GetNewsletterMessages(c.Request.Context(), sessionID, newsletterJID, params)
+	messages, err := h.wmeowService.GetNewsletterMessages(c.Request.Context(), sessionID, newsletterJID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
 			Success: false,

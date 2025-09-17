@@ -48,7 +48,7 @@ internal/infra/logger/log/*
 *.db-wal
 *.db-shm
 
-# WhatsApp/WhatsmeOW related files
+# meow/WhatsmeOW related files
 *.session
 *.store
 whatsmeow_store.db

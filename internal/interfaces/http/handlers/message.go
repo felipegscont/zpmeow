@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strings"
 
-	"zpmeow/internal/application"
-	"zpmeow/internal/infrastructure/wameow"
-	"zpmeow/internal/interfaces/dto"
+	"meow/internal/application"
+	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow"
@@ -17,15 +17,15 @@ import (
 
 // MessageHandler handles message-related HTTP requests (both sending and actions)
 type MessageHandler struct {
-	sessionService *application.SessionService
-	wameowService  *wameow.MeowService
+	sessionService *application.SessionApp
+	wmeowService    wmeow.Service
 }
 
 // NewMessageHandler creates a new message handler
-func NewMessageHandler(sessionService *application.SessionService, wameowService *wameow.MeowService) *MessageHandler {
+func NewMessageHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *MessageHandler {
 	return &MessageHandler{
 		sessionService: sessionService,
-		wameowService:  wameowService,
+		wmeowService:    wmeowService,
 	}
 }
 
@@ -42,7 +42,7 @@ func (h *MessageHandler) resolveSessionID(c *gin.Context, sessionIDOrName string
 		return "", err
 	}
 
-	return session.ID, nil
+	return session.ID.Value(), nil
 }
 
 // decodeMediaData decodes base64 data URL to bytes or downloads from URL
@@ -99,7 +99,7 @@ func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
 // SendText handles sending text messages
 //
 //	@Summary		Send text message
-//	@Description	Send a text message to a WhatsApp contact
+//	@Description	Send a text message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -156,9 +156,9 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	// Send text message using wameow service
+	// Send text message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendTextMessage(ctx, sessionID, req.Phone, req.Body)
+	resp, err := h.wmeowService.SendTextMessage(ctx, sessionID, req.Phone, req.Body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -177,7 +177,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // SendMedia handles sending media messages
 //
 //	@Summary		Send media message
-//	@Description	Send a media message (image, video, audio, document) to a WhatsApp contact
+//	@Description	Send a media message (image, video, audio, document) to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -246,20 +246,20 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 		return
 	}
 
-	// Send media message based on type using wameow service
+	// Send media message based on type using meow service
 	ctx := c.Request.Context()
 	var resp *whatsmeow.SendResponse
 	switch req.MediaType {
 	case "image":
-		resp, err = h.wameowService.SendImageMessage(ctx, sessionID, req.Phone, mediaData, req.Caption, "image/jpeg")
+		resp, err = h.wmeowService.SendImageMessage(ctx, sessionID, req.Phone, mediaData, req.Caption, "image/jpeg")
 	case "audio":
-		resp, err = h.wameowService.SendAudioMessage(ctx, sessionID, req.Phone, mediaData, "audio/mpeg")
+		resp, err = h.wmeowService.SendAudioMessage(ctx, sessionID, req.Phone, mediaData, "audio/mpeg")
 	case "video":
-		resp, err = h.wameowService.SendVideoMessage(ctx, sessionID, req.Phone, mediaData, req.Caption, "video/mp4")
+		resp, err = h.wmeowService.SendVideoMessage(ctx, sessionID, req.Phone, mediaData, req.Caption, "video/mp4")
 	case "document":
-		resp, err = h.wameowService.SendDocumentMessage(ctx, sessionID, req.Phone, mediaData, "document", req.Caption, "application/octet-stream")
+		resp, err = h.wmeowService.SendDocumentMessage(ctx, sessionID, req.Phone, mediaData, "document", req.Caption, "application/octet-stream")
 	case "sticker":
-		resp, err = h.wameowService.SendStickerMessage(ctx, sessionID, req.Phone, mediaData, "image/webp")
+		resp, err = h.wmeowService.SendStickerMessage(ctx, sessionID, req.Phone, mediaData, "image/webp")
 	default:
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -351,9 +351,9 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
-	// Mark messages as read via wameow service
+	// Mark messages as read via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.MarkAsRead(ctx, sessionID, req.Phone, req.MessageIDs)
+	err := h.wmeowService.MarkAsRead(ctx, sessionID, req.Phone, req.MessageIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageActionErrorResponse(
 			http.StatusInternalServerError,
@@ -428,9 +428,9 @@ func (h *MessageHandler) ReactToMessage(c *gin.Context) {
 		return
 	}
 
-	// React to message via wameow service
+	// React to message via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.ReactToMessage(ctx, sessionID, req.Phone, req.MessageID, req.Emoji)
+	err := h.wmeowService.ReactToMessage(ctx, sessionID, req.Phone, req.MessageID, req.Emoji)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageActionErrorResponse(
 			http.StatusInternalServerError,
@@ -495,9 +495,9 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	// Delete message via wameow service
+	// Delete message via meow service
 	ctx := c.Request.Context()
-	err := h.wameowService.DeleteMessage(ctx, sessionID, req.Phone, req.MessageID, req.ForEveryone)
+	err := h.wmeowService.DeleteMessage(ctx, sessionID, req.Phone, req.MessageID, req.ForEveryone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageActionErrorResponse(
 			http.StatusInternalServerError,
@@ -572,9 +572,9 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	// Edit message via wameow service
+	// Edit message via meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.EditMessage(ctx, sessionID, req.Phone, req.MessageID, req.NewText)
+	resp, err := h.wmeowService.EditMessage(ctx, sessionID, req.Phone, req.MessageID, req.NewText)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageActionErrorResponse(
 			http.StatusInternalServerError,
@@ -596,7 +596,7 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 // SendLocation handles sending location messages
 //
 //	@Summary		Send location message
-//	@Description	Send a location message to a WhatsApp contact
+//	@Description	Send a location message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -653,9 +653,9 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	// Send location message using wameow service
+	// Send location message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendLocationMessage(ctx, sessionID, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
+	resp, err := h.wmeowService.SendLocationMessage(ctx, sessionID, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -674,7 +674,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // SendContact handles sending contact messages
 //
 //	@Summary		Send contact message
-//	@Description	Send a contact message to a WhatsApp contact
+//	@Description	Send a contact message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -731,9 +731,9 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 		return
 	}
 
-	// Send contact message using wameow service
+	// Send contact message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendContactMessage(ctx, sessionID, req.Phone, req.ContactName, req.ContactPhone)
+	resp, err := h.wmeowService.SendContactMessage(ctx, sessionID, req.Phone, req.ContactName, req.ContactPhone)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -753,7 +753,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // SendImage handles sending image messages
 //
 //	@Summary		Send image message
-//	@Description	Send an image message to a WhatsApp contact
+//	@Description	Send an image message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -822,9 +822,9 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Send image message using wameow service
+	// Send image message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendImageMessage(ctx, sessionID, req.Phone, imageData, req.Caption, "image/jpeg")
+	resp, err := h.wmeowService.SendImageMessage(ctx, sessionID, req.Phone, imageData, req.Caption, "image/jpeg")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -843,7 +843,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // SendAudio handles sending audio messages
 //
 //	@Summary		Send audio message
-//	@Description	Send an audio message to a WhatsApp contact
+//	@Description	Send an audio message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -912,9 +912,9 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Send audio message using wameow service
+	// Send audio message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendAudioMessage(ctx, sessionID, req.Phone, audioData, "audio/mpeg")
+	resp, err := h.wmeowService.SendAudioMessage(ctx, sessionID, req.Phone, audioData, "audio/mpeg")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -933,7 +933,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // SendDocument handles sending document messages
 //
 //	@Summary		Send document message
-//	@Description	Send a document message to a WhatsApp contact
+//	@Description	Send a document message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -1012,9 +1012,9 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		mimeType = "application/octet-stream"
 	}
 
-	// Send document message using wameow service
+	// Send document message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendDocumentMessage(ctx, sessionID, req.Phone, documentData, filename, "", mimeType)
+	resp, err := h.wmeowService.SendDocumentMessage(ctx, sessionID, req.Phone, documentData, filename, "", mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -1033,7 +1033,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // SendVideo handles sending video messages
 //
 //	@Summary		Send video message
-//	@Description	Send a video message to a WhatsApp contact
+//	@Description	Send a video message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -1102,9 +1102,9 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Send video message using wameow service
+	// Send video message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendVideoMessage(ctx, sessionID, req.Phone, videoData, req.Caption, "video/mp4")
+	resp, err := h.wmeowService.SendVideoMessage(ctx, sessionID, req.Phone, videoData, req.Caption, "video/mp4")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -1123,7 +1123,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // SendSticker handles sending sticker messages
 //
 //	@Summary		Send sticker message
-//	@Description	Send a sticker message to a WhatsApp contact
+//	@Description	Send a sticker message to a meow contact
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -1192,9 +1192,9 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Send sticker message using wameow service
+	// Send sticker message using meow service
 	ctx := c.Request.Context()
-	resp, err := h.wameowService.SendStickerMessage(ctx, sessionID, req.Phone, stickerData, "image/webp")
+	resp, err := h.wmeowService.SendStickerMessage(ctx, sessionID, req.Phone, stickerData, "image/webp")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -1217,7 +1217,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // SendButton handles sending button messages (placeholder)
 //
 //	@Summary		Send button message
-//	@Description	Send a button message to a WhatsApp contact (not yet implemented)
+//	@Description	Send a button message to a meow contact (not yet implemented)
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -1237,7 +1237,7 @@ func (h *MessageHandler) SendButton(c *gin.Context) {
 // SendList handles sending list messages (placeholder)
 //
 //	@Summary		Send list message
-//	@Description	Send a list message to a WhatsApp contact (not yet implemented)
+//	@Description	Send a list message to a meow contact (not yet implemented)
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json
@@ -1257,7 +1257,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // SendPoll handles sending poll messages (placeholder)
 //
 //	@Summary		Send poll message
-//	@Description	Send a poll message to a WhatsApp contact (not yet implemented)
+//	@Description	Send a poll message to a meow contact (not yet implemented)
 //	@Tags			Messages
 //	@Accept			json
 //	@Produce		json

@@ -13,7 +13,7 @@ Esta camada contém apenas **conceitos de domínio puros**, seguindo rigorosamen
 
 ```
 internal/domain/
-└── session/                    # Contexto de Sessão WhatsApp
+└── session/                    # Contexto de Sessão meow
     ├── entity.go              # Entidade Session + Status enum
     ├── repository.go          # Interface para persistência
     ├── service.go             # Interface de serviços de domínio
@@ -30,7 +30,7 @@ internal/domain/
 - **Session** é a única entidade que possui **regras de negócio complexas**
 - Tem **ciclo de vida próprio** (criação, conexão, desconexão, exclusão)
 - Possui **invariantes de domínio** (transições de estado, validações)
-- É o **conceito central** do negócio WhatsApp API
+- É o **conceito central** do negócio meow API
 
 ### O que foi removido e por quê?
 
@@ -90,7 +90,7 @@ internal/domain/
 
 ## 🚫 O que NÃO deve estar aqui
 
-- Interfaces de APIs externas (WhatsApp, HTTP, etc.)
+- Interfaces de APIs externas (meow, HTTP, etc.)
 - Detalhes de persistência (SQL, NoSQL, etc.)
 - Processamento de arquivos/mídia
 - Configurações de infraestrutura

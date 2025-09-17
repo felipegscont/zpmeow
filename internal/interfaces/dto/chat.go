@@ -31,31 +31,31 @@ type ListChatsRequest struct {
 
 // GetChatInfoRequest represents a request to get chat information
 type GetChatInfoRequest struct {
-	JID string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	JID string `json:"jid" binding:"required" example:"5511999999999@s.meow.net"`
 }
 
 // SetDisappearingTimerRequest represents a request to set disappearing timer
 type SetDisappearingTimerRequest struct {
-	JID   string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	JID   string `json:"jid" binding:"required" example:"5511999999999@s.meow.net"`
 	Timer string `json:"timer" binding:"required" example:"24h"` // "off", "24h", "7d", "90d"
 }
 
 // PinChatRequest represents a request to pin/unpin a chat
 type PinChatRequest struct {
-	JID    string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	JID    string `json:"jid" binding:"required" example:"5511999999999@s.meow.net"`
 	Pinned bool   `json:"pinned" example:"true"`
 }
 
 // MuteChatRequest represents a request to mute/unmute a chat
 type MuteChatRequest struct {
-	JID      string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	JID      string `json:"jid" binding:"required" example:"5511999999999@s.meow.net"`
 	Muted    bool   `json:"muted" example:"true"`
 	Duration string `json:"duration,omitempty" example:"8h"` // "1h", "8h", "1w", "forever" (only when muted=true)
 }
 
 // ArchiveChatRequest represents a request to archive/unarchive a chat
 type ArchiveChatRequest struct {
-	JID      string `json:"jid" binding:"required" example:"5511999999999@s.whatsapp.net"`
+	JID      string `json:"jid" binding:"required" example:"5511999999999@s.meow.net"`
 	Archived bool   `json:"archived" example:"true"`
 }
 
@@ -77,7 +77,7 @@ type ChatResponse struct {
 
 // ChatInfo represents information about a chat (group or contact)
 type ChatInfo struct {
-	JID         string    `json:"jid" example:"5511999999999@s.whatsapp.net"`
+	JID         string    `json:"jid" example:"5511999999999@s.meow.net"`
 	Name        string    `json:"name" example:"João Silva"`
 	Type        string    `json:"type" example:"contact"` // "contact", "group"
 	LastMessage string    `json:"last_message,omitempty" example:"Hello!"`
