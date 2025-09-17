@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
-	"zpmeow/internal/shared/errors"
 	"github.com/google/uuid"
+	"zpmeow/internal/shared/errors"
 )
 
 type BaseValidator struct{}
