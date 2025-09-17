@@ -86,10 +86,10 @@ type SessionErrorResponse struct {
 
 // CreateSessionResponse represents the response for session creation
 type CreateSessionResponse struct {
-	Success bool                      `json:"success" example:"true"`
-	Code    int                       `json:"code" example:"201"`
-	Data    SessionCreateData `json:"data"`
-	Error   *SessionErrorResponse     `json:"error,omitempty"`
+	Success bool                  `json:"success" example:"true"`
+	Code    int                   `json:"code" example:"201"`
+	Data    SessionCreateData     `json:"data"`
+	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
 // CreateSessionResponseData contains the data for session creation response
@@ -137,10 +137,10 @@ type SessionListResponseData struct {
 
 // ConnectSessionResponse represents the response for session connection
 type ConnectSessionResponse struct {
-	Success bool                       `json:"success" example:"true"`
-	Code    int                        `json:"code" example:"200"`
-	Data    SessionConnectData `json:"data"`
-	Error   *SessionErrorResponse      `json:"error,omitempty"`
+	Success bool                  `json:"success" example:"true"`
+	Code    int                   `json:"code" example:"200"`
+	Data    SessionConnectData    `json:"data"`
+	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
 // ConnectSessionResponseData contains the data for session connection response
@@ -247,4 +247,3 @@ func NewSessionErrorResponse(code int, errorCode, message, details string) *Sess
 		},
 	}
 }
-

@@ -45,7 +45,7 @@ down: ## Stop all Docker Compose services and remove volumes
 
 docs: ## Generate Swagger API documentation
 	@if command -v swag > /dev/null; then \
-		swag init -g $(MAIN_PATH)/main.go -o ./docs; \
+		swag init -g $(MAIN_PATH)/main.go -o ./docs 2>&1 | grep -v "warning: failed to get package name" | grep -v "warning: failed to evaluate const"; \
 	else \
 		echo "Swagger not found. Install with: go install github.com/swaggo/swag/cmd/swag@latest"; \
 	fi

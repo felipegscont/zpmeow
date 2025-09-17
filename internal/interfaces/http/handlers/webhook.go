@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"meow/internal/application"
-	"meow/internal/interfaces/dto"
 	"meow/internal/infrastructure/wmeow"
+	"meow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,33 +14,64 @@ import (
 // WebhookHandler handles webhook-related HTTP requests
 type WebhookHandler struct {
 	sessionService *application.SessionApp
-	webhookService application.WebhookService
+	webhookApp     application.WebhookService
+}
+
+// resolveSessionID resolves session ID or name to actual session ID
+func (h *WebhookHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) (string, error) {
+	if h.sessionService == nil {
+		// Fallback: assume it's already an ID
+		return sessionIDOrName, nil
+	}
+
+	ctx := c.Request.Context()
+	session, err := h.sessionService.GetSession(ctx, sessionIDOrName)
+	if err != nil {
+		return "", err
+	}
+
+	return session.ID.Value(), nil
 }
 
 // NewWebhookHandler creates a new webhook handler
-func NewWebhookHandler(sessionService *application.SessionApp, webhookService application.WebhookService) *WebhookHandler {
+func NewWebhookHandler(sessionService *application.SessionApp, webhookApp application.WebhookService) *WebhookHandler {
 	return &WebhookHandler{
 		sessionService: sessionService,
-		webhookService: webhookService,
+		webhookApp:     webhookApp,
 	}
 }
 
-// RegisterWebhook handles registering a webhook
+// SetWebhook handles setting/configuring a webhook
 //
-//	@Summary		Register webhook
-//	@Description	Register a webhook URL to receive meow events
+//	@Summary		Set webhook
+//	@Description	Set a webhook URL to receive meow events
 //	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
 //	@Param			sessionId	path		string						true	"Session ID"
-//	@Param			request		body		dto.RegisterWebhookRequest	true	"Register webhook request"
-//	@Success		201			{object}	dto.RegisterWebhookResponse
+//	@Param			request		body		dto.RegisterWebhookRequest	true	"Set webhook request"
+//	@Success		201			{object}	dto.StandardWebhookCreateResponse
 //	@Failure		400			{object}	dto.WebhookResponse
 //	@Failure		500			{object}	dto.WebhookResponse
 //	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/webhook/register [post]
-func (h *WebhookHandler) RegisterWebhook(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+//	@Router			/session/{sessionId}/webhook [post]
+func (h *WebhookHandler) SetWebhook(c *gin.Context) {
+	sessionIDOrName := c.Param("sessionId")
+
+	// Resolve session ID or name to actual session ID
+	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.WebhookResponse{
+			Success: false,
+			Code:    http.StatusNotFound,
+			Data:    dto.WebhookResponseData{},
+			Error: &dto.WebhookErrorResponse{
+				Code:    "SESSION_NOT_FOUND",
+				Message: "Session not found: " + err.Error(),
+			},
+		})
+		return
+	}
 
 	var req dto.RegisterWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,53 +87,54 @@ func (h *WebhookHandler) RegisterWebhook(c *gin.Context) {
 		return
 	}
 
-	// Validate webhook URL
-	if req.URL == "" {
+	// Validate and map event types using wmeow service
+	validEvents := make([]string, 0)
+	for _, event := range req.Events {
+		if wmeow.IsValidEventType(event) {
+			// Map to proper event type if needed
+			mappedEvent := wmeow.MapEventType(event)
+			validEvents = append(validEvents, mappedEvent)
+		}
+	}
+
+	// If no valid events, return error
+	if len(validEvents) == 0 {
 		c.JSON(http.StatusBadRequest, dto.WebhookResponse{
 			Success: false,
 			Code:    http.StatusBadRequest,
 			Data:    dto.WebhookResponseData{},
 			Error: &dto.WebhookErrorResponse{
-				Code:    "MISSING_URL",
-				Message: "Webhook URL is required",
+				Code:    "INVALID_EVENTS",
+				Message: "No valid events provided. Valid events include: message, status, connection, call, contact, group, presence, qr, pair, disconnect, error, all",
 			},
 		})
 		return
 	}
 
-	// Validate event types
-	validEvents := make([]string, 0)
-	for _, event := range req.Events {
-		if wmeow.IsValidEventType(event) {
-			validEvents = append(validEvents, event)
-		}
-	}
-
-	// Set webhook for session
-	err := h.webhookService.SetWebhook(c.Request.Context(), sessionID, req.URL, validEvents)
+	// Set webhook for session using application service (includes validation)
+	err = h.webhookApp.SetWebhook(c.Request.Context(), sessionID, req.URL, validEvents)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.WebhookResponse{
+		c.JSON(http.StatusBadRequest, dto.WebhookResponse{
 			Success: false,
-			Code:    http.StatusInternalServerError,
+			Code:    http.StatusBadRequest,
 			Data:    dto.WebhookResponseData{},
 			Error: &dto.WebhookErrorResponse{
-				Code:    "REGISTRATION_FAILED",
+				Code:    "VALIDATION_FAILED",
 				Message: "Failed to register webhook: " + err.Error(),
 			},
 		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, dto.RegisterWebhookResponse{
+	c.JSON(http.StatusCreated, dto.StandardWebhookCreateResponse{
 		Status:  http.StatusCreated,
 		Message: "Webhook registered successfully",
-		Data: dto.RegisterWebhookResponseData{
-			WebhookID: "webhook_" + sessionID,
-			SessionID: sessionID,
-			URL:       req.URL,
-			Events:    validEvents,
-			Status:    "active",
+		Data: dto.StandardWebhookData{
 			CreatedAt: time.Now(),
+			Events:    validEvents,
+			SessionID: sessionIDOrName,
+			Status:    "active",
+			URL:       req.URL,
 		},
 	})
 }
@@ -115,16 +147,31 @@ func (h *WebhookHandler) RegisterWebhook(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sessionId	path		string	true	"Session ID"
-//	@Success		200			{object}	dto.GetWebhookResponse
+//	@Success		200			{object}	dto.StandardWebhookResponse
 //	@Failure		400			{object}	dto.WebhookResponse
 //	@Failure		404			{object}	dto.WebhookResponse
 //	@Failure		500			{object}	dto.WebhookResponse
 //	@Security		ApiKeyAuth
 //	@Router			/session/{sessionId}/webhook [get]
 func (h *WebhookHandler) GetWebhook(c *gin.Context) {
-	sessionID := c.Param("sessionId")
+	sessionIDOrName := c.Param("sessionId")
 
-	webhook, err := h.webhookService.GetWebhook(c.Request.Context(), sessionID)
+	// Resolve session ID or name to actual session ID
+	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
+	if err != nil {
+		c.JSON(http.StatusNotFound, dto.WebhookResponse{
+			Success: false,
+			Code:    http.StatusNotFound,
+			Data:    dto.WebhookResponseData{},
+			Error: &dto.WebhookErrorResponse{
+				Code:    "SESSION_NOT_FOUND",
+				Message: "Session not found: " + err.Error(),
+			},
+		})
+		return
+	}
+
+	webhook, err := h.webhookApp.GetWebhook(c.Request.Context(), sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.WebhookResponse{
 			Success: false,
@@ -151,165 +198,30 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.GetWebhookResponse{
+	c.JSON(http.StatusOK, dto.StandardWebhookResponse{
 		Status:  http.StatusOK,
 		Message: "Webhook retrieved successfully",
-		Data: dto.GetWebhookResponseData{
-			WebhookID: "webhook_" + sessionID,
-			SessionID: sessionID,
-			URL:       webhook.URL,
-			Events:    webhook.Events,
-			Status:    "active",
+		Data: dto.StandardWebhookData{
 			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			Events:    webhook.Events,
+			SessionID: sessionIDOrName,
+			Status:    "active",
+			URL:       webhook.URL,
 		},
 	})
 }
 
-// Router compatibility methods
-func (h *WebhookHandler) SetWebhook(c *gin.Context) { h.RegisterWebhook(c) }
-
-// UpdateWebhook handles updating webhook configuration
+// ListEvents handles listing supported webhook event types
 //
-//	@Summary		Update webhook
-//	@Description	Update webhook URL, events, or status for a session
-//	@Tags			Webhooks
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string						true	"Session ID"
-//	@Param			request		body		dto.UpdateWebhookRequest	true	"Update webhook request"
-//	@Success		200			{object}	dto.UpdateWebhookResponse
-//	@Failure		400			{object}	dto.WebhookResponse
-//	@Failure		404			{object}	dto.WebhookResponse
-//	@Failure		500			{object}	dto.WebhookResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/webhook [put]
-func (h *WebhookHandler) UpdateWebhook(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-
-	var req dto.UpdateWebhookRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.WebhookResponse{
-			Success: false,
-			Code:    http.StatusBadRequest,
-			Data:    dto.WebhookResponseData{},
-			Error: &dto.WebhookErrorResponse{
-				Code:    "INVALID_REQUEST",
-				Message: "Invalid request body: " + err.Error(),
-			},
-		})
-		return
-	}
-
-	// Validate event types if provided
-	validEvents := make([]string, 0)
-	for _, event := range req.Events {
-		if wmeow.IsValidEventType(event) {
-			validEvents = append(validEvents, event)
-		}
-	}
-
-	// Determine if webhook should be active
-	active := req.Status == "active"
-
-	// Update webhook for session
-	err := h.webhookService.UpdateWebhook(c.Request.Context(), sessionID, req.URL, validEvents, active)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.WebhookResponse{
-			Success: false,
-			Code:    http.StatusInternalServerError,
-			Data:    dto.WebhookResponseData{},
-			Error: &dto.WebhookErrorResponse{
-				Code:    "UPDATE_FAILED",
-				Message: "Failed to update webhook: " + err.Error(),
-			},
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.UpdateWebhookResponse{
-		Status:  http.StatusOK,
-		Message: "Webhook updated successfully",
-		Data: dto.UpdateWebhookResponseData{
-			WebhookID: "webhook_" + sessionID,
-			SessionID: sessionID,
-			URL:       req.URL,
-			Events:    validEvents,
-			Status:    req.Status,
-			UpdatedAt: time.Now(),
-		},
-	})
-}
-
-// DeleteWebhook handles deleting a webhook
-//
-//	@Summary		Delete webhook
-//	@Description	Delete/unregister a webhook for a session
-//	@Tags			Webhooks
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string	true	"Session ID"
-//	@Success		200			{object}	dto.DeleteWebhookResponse
-//	@Failure		400			{object}	dto.WebhookResponse
-//	@Failure		404			{object}	dto.WebhookResponse
-//	@Failure		500			{object}	dto.WebhookResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/webhook [delete]
-func (h *WebhookHandler) DeleteWebhook(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-
-	err := h.webhookService.DeleteWebhook(c.Request.Context(), sessionID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.WebhookResponse{
-			Success: false,
-			Code:    http.StatusInternalServerError,
-			Data:    dto.WebhookResponseData{},
-			Error: &dto.WebhookErrorResponse{
-				Code:    "DELETE_FAILED",
-				Message: "Failed to delete webhook: " + err.Error(),
-			},
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.DeleteWebhookResponse{
-		Status:  http.StatusOK,
-		Message: "Webhook deleted successfully",
-		Data: dto.DeleteWebhookResponseData{
-			WebhookID: "webhook_" + sessionID,
-			Status:    "deleted",
-		},
-	})
-}
-
-// ListWebhooks handles listing all webhooks
-//
-//	@Summary		List webhooks
-//	@Description	Get a list of all registered webhooks for a session
-//	@Tags			Webhooks
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string	true	"Session ID"
-//	@Success		200			{object}	dto.ListWebhooksResponse
-//	@Failure		400			{object}	dto.WebhookResponse
-//	@Failure		500			{object}	dto.WebhookResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/webhooks [get]
-func (h *WebhookHandler) ListWebhooks(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"success": true, "message": "List webhooks - implementation pending"})
-}
-
-// GetSupportedEvents handles listing supported webhook event types
-//
-//	@Summary		Get supported events
+//	@Summary		List supported events
 //	@Description	Get list of all supported webhook event types
 //	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	dto.SupportedEventsResponse
 //	@Security		ApiKeyAuth
-//	@Router			/webhooks/events [get]
-func (h *WebhookHandler) GetSupportedEvents(c *gin.Context) {
+//	@Router			/session/{sessionId}/webhooks/events [get]
+func (h *WebhookHandler) ListEvents(c *gin.Context) {
 	events := wmeow.GetSupportedEventTypes()
 
 	c.JSON(http.StatusOK, dto.SupportedEventsResponse{
@@ -318,65 +230,6 @@ func (h *WebhookHandler) GetSupportedEvents(c *gin.Context) {
 		Data: dto.SupportedEventsData{
 			Events: events,
 			Count:  len(events),
-		},
-	})
-}
-
-// TestWebhook handles testing a webhook
-//
-//	@Summary		Test webhook
-//	@Description	Send a test event to a webhook to verify it's working
-//	@Tags			Webhooks
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string					true	"Session ID"
-//	@Param			request		body		dto.TestWebhookRequest	true	"Test webhook request"
-//	@Success		200			{object}	dto.TestWebhookResponse
-//	@Failure		400			{object}	dto.WebhookResponse
-//	@Failure		404			{object}	dto.WebhookResponse
-//	@Failure		500			{object}	dto.WebhookResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/webhook/test [post]
-func (h *WebhookHandler) TestWebhook(c *gin.Context) {
-	sessionID := c.Param("sessionId")
-
-	var req dto.TestWebhookRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, dto.WebhookResponse{
-			Success: false,
-			Code:    http.StatusBadRequest,
-			Data:    dto.WebhookResponseData{},
-			Error: &dto.WebhookErrorResponse{
-				Code:    "INVALID_REQUEST",
-				Message: "Invalid request body: " + err.Error(),
-			},
-		})
-		return
-	}
-
-	// Test webhook with event type
-	err := h.webhookService.TestWebhook(c.Request.Context(), sessionID, req.EventType)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.WebhookResponse{
-			Success: false,
-			Code:    http.StatusInternalServerError,
-			Data:    dto.WebhookResponseData{},
-			Error: &dto.WebhookErrorResponse{
-				Code:    "TEST_FAILED",
-				Message: "Webhook test failed: " + err.Error(),
-			},
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, dto.TestWebhookResponse{
-		Status:  http.StatusOK,
-		Message: "Webhook test completed",
-		Data: dto.TestWebhookResponseData{
-			WebhookID:    "webhook_" + sessionID,
-			TestResult:   "success",
-			ResponseCode: 200,
-			ResponseTime: 150,
 		},
 	})
 }

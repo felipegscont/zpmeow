@@ -319,34 +319,12 @@ definitions:
         example: 200
         type: integer
       data:
-        $ref: '#/definitions/dto.ConnectSessionResponseData'
+        $ref: '#/definitions/dto.SessionConnectData'
       error:
         $ref: '#/definitions/dto.SessionErrorResponse'
       success:
         example: true
         type: boolean
-    type: object
-  dto.ConnectSessionResponseData:
-    properties:
-      action:
-        example: connect
-        type: string
-      connection:
-        $ref: '#/definitions/dto.SessionConnectionInfo'
-      qr_code:
-        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
-        type: string
-      session:
-        $ref: '#/definitions/dto.SessionInfo'
-      session_id:
-        example: default
-        type: string
-      status:
-        example: success
-        type: string
-      timestamp:
-        example: "2023-01-01T00:00:00Z"
-        type: string
     type: object
   dto.ContactCheckResult:
     properties:
@@ -594,29 +572,12 @@ definitions:
         example: 201
         type: integer
       data:
-        $ref: '#/definitions/dto.CreateSessionResponseData'
+        $ref: '#/definitions/dto.SessionCreateData'
       error:
         $ref: '#/definitions/dto.SessionErrorResponse'
       success:
         example: true
         type: boolean
-    type: object
-  dto.CreateSessionResponseData:
-    properties:
-      action:
-        example: create
-        type: string
-      session:
-        $ref: '#/definitions/dto.SessionInfo'
-      session_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
-      status:
-        example: success
-        type: string
-      timestamp:
-        example: "2023-01-01T00:00:00Z"
-        type: string
     type: object
   dto.DeleteMessageRequest:
     properties:
@@ -633,26 +594,6 @@ definitions:
     required:
     - message_id
     - phone
-    type: object
-  dto.DeleteWebhookResponse:
-    properties:
-      data:
-        $ref: '#/definitions/dto.DeleteWebhookResponseData'
-      message:
-        example: Webhook deleted successfully
-        type: string
-      status:
-        example: 200
-        type: integer
-    type: object
-  dto.DeleteWebhookResponseData:
-    properties:
-      status:
-        example: deleted
-        type: string
-      webhook_id:
-        example: webhook_123456789
-        type: string
     type: object
   dto.DocumentMessagePayload:
     properties:
@@ -740,26 +681,6 @@ definitions:
     required:
     - phones
     type: object
-  dto.GetGroupInfoFromInviteRequest:
-    properties:
-      code:
-        example: ABC123DEF456
-        type: string
-      expiration:
-        example: 1640995200
-        type: integer
-      group_jid:
-        example: 120363025246125486@g.us
-        type: string
-      inviter:
-        example: 5511999999999@s.meow.net
-        type: string
-    required:
-    - code
-    - expiration
-    - group_jid
-    - inviter
-    type: object
   dto.GetGroupInfoRequest:
     properties:
       group_jid:
@@ -818,46 +739,6 @@ definitions:
         type: string
     required:
     - community_jid
-    type: object
-  dto.GetWebhookResponse:
-    properties:
-      data:
-        $ref: '#/definitions/dto.GetWebhookResponseData'
-      message:
-        example: Webhook retrieved successfully
-        type: string
-      status:
-        example: 200
-        type: integer
-    type: object
-  dto.GetWebhookResponseData:
-    properties:
-      created_at:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      events:
-        example:
-        - '["message"'
-        - ' "status"'
-        - ' "connection"]'
-        items:
-          type: string
-        type: array
-      session_id:
-        example: default
-        type: string
-      status:
-        example: active
-        type: string
-      updated_at:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      url:
-        example: https://webhook.example.com/meow
-        type: string
-      webhook_id:
-        example: webhook_123456789
-        type: string
     type: object
   dto.GroupData:
     properties:
@@ -940,6 +821,50 @@ definitions:
       topic:
         example: Group topic description
         type: string
+    type: object
+  dto.GroupInviteInfoReq:
+    properties:
+      code:
+        example: ABC123DEF456
+        type: string
+      expiration:
+        example: 1640995200
+        type: integer
+      group_jid:
+        example: 120363025246125486@g.us
+        type: string
+      inviter:
+        example: 5511999999999@s.meow.net
+        type: string
+    required:
+    - code
+    - expiration
+    - group_jid
+    - inviter
+    type: object
+  dto.GroupJoinApprovalReq:
+    properties:
+      group_jid:
+        example: 120363025246125486@g.us
+        type: string
+      require_approval:
+        example: true
+        type: boolean
+    required:
+    - group_jid
+    - require_approval
+    type: object
+  dto.GroupMemberModeReq:
+    properties:
+      group_jid:
+        example: 120363025246125486@g.us
+        type: string
+      mode:
+        example: admin
+        type: string
+    required:
+    - group_jid
+    - mode
     type: object
   dto.GroupResponse:
     properties:
@@ -1041,45 +966,6 @@ definitions:
       success:
         example: true
         type: boolean
-    type: object
-  dto.ListWebhooksResponse:
-    properties:
-      data:
-        items:
-          $ref: '#/definitions/dto.ListWebhooksResponseData'
-        type: array
-      message:
-        example: Webhooks retrieved successfully
-        type: string
-      status:
-        example: 200
-        type: integer
-    type: object
-  dto.ListWebhooksResponseData:
-    properties:
-      created_at:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      events:
-        example:
-        - '["message"'
-        - ' "status"'
-        - ' "connection"]'
-        items:
-          type: string
-        type: array
-      session_id:
-        example: default
-        type: string
-      status:
-        example: active
-        type: string
-      url:
-        example: https://webhook.example.com/meow
-        type: string
-      webhook_id:
-        example: webhook_123456789
-        type: string
     type: object
   dto.LocationMessagePayload:
     properties:
@@ -1529,62 +1415,21 @@ definitions:
     properties:
       events:
         example:
-        - '["message"'
-        - ' "status"'
-        - ' "connection"]'
+        - Message
+        - Receipt
+        - Connected
         items:
           type: string
         type: array
       secret:
         example: webhook_secret_key
         type: string
-      session_id:
-        example: default
-        type: string
       url:
         example: https://webhook.example.com/meow
         type: string
     required:
     - events
-    - session_id
     - url
-    type: object
-  dto.RegisterWebhookResponse:
-    properties:
-      data:
-        $ref: '#/definitions/dto.RegisterWebhookResponseData'
-      message:
-        example: Webhook registered successfully
-        type: string
-      status:
-        example: 201
-        type: integer
-    type: object
-  dto.RegisterWebhookResponseData:
-    properties:
-      created_at:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      events:
-        example:
-        - '["message"'
-        - ' "status"'
-        - ' "connection"]'
-        items:
-          type: string
-        type: array
-      session_id:
-        example: default
-        type: string
-      status:
-        example: active
-        type: string
-      url:
-        example: https://webhook.example.com/meow
-        type: string
-      webhook_id:
-        example: webhook_123456789
-        type: string
     type: object
   dto.RemoveGroupPhotoRequest:
     properties:
@@ -1775,6 +1620,28 @@ definitions:
     - phone
     - video
     type: object
+  dto.SessionConnectData:
+    properties:
+      action:
+        example: connect
+        type: string
+      connection:
+        $ref: '#/definitions/dto.SessionConnectionInfo'
+      qr_code:
+        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+      session:
+        $ref: '#/definitions/dto.SessionInfo'
+      session_id:
+        example: default
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+    type: object
   dto.SessionConnectionInfo:
     properties:
       connected:
@@ -1791,6 +1658,23 @@ definitions:
         type: string
       qr_code:
         example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+        type: string
+    type: object
+  dto.SessionCreateData:
+    properties:
+      action:
+        example: create
+        type: string
+      session:
+        $ref: '#/definitions/dto.SessionInfo'
+      session_id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      status:
+        example: success
+        type: string
+      timestamp:
+        example: "2023-01-01T00:00:00Z"
         type: string
     type: object
   dto.SessionData:
@@ -2067,18 +1951,6 @@ definitions:
     required:
     - group_jid
     type: object
-  dto.SetGroupJoinApprovalRequest:
-    properties:
-      group_jid:
-        example: 120363025246125486@g.us
-        type: string
-      require_approval:
-        example: true
-        type: boolean
-    required:
-    - group_jid
-    - require_approval
-    type: object
   dto.SetGroupLockedRequest:
     properties:
       group_jid:
@@ -2089,18 +1961,6 @@ definitions:
         type: boolean
     required:
     - group_jid
-    type: object
-  dto.SetGroupMemberAddModeRequest:
-    properties:
-      group_jid:
-        example: 120363025246125486@g.us
-        type: string
-      mode:
-        example: admin
-        type: string
-    required:
-    - group_jid
-    - mode
     type: object
   dto.SetGroupNameRequest:
     properties:
@@ -2163,51 +2023,81 @@ definitions:
       success:
         type: boolean
     type: object
+  dto.StandardWebhookCreateResponse:
+    properties:
+      data:
+        $ref: '#/definitions/dto.StandardWebhookData'
+      message:
+        example: Webhook created successfully
+        type: string
+      status:
+        example: 201
+        type: integer
+    type: object
+  dto.StandardWebhookData:
+    properties:
+      created_at:
+        example: "2023-01-01T00:00:00Z"
+        type: string
+      events:
+        example:
+        - Message
+        - Receipt
+        - Connected
+        items:
+          type: string
+        type: array
+      sessionID:
+        example: default
+        type: string
+      status:
+        example: active
+        type: string
+      url:
+        example: https://webhook.example.com/meow
+        type: string
+    type: object
+  dto.StandardWebhookResponse:
+    properties:
+      data:
+        $ref: '#/definitions/dto.StandardWebhookData'
+      message:
+        example: Webhook retrieved successfully
+        type: string
+      status:
+        example: 200
+        type: integer
+    type: object
   dto.StickerMessagePayload:
     properties:
       url:
         example: https://example.com/sticker.webp
         type: string
     type: object
-  dto.TestWebhookRequest:
+  dto.SupportedEventsData:
     properties:
-      event_type:
-        example: message
-        type: string
-      test_data:
-        additionalProperties: true
-        type: object
-    required:
-    - event_type
+      count:
+        example: 65
+        type: integer
+      events:
+        example:
+        - '["Message"'
+        - ' "Receipt"'
+        - ' "Connected"]'
+        items:
+          type: string
+        type: array
     type: object
-  dto.TestWebhookResponse:
+  dto.SupportedEventsResponse:
     properties:
       data:
-        $ref: '#/definitions/dto.TestWebhookResponseData'
+        $ref: '#/definitions/dto.SupportedEventsData'
       message:
-        example: Webhook test completed
+        example: Supported events retrieved successfully
         type: string
       status:
         example: 200
         type: integer
-    type: object
-  dto.TestWebhookResponseData:
-    properties:
-      error:
-        example: ""
-        type: string
-      response_code:
-        example: 200
-        type: integer
-      response_time_ms:
-        example: 150
-        type: integer
-      test_result:
-        example: success
-        type: string
-      webhook_id:
-        example: webhook_123456789
-        type: string
     type: object
   dto.TestWebhookResult:
     properties:
@@ -2301,8 +2191,8 @@ definitions:
     properties:
       events:
         example:
-        - '["message"'
-        - ' "status"]'
+        - Message
+        - Receipt
         items:
           type: string
         type: array
@@ -2314,43 +2204,6 @@ definitions:
         type: string
       url:
         example: https://webhook.example.com/meow
-        type: string
-    type: object
-  dto.UpdateWebhookResponse:
-    properties:
-      data:
-        $ref: '#/definitions/dto.UpdateWebhookResponseData'
-      message:
-        example: Webhook updated successfully
-        type: string
-      status:
-        example: 200
-        type: integer
-    type: object
-  dto.UpdateWebhookResponseData:
-    properties:
-      events:
-        example:
-        - '["message"'
-        - ' "status"'
-        - ' "connection"]'
-        items:
-          type: string
-        type: array
-      session_id:
-        example: default
-        type: string
-      status:
-        example: active
-        type: string
-      updated_at:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      url:
-        example: https://webhook.example.com/meow
-        type: string
-      webhook_id:
-        example: webhook_123456789
         type: string
     type: object
   dto.UploadMediaRequest:
@@ -2425,9 +2278,9 @@ definitions:
         type: string
       events:
         example:
-        - '["message"'
-        - ' "status"'
-        - ' "connection"]'
+        - Message
+        - Receipt
+        - Connected
         items:
           type: string
         type: array
@@ -3560,7 +3413,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.GetGroupInfoFromInviteRequest'
+          $ref: '#/definitions/dto.GroupInviteInfoReq'
       produces:
       - application/json
       responses:
@@ -3683,7 +3536,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.SetGroupJoinApprovalRequest'
+          $ref: '#/definitions/dto.GroupJoinApprovalReq'
       produces:
       - application/json
       responses:
@@ -3882,7 +3735,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/dto.SetGroupMemberAddModeRequest'
+          $ref: '#/definitions/dto.GroupMemberModeReq'
       produces:
       - application/json
       responses:
@@ -5555,40 +5408,6 @@ paths:
       tags:
       - Privacy
   /session/{sessionId}/webhook:
-    delete:
-      consumes:
-      - application/json
-      description: Delete/unregister a webhook for a session
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.DeleteWebhookResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Delete webhook
-      tags:
-      - Webhooks
     get:
       consumes:
       - application/json
@@ -5605,7 +5424,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.GetWebhookResponse'
+            $ref: '#/definitions/dto.StandardWebhookResponse'
         "400":
           description: Bad Request
           schema:
@@ -5623,58 +5442,17 @@ paths:
       summary: Get webhook information
       tags:
       - Webhooks
-    put:
-      consumes:
-      - application/json
-      description: Update webhook URL, events, or status for a session
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Update webhook request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdateWebhookRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.UpdateWebhookResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Update webhook
-      tags:
-      - Webhooks
-  /session/{sessionId}/webhook/register:
     post:
       consumes:
       - application/json
-      description: Register a webhook URL to receive meow events
+      description: Set a webhook URL to receive meow events
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Register webhook request
+      - description: Set webhook request
         in: body
         name: request
         required: true
@@ -5686,7 +5464,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.RegisterWebhookResponse'
+            $ref: '#/definitions/dto.StandardWebhookCreateResponse'
         "400":
           description: Bad Request
           schema:
@@ -5697,79 +5475,24 @@ paths:
             $ref: '#/definitions/dto.WebhookResponse'
       security:
       - ApiKeyAuth: []
-      summary: Register webhook
+      summary: Set webhook
       tags:
       - Webhooks
-  /session/{sessionId}/webhook/test:
-    post:
-      consumes:
-      - application/json
-      description: Send a test event to a webhook to verify it's working
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Test webhook request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.TestWebhookRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.TestWebhookResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Test webhook
-      tags:
-      - Webhooks
-  /session/{sessionId}/webhooks:
+  /session/{sessionId}/webhooks/events:
     get:
       consumes:
       - application/json
-      description: Get a list of all registered webhooks for a session
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
+      description: Get list of all supported webhook event types
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/dto.ListWebhooksResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.WebhookResponse'
+            $ref: '#/definitions/dto.SupportedEventsResponse'
       security:
       - ApiKeyAuth: []
-      summary: List webhooks
+      summary: List supported events
       tags:
       - Webhooks
   /sessions/{id}/connect:

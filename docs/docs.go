@@ -1628,7 +1628,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.GetGroupInfoFromInviteRequest"
+                            "$ref": "#/definitions/dto.GroupInviteInfoReq"
                         }
                     }
                 ],
@@ -1820,7 +1820,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.SetGroupJoinApprovalRequest"
+                            "$ref": "#/definitions/dto.GroupJoinApprovalReq"
                         }
                     }
                 ],
@@ -2131,7 +2131,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/dto.SetGroupMemberAddModeRequest"
+                            "$ref": "#/definitions/dto.GroupMemberModeReq"
                         }
                     }
                 ],
@@ -4749,7 +4749,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.GetWebhookResponse"
+                            "$ref": "#/definitions/dto.StandardWebhookResponse"
                         }
                     },
                     "400": {
@@ -4772,130 +4772,13 @@ const docTemplate = `{
                     }
                 }
             },
-            "put": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Update webhook URL, events, or status for a session",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Webhooks"
-                ],
-                "summary": "Update webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Update webhook request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateWebhookRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.UpdateWebhookResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    }
-                }
-            },
-            "delete": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Delete/unregister a webhook for a session",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Webhooks"
-                ],
-                "summary": "Delete webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.DeleteWebhookResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/session/{sessionId}/webhook/register": {
             "post": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Register a webhook URL to receive meow events",
+                "description": "Set a webhook URL to receive meow events",
                 "consumes": [
                     "application/json"
                 ],
@@ -4905,7 +4788,7 @@ const docTemplate = `{
                 "tags": [
                     "Webhooks"
                 ],
-                "summary": "Register webhook",
+                "summary": "Set webhook",
                 "parameters": [
                     {
                         "type": "string",
@@ -4915,7 +4798,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Register webhook request",
+                        "description": "Set webhook request",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -4928,7 +4811,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/dto.RegisterWebhookResponse"
+                            "$ref": "#/definitions/dto.StandardWebhookCreateResponse"
                         }
                     },
                     "400": {
@@ -4946,78 +4829,14 @@ const docTemplate = `{
                 }
             }
         },
-        "/session/{sessionId}/webhook/test": {
-            "post": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Send a test event to a webhook to verify it's working",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Webhooks"
-                ],
-                "summary": "Test webhook",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Test webhook request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/dto.TestWebhookRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/dto.TestWebhookResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/session/{sessionId}/webhooks": {
+        "/session/{sessionId}/webhooks/events": {
             "get": {
                 "security": [
                     {
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Get a list of all registered webhooks for a session",
+                "description": "Get list of all supported webhook event types",
                 "consumes": [
                     "application/json"
                 ],
@@ -5027,33 +4846,12 @@ const docTemplate = `{
                 "tags": [
                     "Webhooks"
                 ],
-                "summary": "List webhooks",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "List supported events",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/dto.ListWebhooksResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.WebhookResponse"
+                            "$ref": "#/definitions/dto.SupportedEventsResponse"
                         }
                     }
                 }
@@ -6004,7 +5802,7 @@ const docTemplate = `{
                     "example": 200
                 },
                 "data": {
-                    "$ref": "#/definitions/dto.ConnectSessionResponseData"
+                    "$ref": "#/definitions/dto.SessionConnectData"
                 },
                 "error": {
                     "$ref": "#/definitions/dto.SessionErrorResponse"
@@ -6012,37 +5810,6 @@ const docTemplate = `{
                 "success": {
                     "type": "boolean",
                     "example": true
-                }
-            }
-        },
-        "dto.ConnectSessionResponseData": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string",
-                    "example": "connect"
-                },
-                "connection": {
-                    "$ref": "#/definitions/dto.SessionConnectionInfo"
-                },
-                "qr_code": {
-                    "type": "string",
-                    "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
-                },
-                "session": {
-                    "$ref": "#/definitions/dto.SessionInfo"
-                },
-                "session_id": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "success"
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
                 }
             }
         },
@@ -6399,7 +6166,7 @@ const docTemplate = `{
                     "example": 201
                 },
                 "data": {
-                    "$ref": "#/definitions/dto.CreateSessionResponseData"
+                    "$ref": "#/definitions/dto.SessionCreateData"
                 },
                 "error": {
                     "$ref": "#/definitions/dto.SessionErrorResponse"
@@ -6407,30 +6174,6 @@ const docTemplate = `{
                 "success": {
                     "type": "boolean",
                     "example": true
-                }
-            }
-        },
-        "dto.CreateSessionResponseData": {
-            "type": "object",
-            "properties": {
-                "action": {
-                    "type": "string",
-                    "example": "create"
-                },
-                "session": {
-                    "$ref": "#/definitions/dto.SessionInfo"
-                },
-                "session_id": {
-                    "type": "string",
-                    "example": "550e8400-e29b-41d4-a716-446655440000"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "success"
-                },
-                "timestamp": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
                 }
             }
         },
@@ -6453,35 +6196,6 @@ const docTemplate = `{
                 "phone": {
                     "type": "string",
                     "example": "5511999999999"
-                }
-            }
-        },
-        "dto.DeleteWebhookResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/dto.DeleteWebhookResponseData"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Webhook deleted successfully"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 200
-                }
-            }
-        },
-        "dto.DeleteWebhookResponseData": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string",
-                    "example": "deleted"
-                },
-                "webhook_id": {
-                    "type": "string",
-                    "example": "webhook_123456789"
                 }
             }
         },
@@ -6609,33 +6323,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.GetGroupInfoFromInviteRequest": {
-            "type": "object",
-            "required": [
-                "code",
-                "expiration",
-                "group_jid",
-                "inviter"
-            ],
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "example": "ABC123DEF456"
-                },
-                "expiration": {
-                    "type": "integer",
-                    "example": 1640995200
-                },
-                "group_jid": {
-                    "type": "string",
-                    "example": "120363025246125486@g.us"
-                },
-                "inviter": {
-                    "type": "string",
-                    "example": "5511999999999@s.meow.net"
-                }
-            }
-        },
         "dto.GetGroupInfoRequest": {
             "type": "object",
             "required": [
@@ -6721,62 +6408,6 @@ const docTemplate = `{
                 "community_jid": {
                     "type": "string",
                     "example": "120363025246125486@g.us"
-                }
-            }
-        },
-        "dto.GetWebhookResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/dto.GetWebhookResponseData"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Webhook retrieved successfully"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 200
-                }
-            }
-        },
-        "dto.GetWebhookResponseData": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "[\"message\"",
-                        " \"status\"",
-                        " \"connection\"]"
-                    ]
-                },
-                "session_id": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "active"
-                },
-                "updated_at": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://webhook.example.com/meow"
-                },
-                "webhook_id": {
-                    "type": "string",
-                    "example": "webhook_123456789"
                 }
             }
         },
@@ -6892,6 +6523,67 @@ const docTemplate = `{
                 "topic": {
                     "type": "string",
                     "example": "Group topic description"
+                }
+            }
+        },
+        "dto.GroupInviteInfoReq": {
+            "type": "object",
+            "required": [
+                "code",
+                "expiration",
+                "group_jid",
+                "inviter"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "ABC123DEF456"
+                },
+                "expiration": {
+                    "type": "integer",
+                    "example": 1640995200
+                },
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "inviter": {
+                    "type": "string",
+                    "example": "5511999999999@s.meow.net"
+                }
+            }
+        },
+        "dto.GroupJoinApprovalReq": {
+            "type": "object",
+            "required": [
+                "group_jid",
+                "require_approval"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "require_approval": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "dto.GroupMemberModeReq": {
+            "type": "object",
+            "required": [
+                "group_jid",
+                "mode"
+            ],
+            "properties": {
+                "group_jid": {
+                    "type": "string",
+                    "example": "120363025246125486@g.us"
+                },
+                "mode": {
+                    "type": "string",
+                    "example": "admin"
                 }
             }
         },
@@ -7038,61 +6730,6 @@ const docTemplate = `{
                 "success": {
                     "type": "boolean",
                     "example": true
-                }
-            }
-        },
-        "dto.ListWebhooksResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/dto.ListWebhooksResponseData"
-                    }
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Webhooks retrieved successfully"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 200
-                }
-            }
-        },
-        "dto.ListWebhooksResponseData": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "[\"message\"",
-                        " \"status\"",
-                        " \"connection\"]"
-                    ]
-                },
-                "session_id": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "active"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://webhook.example.com/meow"
-                },
-                "webhook_id": {
-                    "type": "string",
-                    "example": "webhook_123456789"
                 }
             }
         },
@@ -7737,7 +7374,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "events",
-                "session_id",
                 "url"
             ],
             "properties": {
@@ -7747,74 +7383,18 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[\"message\"",
-                        " \"status\"",
-                        " \"connection\"]"
+                        "Message",
+                        "Receipt",
+                        "Connected"
                     ]
                 },
                 "secret": {
                     "type": "string",
                     "example": "webhook_secret_key"
                 },
-                "session_id": {
-                    "type": "string",
-                    "example": "default"
-                },
                 "url": {
                     "type": "string",
                     "example": "https://webhook.example.com/meow"
-                }
-            }
-        },
-        "dto.RegisterWebhookResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/dto.RegisterWebhookResponseData"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Webhook registered successfully"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 201
-                }
-            }
-        },
-        "dto.RegisterWebhookResponseData": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "[\"message\"",
-                        " \"status\"",
-                        " \"connection\"]"
-                    ]
-                },
-                "session_id": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "active"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://webhook.example.com/meow"
-                },
-                "webhook_id": {
-                    "type": "string",
-                    "example": "webhook_123456789"
                 }
             }
         },
@@ -8081,6 +7661,37 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.SessionConnectData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "connect"
+                },
+                "connection": {
+                    "$ref": "#/definitions/dto.SessionConnectionInfo"
+                },
+                "qr_code": {
+                    "type": "string",
+                    "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                },
+                "session": {
+                    "$ref": "#/definitions/dto.SessionInfo"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                }
+            }
+        },
         "dto.SessionConnectionInfo": {
             "type": "object",
             "properties": {
@@ -8103,6 +7714,30 @@ const docTemplate = `{
                 "qr_code": {
                     "type": "string",
                     "example": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."
+                }
+            }
+        },
+        "dto.SessionCreateData": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "example": "create"
+                },
+                "session": {
+                    "$ref": "#/definitions/dto.SessionInfo"
+                },
+                "session_id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
                 }
             }
         },
@@ -8488,23 +8123,6 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.SetGroupJoinApprovalRequest": {
-            "type": "object",
-            "required": [
-                "group_jid",
-                "require_approval"
-            ],
-            "properties": {
-                "group_jid": {
-                    "type": "string",
-                    "example": "120363025246125486@g.us"
-                },
-                "require_approval": {
-                    "type": "boolean",
-                    "example": true
-                }
-            }
-        },
         "dto.SetGroupLockedRequest": {
             "type": "object",
             "required": [
@@ -8518,23 +8136,6 @@ const docTemplate = `{
                 "locked": {
                     "type": "boolean",
                     "example": true
-                }
-            }
-        },
-        "dto.SetGroupMemberAddModeRequest": {
-            "type": "object",
-            "required": [
-                "group_jid",
-                "mode"
-            ],
-            "properties": {
-                "group_jid": {
-                    "type": "string",
-                    "example": "120363025246125486@g.us"
-                },
-                "mode": {
-                    "type": "string",
-                    "example": "admin"
                 }
             }
         },
@@ -8625,6 +8226,70 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.StandardWebhookCreateResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.StandardWebhookData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Webhook created successfully"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 201
+                }
+            }
+        },
+        "dto.StandardWebhookData": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2023-01-01T00:00:00Z"
+                },
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "Message",
+                        "Receipt",
+                        "Connected"
+                    ]
+                },
+                "sessionID": {
+                    "type": "string",
+                    "example": "default"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "active"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://webhook.example.com/meow"
+                }
+            }
+        },
+        "dto.StandardWebhookResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/dto.StandardWebhookData"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Webhook retrieved successfully"
+                },
+                "status": {
+                    "type": "integer",
+                    "example": 200
+                }
+            }
+        },
         "dto.StickerMessagePayload": {
             "type": "object",
             "properties": {
@@ -8634,60 +8299,39 @@ const docTemplate = `{
                 }
             }
         },
-        "dto.TestWebhookRequest": {
+        "dto.SupportedEventsData": {
             "type": "object",
-            "required": [
-                "event_type"
-            ],
             "properties": {
-                "event_type": {
-                    "type": "string",
-                    "example": "message"
+                "count": {
+                    "type": "integer",
+                    "example": 65
                 },
-                "test_data": {
-                    "type": "object",
-                    "additionalProperties": true
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"Message\"",
+                        " \"Receipt\"",
+                        " \"Connected\"]"
+                    ]
                 }
             }
         },
-        "dto.TestWebhookResponse": {
+        "dto.SupportedEventsResponse": {
             "type": "object",
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/dto.TestWebhookResponseData"
+                    "$ref": "#/definitions/dto.SupportedEventsData"
                 },
                 "message": {
                     "type": "string",
-                    "example": "Webhook test completed"
+                    "example": "Supported events retrieved successfully"
                 },
                 "status": {
                     "type": "integer",
                     "example": 200
-                }
-            }
-        },
-        "dto.TestWebhookResponseData": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string",
-                    "example": ""
-                },
-                "response_code": {
-                    "type": "integer",
-                    "example": 200
-                },
-                "response_time_ms": {
-                    "type": "integer",
-                    "example": 150
-                },
-                "test_result": {
-                    "type": "string",
-                    "example": "success"
-                },
-                "webhook_id": {
-                    "type": "string",
-                    "example": "webhook_123456789"
                 }
             }
         },
@@ -8824,8 +8468,8 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[\"message\"",
-                        " \"status\"]"
+                        "Message",
+                        "Receipt"
                     ]
                 },
                 "secret": {
@@ -8839,58 +8483,6 @@ const docTemplate = `{
                 "url": {
                     "type": "string",
                     "example": "https://webhook.example.com/meow"
-                }
-            }
-        },
-        "dto.UpdateWebhookResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "$ref": "#/definitions/dto.UpdateWebhookResponseData"
-                },
-                "message": {
-                    "type": "string",
-                    "example": "Webhook updated successfully"
-                },
-                "status": {
-                    "type": "integer",
-                    "example": 200
-                }
-            }
-        },
-        "dto.UpdateWebhookResponseData": {
-            "type": "object",
-            "properties": {
-                "events": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "[\"message\"",
-                        " \"status\"",
-                        " \"connection\"]"
-                    ]
-                },
-                "session_id": {
-                    "type": "string",
-                    "example": "default"
-                },
-                "status": {
-                    "type": "string",
-                    "example": "active"
-                },
-                "updated_at": {
-                    "type": "string",
-                    "example": "2023-01-01T00:00:00Z"
-                },
-                "url": {
-                    "type": "string",
-                    "example": "https://webhook.example.com/meow"
-                },
-                "webhook_id": {
-                    "type": "string",
-                    "example": "webhook_123456789"
                 }
             }
         },
@@ -9002,9 +8594,9 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": [
-                        "[\"message\"",
-                        " \"status\"",
-                        " \"connection\"]"
+                        "Message",
+                        "Receipt",
+                        "Connected"
                     ]
                 },
                 "secret": {

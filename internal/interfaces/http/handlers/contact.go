@@ -13,14 +13,14 @@ import (
 // ContactHandler handles contact-related HTTP requests
 type ContactHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 }
 
 // NewContactHandler creates a new contact handler
 func NewContactHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ContactHandler {
 	return &ContactHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 

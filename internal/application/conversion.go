@@ -18,15 +18,13 @@ func NewConverter() *Converter {
 // SessionToInfo converts a session entity to session info DTO
 func (c *Converter) SessionToInfo(session *session.Session) dto.SessionInfo {
 	return dto.SessionInfo{
-		ID:         session.ID.Value(),
-		Name:       session.Name.Value(),
-		Status:     string(session.Status),
-		WaJID:      session.WaJID,
-		ProxyURL:   session.ProxyURL.Value(),
-		WebhookURL: session.WebhookURL,
-		Events:     session.Events,
-		CreatedAt:  session.CreatedAt,
-		UpdatedAt:  session.UpdatedAt,
+		ID:        session.ID.Value(),
+		Name:      session.Name.Value(),
+		Status:    string(session.Status),
+		WaJID:     session.WaJID.Value(),
+		ProxyURL:  session.ProxyURL.Value(),
+		CreatedAt: session.CreatedAt,
+		// Note: WebhookURL and Events removed - now handled by separate webhook aggregate
 	}
 }
 

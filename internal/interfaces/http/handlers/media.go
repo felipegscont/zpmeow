@@ -3,7 +3,7 @@ package handlers
 import (
 	"net/http"
 
-	"meow/internal/domain/session"
+	"meow/internal/application"
 	"meow/internal/infrastructure/wmeow"
 	"meow/internal/interfaces/dto"
 
@@ -12,15 +12,15 @@ import (
 
 // MediaHandler handles media-related HTTP requests
 type MediaHandler struct {
-	sessionService session.ApplicationSessionService
-	wmeowService    wmeow.Service
+	sessionService *application.SessionApp
+	wmeowService   wmeow.Service
 }
 
 // NewMediaHandler creates a new media handler
-func NewMediaHandler(sessionService session.ApplicationSessionService, wmeowService wmeow.Service) *MediaHandler {
+func NewMediaHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *MediaHandler {
 	return &MediaHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 

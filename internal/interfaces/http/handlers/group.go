@@ -1,11 +1,8 @@
 package handlers
 
 import (
-	"encoding/base64"
 	"fmt"
-	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"meow/internal/application"
@@ -19,14 +16,14 @@ import (
 // GroupHandler handles group-related HTTP requests
 type GroupHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 }
 
 // NewGroupHandler creates a new group handler
 func NewGroupHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *GroupHandler {
 	return &GroupHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 
@@ -657,7 +654,7 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sessionId	path		string								true	"Session ID"
-//	@Param			request		body		dto.GetGroupInfoFromInviteRequest	true	"Get group info from invite request"
+//	@Param			request		body		dto.GroupInviteInfoReq	true	"Get group info from invite request"
 //	@Success		200			{object}	dto.GroupResponse
 //	@Failure		400			{object}	dto.GroupResponse
 //	@Failure		404			{object}	dto.GroupResponse
@@ -1287,7 +1284,7 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sessionId	path		string							true	"Session ID"
-//	@Param			request		body		dto.SetGroupJoinApprovalRequest	true	"Set group join approval request"
+//	@Param			request		body		dto.GroupJoinApprovalReq	true	"Set group join approval request"
 //	@Success		200			{object}	dto.GroupResponse
 //	@Failure		400			{object}	dto.GroupResponse
 //	@Failure		404			{object}	dto.GroupResponse
@@ -1354,7 +1351,7 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			sessionId	path		string								true	"Session ID"
-//	@Param			request		body		dto.SetGroupMemberAddModeRequest	true	"Set group member add mode request"
+//	@Param			request		body		dto.GroupMemberModeReq	true	"Set group member add mode request"
 //	@Success		200			{object}	dto.GroupResponse
 //	@Failure		400			{object}	dto.GroupResponse
 //	@Failure		404			{object}	dto.GroupResponse
@@ -1580,61 +1577,4 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	message := fmt.Sprintf("Successfully %sed %d participants", req.Action, len(req.Participants))
 	response := dto.NewGroupOperationResponse(sessionID, "update_request_participants", message)
 	c.JSON(http.StatusOK, response)
-}
-
-// ============================================================================
-// HELPER FUNCTIONS FOR MEDIA HANDLING
-// ============================================================================
-
-// decodeMediaData decodes base64 data URL to bytes or downloads from URL
-func (h *GroupHandler) decodeMediaData(dataURL string) ([]byte, error) {
-	// Check if it's a HTTP/HTTPS URL
-	if strings.HasPrefix(dataURL, "http://") || strings.HasPrefix(dataURL, "https://") {
-		// Download from URL
-		resp, err := http.Get(dataURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to download from URL: %w", err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("failed to download from URL: HTTP %d", resp.StatusCode)
-		}
-
-		// Read the response body
-		data, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
-		}
-
-		return data, nil
-	}
-
-	// Handle data URL format: data:image/jpeg;base64,<base64-data>
-	if strings.HasPrefix(dataURL, "data:") {
-		// Find the comma that separates the header from the data
-		commaIndex := strings.Index(dataURL, ",")
-		if commaIndex == -1 {
-			return nil, fmt.Errorf("invalid data URL format")
-		}
-
-		// Extract the base64 data part
-		base64Data := dataURL[commaIndex+1:]
-
-		// Decode base64
-		data, err := base64.StdEncoding.DecodeString(base64Data)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode base64 data: %w", err)
-		}
-
-		return data, nil
-	}
-
-	// Assume it's raw base64 data
-	data, err := base64.StdEncoding.DecodeString(dataURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode base64 data: %w", err)
-	}
-
-	return data, nil
 }

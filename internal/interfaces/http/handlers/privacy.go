@@ -18,14 +18,14 @@ import (
 // PrivacyHandler handles privacy-related HTTP requests
 type PrivacyHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 }
 
 // NewPrivacyHandler creates a new privacy handler
 func NewPrivacyHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *PrivacyHandler {
 	return &PrivacyHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 

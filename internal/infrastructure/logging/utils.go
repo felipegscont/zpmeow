@@ -52,17 +52,17 @@ func FormatContext(pairs ...interface{}) string {
 	for i := 0; i < len(pairs); i += 2 {
 		key := fmt.Sprintf("%v", pairs[i])
 		value := fmt.Sprintf("%v", pairs[i+1])
-		
+
 		// Truncate long values for readability
 		if isIDField(key) && len(value) > 12 {
 			value = TruncateID(value)
 		} else if len(value) > 50 {
 			value = TruncateString(value, 50)
 		}
-		
+
 		parts = append(parts, fmt.Sprintf("%s=%s", key, value))
 	}
-	
+
 	return strings.Join(parts, " ")
 }
 
@@ -72,12 +72,12 @@ func SanitizeMessage(msg string) string {
 	msg = strings.TrimSpace(msg)
 	msg = strings.ReplaceAll(msg, "\n", " ")
 	msg = strings.ReplaceAll(msg, "\t", " ")
-	
+
 	// Replace multiple spaces with single space
 	for strings.Contains(msg, "  ") {
 		msg = strings.ReplaceAll(msg, "  ", " ")
 	}
-	
+
 	return msg
 }
 
@@ -210,7 +210,7 @@ func (c *LogContextBuilder) Apply(logger Logger) LogContext {
 	for i := 0; i < len(c.pairs); i += 2 {
 		key := fmt.Sprintf("%v", c.pairs[i])
 		value := c.pairs[i+1]
-		
+
 		switch v := value.(type) {
 		case string:
 			ctx = ctx.Str(key, v)
@@ -283,7 +283,7 @@ func LogSessionEvent(logger Logger, sessionID, event string, success bool, err e
 	}
 
 	msg := GetShortMessage(event, "session", success)
-	
+
 	if success {
 		ctx.Apply(logger).Logger().Info(msg)
 	} else {
@@ -304,7 +304,7 @@ func LogMessageEvent(logger Logger, sessionID, messageID, direction string, succ
 	}
 
 	msg := GetShortMessage(direction, "message", success)
-	
+
 	if success {
 		ctx.Apply(logger).Logger().Info(msg)
 	} else {

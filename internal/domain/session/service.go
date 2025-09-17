@@ -1,14 +1,10 @@
 package session
 
-import (
-	"net/url"
-	"regexp"
-)
+// No imports needed - all validations moved to Value Objects
 
 var (
 	sessionNameMinLength = 3
 	sessionNameMaxLength = 50
-	sessionNameRegex     = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
 type Service interface {
@@ -57,11 +53,7 @@ func (s *DomainService) ValidateSessionConfiguration(session *Session) error {
 		return err
 	}
 
-	if session.HasProxy() {
-		if err := ValidateProxyURL(session.ProxyURL.Value()); err != nil {
-			return err
-		}
-	}
+	// Proxy validation is now handled by ProxyURL value object during creation
 
 	if session.IsConnected() && !session.IsAuthenticated() {
 		return ErrSessionNotConnected
@@ -96,59 +88,11 @@ func (s *DomainService) ValidateDeviceConnection(session *Session, deviceJID str
 	return nil
 }
 
-func ValidateSessionName(name string) error {
-	if name == "" {
-		return ErrInvalidSessionName
-	}
+// Note: ValidateSessionName removed - validation now handled by NewSessionName() Value Object
 
-	if len(name) < sessionNameMinLength {
-		return ErrSessionNameTooShort
-	}
+// Note: ValidateSessionID removed - validation now handled by NewSessionID() Value Object
 
-	if len(name) > sessionNameMaxLength {
-		return ErrSessionNameTooLong
-	}
-
-	if !sessionNameRegex.MatchString(name) {
-		return ErrInvalidSessionNameChar
-	}
-
-	return nil
-}
-
-func ValidateSessionID(id string) error {
-	if id == "" {
-		return ErrInvalidSessionID
-	}
-
-	uuidRegex := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
-	if !uuidRegex.MatchString(id) {
-		return ErrInvalidSessionID
-	}
-
-	return nil
-}
-
-func ValidateProxyURL(proxyURL string) error {
-	if proxyURL == "" {
-		return nil // Empty proxy URL is valid (means no proxy)
-	}
-
-	parsedURL, err := url.Parse(proxyURL)
-	if err != nil {
-		return ErrInvalidProxyURL
-	}
-
-	if parsedURL.Scheme == "" {
-		return ErrInvalidProxyURL
-	}
-
-	if parsedURL.Host == "" {
-		return ErrInvalidProxyURL
-	}
-
-	return nil
-}
+// Note: ValidateProxyURL removed - validation now handled by NewProxyURL() Value Object
 
 func ValidateSessionStatus(currentStatus, newStatus Status) error {
 	validTransitions := map[Status][]Status{

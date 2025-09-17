@@ -1,10 +1,7 @@
 package session
 
 import (
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Status string
@@ -26,17 +23,15 @@ func (s Status) IsValid() bool {
 }
 
 type Session struct {
-	ID         SessionID
-	Name       SessionName
-	WaJID      string
-	Status     Status
-	QRCode     string
-	ProxyURL   ProxyURL
-	WebhookURL string
-	Events     []string
-	ApiKey     string
-	CreatedAt  time.Time
-	UpdatedAt  time.Time
+	ID        SessionID
+	Name      SessionName
+	WaJID     WaJID
+	Status    Status
+	QRCode    QRCode
+	ProxyURL  ProxyURL
+	ApiKey    ApiKey
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 func NewSession(id, name string) (*Session, error) {
@@ -50,13 +45,20 @@ func NewSession(id, name string) (*Session, error) {
 		return nil, err
 	}
 
+	// Create empty value objects for new session
+	waJID, _ := NewWaJID("")
+	qrCode, _ := NewQRCode("")
+	apiKey, _ := NewApiKey("temp-key") // Temporary key, will be replaced by application layer
+
 	now := time.Now()
 	return &Session{
 		ID:        sessionID,
 		Name:      sessionName,
+		WaJID:     waJID,
 		Status:    StatusDisconnected,
+		QRCode:    qrCode,
 		ProxyURL:  ProxyURL{}, // Empty proxy URL
-		ApiKey:    uuid.New().String(),
+		ApiKey:    apiKey,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}, nil
@@ -83,7 +85,7 @@ func (s *Session) CanConnect() bool {
 }
 
 func (s *Session) HasQRCode() bool {
-	return strings.TrimSpace(s.QRCode) != ""
+	return !s.QRCode.IsEmpty()
 }
 
 func (s *Session) HasProxy() bool {
@@ -91,7 +93,7 @@ func (s *Session) HasProxy() bool {
 }
 
 func (s *Session) IsAuthenticated() bool {
-	return strings.TrimSpace(s.WaJID) != ""
+	return !s.WaJID.IsEmpty()
 }
 
 func (s *Session) SetStatus(status Status) {
@@ -102,14 +104,24 @@ func (s *Session) SetStatus(status Status) {
 	s.updateTimestamp()
 }
 
-func (s *Session) SetQRCode(qrCode string) {
-	s.QRCode = strings.TrimSpace(qrCode)
+func (s *Session) SetQRCode(qrCode string) error {
+	qr, err := NewQRCode(qrCode)
+	if err != nil {
+		return err
+	}
+	s.QRCode = qr
 	s.updateTimestamp()
+	return nil
 }
 
-func (s *Session) SetWaJID(jid string) {
-	s.WaJID = strings.TrimSpace(jid)
+func (s *Session) SetWaJID(jid string) error {
+	waJID, err := NewWaJID(jid)
+	if err != nil {
+		return err
+	}
+	s.WaJID = waJID
 	s.updateTimestamp()
+	return nil
 }
 
 func (s *Session) SetProxyURL(proxyURL string) error {
@@ -123,41 +135,13 @@ func (s *Session) SetProxyURL(proxyURL string) error {
 }
 
 func (s *Session) ClearQRCode() {
-	s.QRCode = ""
+	s.QRCode = QRCode{}
 	s.updateTimestamp()
 }
 
 func (s *Session) ClearProxy() {
 	s.ProxyURL = ProxyURL{} // Empty proxy URL
 	s.updateTimestamp()
-}
-
-func (s *Session) SetWebhook(url string, events []string) {
-	s.WebhookURL = strings.TrimSpace(url)
-	s.Events = events
-	s.updateTimestamp()
-}
-
-func (s *Session) ClearWebhook() {
-	s.WebhookURL = ""
-	s.Events = nil
-	s.updateTimestamp()
-}
-
-func (s *Session) HasWebhook() bool {
-	return strings.TrimSpace(s.WebhookURL) != ""
-}
-
-func (s *Session) IsEventSubscribed(event string) bool {
-	if !s.HasWebhook() {
-		return false
-	}
-	for _, e := range s.Events {
-		if e == event {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *Session) updateTimestamp() {
@@ -199,19 +183,60 @@ func (s *Session) validateStatus() error {
 }
 
 func (s *Session) HasApiKey() bool {
-	return strings.TrimSpace(s.ApiKey) != ""
+	return !s.ApiKey.IsEmpty()
 }
 
-func (s *Session) RegenerateApiKey() {
-	s.ApiKey = generateApiKey()
+// RegenerateApiKey should be called from application layer with generated key
+func (s *Session) RegenerateApiKey(newApiKey string) error {
+	apiKey, err := NewApiKey(newApiKey)
+	if err != nil {
+		return err
+	}
+	s.ApiKey = apiKey
 	s.updateTimestamp()
+	return nil
 }
 
-func (s *Session) SetApiKey(apiKey string) {
-	s.ApiKey = strings.TrimSpace(apiKey)
+func (s *Session) SetApiKey(apiKey string) error {
+	key, err := NewApiKey(apiKey)
+	if err != nil {
+		return err
+	}
+	s.ApiKey = key
 	s.updateTimestamp()
+	return nil
 }
 
-func generateApiKey() string {
-	return uuid.New().String()
+// generateApiKey moved to application layer to avoid external dependencies in domain
+
+// Compatibility methods for gradual migration (will be removed in future versions)
+
+// GetWaJIDString returns WaJID as string for compatibility
+func (s *Session) GetWaJIDString() string {
+	return s.WaJID.Value()
+}
+
+// GetQRCodeString returns QRCode as string for compatibility
+func (s *Session) GetQRCodeString() string {
+	return s.QRCode.Value()
+}
+
+// GetApiKeyString returns ApiKey as string for compatibility
+func (s *Session) GetApiKeyString() string {
+	return s.ApiKey.Value()
+}
+
+// SetWaJIDString sets WaJID from string for compatibility
+func (s *Session) SetWaJIDString(jid string) error {
+	return s.SetWaJID(jid)
+}
+
+// SetQRCodeString sets QRCode from string for compatibility
+func (s *Session) SetQRCodeString(qr string) error {
+	return s.SetQRCode(qr)
+}
+
+// SetApiKeyString sets ApiKey from string for compatibility
+func (s *Session) SetApiKeyString(key string) error {
+	return s.SetApiKey(key)
 }

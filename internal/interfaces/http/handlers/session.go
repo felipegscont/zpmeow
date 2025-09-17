@@ -21,14 +21,14 @@ import (
 
 type SessionHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 	logger         logging.Logger
 }
 
 func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *SessionHandler {
 	return &SessionHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 		logger:         logging.GetLogger().Sub("session-handler"),
 	}
 }
@@ -124,16 +124,14 @@ func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode
 // convertToSessionInfo converts domain session to SessionInfo DTO
 func (h *SessionHandler) convertToSessionInfo(session *session.Session) *dto.SessionInfo {
 	sessionInfo := &dto.SessionInfo{
-		ID:         session.ID.Value(),
-		Name:       session.Name.Value(),
-		Status:     string(session.Status),
-		WaJID:      session.WaJID,
-		ProxyURL:   session.ProxyURL.Value(),
-		WebhookURL: session.WebhookURL,
-		Events:     session.Events, // Now properly handling as array
-		ApiKey:     session.ApiKey,
-		CreatedAt:  session.CreatedAt,
-		UpdatedAt:  session.UpdatedAt,
+		ID:        session.ID.Value(),
+		Name:      session.Name.Value(),
+		Status:    string(session.Status),
+		WaJID:     session.WaJID.Value(),
+		ProxyURL:  session.ProxyURL.Value(),
+		ApiKey:    session.ApiKey.Value(),
+		CreatedAt: session.CreatedAt,
+		// Note: WebhookURL and Events removed - now handled by separate webhook aggregate
 	}
 
 	return sessionInfo
@@ -347,12 +345,12 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 	}
 
 	// Validate that no other session is using the same device (if this session has a device)
-	if session.WaJID != "" {
+	if !session.WaJID.IsEmpty() {
 		// Check if another session is already using this device
-		existingSession, err := h.sessionService.GetSessionByDeviceJID(c.Request.Context(), session.WaJID)
+		existingSession, err := h.sessionService.GetSessionByDeviceJID(c.Request.Context(), session.WaJID.Value())
 		if err == nil && existingSession.ID != session.ID {
 			h.sendErrorResponse(c, http.StatusConflict, "DEVICE_ALREADY_IN_USE",
-				fmt.Sprintf("Device %s is already in use by session %s (%s)", session.WaJID, existingSession.ID, existingSession.Name),
+				fmt.Sprintf("Device %s is already in use by session %s (%s)", session.WaJID.Value(), existingSession.ID.Value(), existingSession.Name.Value()),
 				"Each meow device can only be used by one session at a time")
 			return
 		}
@@ -549,7 +547,7 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 			Timestamp:     time.Now(),
 			Name:          session.Name.Value(),
 			SessionStatus: string(session.Status),
-			WaJID:         session.WaJID,
+			WaJID:         session.WaJID.Value(),
 			IsConnected:   isConnected,
 			ClientStatus:  string(clientStatus), // Convert types.Status to string
 			CreatedAt:     session.CreatedAt,

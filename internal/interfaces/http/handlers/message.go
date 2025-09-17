@@ -18,14 +18,14 @@ import (
 // MessageHandler handles message-related HTTP requests (both sending and actions)
 type MessageHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 }
 
 // NewMessageHandler creates a new message handler
 func NewMessageHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *MessageHandler {
 	return &MessageHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 

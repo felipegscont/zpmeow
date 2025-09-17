@@ -21,14 +21,14 @@ import (
 // NewsletterHandler handles newsletter-related HTTP requests
 type NewsletterHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 }
 
 // NewNewsletterHandler creates a new newsletter handler
 func NewNewsletterHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *NewsletterHandler {
 	return &NewsletterHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 
@@ -889,7 +889,7 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SendNewsletterMessageResponse{
 		Success:   true,
 		MessageID: string(resp.ID),
-		ServerID:  string(resp.ServerID),
+		ServerID:  fmt.Sprintf("%d", resp.ServerID),
 		Timestamp: resp.Timestamp.Format(time.RFC3339),
 	})
 }

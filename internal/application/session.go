@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"meow/internal/domain/session"
 	"meow/internal/interfaces/dto"
@@ -13,9 +12,10 @@ import (
 )
 
 type SessionApp struct {
-	sessionRepo    session.Repository
-	sessionService session.Service
-	validator      *validation.Validator
+	sessionRepo       session.Repository
+	sessionService    session.Service
+	identifierService session.IdentifierService
+	validator         *validation.Validator
 }
 
 func NewSessionApp(
@@ -24,9 +24,10 @@ func NewSessionApp(
 	validator *validation.Validator,
 ) *SessionApp {
 	return &SessionApp{
-		sessionRepo:    sessionRepo,
-		sessionService: sessionService,
-		validator:      validator,
+		sessionRepo:       sessionRepo,
+		sessionService:    sessionService,
+		identifierService: session.NewIdentifierService(),
+		validator:         validator,
 	}
 }
 
@@ -46,10 +47,7 @@ func (s *SessionApp) CreateSessionWithRequest(ctx context.Context, req *dto.Crea
 		}
 	}
 
-	sessionEntity.WebhookURL = req.WebhookURL
-	if req.Events != "" {
-		sessionEntity.Events = []string{req.Events}
-	}
+	// Webhook configuration is now handled by separate webhook aggregate
 
 	if err := s.sessionService.ValidateSessionConfiguration(sessionEntity); err != nil {
 		return nil, fmt.Errorf("session configuration validation failed: %w", err)
@@ -63,43 +61,64 @@ func (s *SessionApp) CreateSessionWithRequest(ctx context.Context, req *dto.Crea
 }
 
 func (s *SessionApp) GetSession(ctx context.Context, sessionIDOrName string) (*session.Session, error) {
-	if sessionIDOrName == "" {
-		return nil, fmt.Errorf("session ID or name is required")
+	// Use domain service to resolve identifier
+	identifierInfo, err := s.identifierService.ResolveIdentifier(sessionIDOrName)
+	if err != nil {
+		return nil, fmt.Errorf("invalid session identifier: %w", err)
 	}
 
-	// Clean the input
-	sessionIDOrName = strings.TrimSpace(sessionIDOrName)
-
-	// Check if it looks like a UUID (contains hyphens and is 36 chars)
-	isUUID := len(sessionIDOrName) == 36 && strings.Contains(sessionIDOrName, "-")
-
-	if isUUID {
-		// If it looks like a UUID, try to parse it first to validate
-		if _, err := uuid.Parse(sessionIDOrName); err == nil {
-			// Valid UUID, try to get by ID first
-			sessionEntity, err := s.sessionRepo.GetByID(ctx, sessionIDOrName)
-			if err == nil {
-				return sessionEntity, nil
-			}
-		}
-	}
-
-	// If not a valid UUID or not found by ID, try by name first
-	sessionEntity, err := s.sessionRepo.GetByName(ctx, sessionIDOrName)
-	if err == nil {
-		return sessionEntity, nil
-	}
-
-	// If not found by name and wasn't tried as ID yet, try by ID
-	if !isUUID {
-		sessionEntity, err = s.sessionRepo.GetByID(ctx, sessionIDOrName)
+	// Try to get session based on identifier type
+	switch identifierInfo.Type {
+	case session.IdentifierTypeUUID:
+		// Try by ID first for UUIDs
+		sessionEntity, err := s.sessionRepo.GetByID(ctx, identifierInfo.Normalized)
 		if err == nil {
 			return sessionEntity, nil
 		}
+		// If not found by ID, try by name as fallback
+		sessionEntity, err = s.sessionRepo.GetByName(ctx, identifierInfo.Normalized)
+		if err == nil {
+			return sessionEntity, nil
+		}
+	case session.IdentifierTypeName:
+		// Try by name first for names
+		sessionEntity, err := s.sessionRepo.GetByName(ctx, identifierInfo.Normalized)
+		if err == nil {
+			return sessionEntity, nil
+		}
+		// If not found by name, try by ID as fallback
+		sessionEntity, err = s.sessionRepo.GetByID(ctx, identifierInfo.Normalized)
+		if err == nil {
+			return sessionEntity, nil
+		}
+	default:
+		return nil, fmt.Errorf("unsupported identifier type: %s", identifierInfo.Type)
 	}
 
-	// Not found by either method
-	return nil, fmt.Errorf("session not found")
+	return nil, fmt.Errorf("session not found: %s", sessionIDOrName)
+}
+
+// GetSessionDTO returns session information as DTO (for interface layer)
+func (s *SessionApp) GetSessionDTO(ctx context.Context, sessionIDOrName string) (*dto.SessionInfo, error) {
+	sessionEntity, err := s.GetSession(ctx, sessionIDOrName)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.convertSessionToDTO(sessionEntity), nil
+}
+
+// convertSessionToDTO converts domain entity to DTO
+func (s *SessionApp) convertSessionToDTO(sessionEntity *session.Session) *dto.SessionInfo {
+	return &dto.SessionInfo{
+		ID:        sessionEntity.ID.Value(),
+		Name:      sessionEntity.Name.Value(),
+		Status:    string(sessionEntity.Status),
+		WaJID:     sessionEntity.WaJID.Value(),
+		ProxyURL:  sessionEntity.ProxyURL.Value(),
+		ApiKey:    sessionEntity.ApiKey.Value(),
+		CreatedAt: sessionEntity.CreatedAt,
+	}
 }
 
 func (s *SessionApp) GetSessionByDeviceJID(ctx context.Context, deviceJID string) (*session.Session, error) {
@@ -140,7 +159,7 @@ func (s *SessionApp) ConnectSession(ctx context.Context, sessionIDOrName string)
 	sessionEntity.Status = session.StatusConnecting
 
 	// Validate device connection consistency before updating
-	if err := s.sessionService.ValidateDeviceConnection(sessionEntity, sessionEntity.WaJID); err != nil {
+	if err := s.sessionService.ValidateDeviceConnection(sessionEntity, sessionEntity.WaJID.Value()); err != nil {
 		return nil, fmt.Errorf("device connection validation failed: %w", err)
 	}
 
@@ -149,7 +168,10 @@ func (s *SessionApp) ConnectSession(ctx context.Context, sessionIDOrName string)
 	}
 
 	// Set a placeholder QR code - this should be handled by the infrastructure layer
-	sessionEntity.QRCode = "data:image/png;base64,placeholder_qr_code"
+	err = sessionEntity.SetQRCode("data:image/png;base64,placeholder_qr_code")
+	if err != nil {
+		return nil, fmt.Errorf("failed to set QR code: %w", err)
+	}
 
 	return sessionEntity, nil
 }
@@ -189,12 +211,16 @@ func (s *SessionApp) RegenerateApiKey(ctx context.Context, sessionIDOrName strin
 		return "", fmt.Errorf("cannot regenerate API key for connected session")
 	}
 
-	// Regenerate API key using domain method
-	sessionEntity.RegenerateApiKey()
+	// Generate new API key and set it on the entity
+	newApiKey := uuid.New().String()
+	err = sessionEntity.RegenerateApiKey(newApiKey)
+	if err != nil {
+		return "", fmt.Errorf("failed to regenerate API key: %w", err)
+	}
 
 	if err := s.sessionRepo.Update(ctx, sessionEntity); err != nil {
 		return "", fmt.Errorf("failed to update session with new API key: %w", err)
 	}
 
-	return sessionEntity.ApiKey, nil
+	return sessionEntity.ApiKey.Value(), nil
 }

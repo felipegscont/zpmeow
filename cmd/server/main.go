@@ -32,9 +32,9 @@ import (
 	"meow/internal/infrastructure/database"
 	"meow/internal/infrastructure/database/repository"
 	"meow/internal/infrastructure/logging"
-	"meow/internal/infrastructure/wmeow"
-	"meow/internal/infrastructure/webhooks"
 	"meow/internal/infrastructure/middleware"
+	"meow/internal/infrastructure/webhooks"
+	"meow/internal/infrastructure/wmeow"
 	"meow/internal/interfaces/http/handlers"
 	"meow/internal/interfaces/http/routes"
 	"meow/internal/shared/validation"
@@ -79,7 +79,7 @@ func main() {
 	// Create webhook service
 	webhookService := webhooks.NewService()
 
-	// Create WhatsApp service
+	// Create WhatsApp service (infrastructure implementation)
 	wmeowService := wmeow.NewService(container, waLogger, sessionRepo, cfg.GetMeow(), webhookService)
 
 	// Create session service with proper dependencies
@@ -88,7 +88,7 @@ func main() {
 	appSessionService := application.NewSessionApp(sessionRepo, domainSessionService, validator)
 
 	// Create webhook application service
-	webhookAppService := application.NewWebhookService(sessionRepo, webhookService)
+	webhookAppService := application.NewWebhookApp(sessionRepo, webhookService)
 
 	// Connect active sessions on startup
 	log.Info("Connecting active sessions on startup...")
@@ -129,7 +129,7 @@ func main() {
 		Formatter: func(param gin.LogFormatterParams) string {
 			// Only log non-2xx responses and important endpoints
 			if param.StatusCode >= 400 ||
-			   (param.Path != "/ping" && param.Path != "/health") {
+				(param.Path != "/ping" && param.Path != "/health") {
 				return fmt.Sprintf("%s - %s %s %d %s\n",
 					param.TimeStamp.Format("15:04:05"),
 					param.Method,

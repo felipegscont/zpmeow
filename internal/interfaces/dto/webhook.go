@@ -11,16 +11,15 @@ import (
 
 // RegisterWebhookRequest represents a request to register a webhook
 type RegisterWebhookRequest struct {
-	SessionID string   `json:"session_id" binding:"required" example:"default"`
-	URL       string   `json:"url" binding:"required" example:"https://webhook.example.com/meow"`
-	Events    []string `json:"events" binding:"required" example:"[\"message\", \"status\", \"connection\"]"`
-	Secret    string   `json:"secret,omitempty" example:"webhook_secret_key"`
+	URL    string   `json:"url" binding:"required" example:"https://webhook.example.com/meow"`
+	Events []string `json:"events" binding:"required" example:"Message,Receipt,Connected"`
+	Secret string   `json:"secret,omitempty" example:"webhook_secret_key"`
 }
 
 // UpdateWebhookRequest represents a request to update a webhook
 type UpdateWebhookRequest struct {
 	URL    string   `json:"url,omitempty" example:"https://webhook.example.com/meow"`
-	Events []string `json:"events,omitempty" example:"[\"message\", \"status\"]"`
+	Events []string `json:"events,omitempty" example:"Message,Receipt"`
 	Secret string   `json:"secret,omitempty" example:"new_webhook_secret_key"`
 	Status string   `json:"status,omitempty" example:"active"`
 }
@@ -40,7 +39,7 @@ type WebhookInfo struct {
 	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
 	SessionID string    `json:"session_id" example:"default"`
 	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
-	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
+	Events    []string  `json:"events" example:"Message,Receipt,Connected"`
 	Status    string    `json:"status" example:"active"`
 	Secret    string    `json:"secret,omitempty" example:"webhook_secret_key"`
 	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
@@ -131,113 +130,11 @@ func (e *WebhookValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
 
-// ============================================================================
-// LEGACY RESPONSE STRUCTURES (for backward compatibility)
-// ============================================================================
-
-// RegisterWebhookResponse represents legacy register webhook response
-type RegisterWebhookResponse struct {
-	Status  int                         `json:"status" example:"201"`
-	Message string                      `json:"message" example:"Webhook registered successfully"`
-	Data    RegisterWebhookResponseData `json:"data"`
-}
-
-// RegisterWebhookResponseData represents legacy register webhook response data
-type RegisterWebhookResponseData struct {
-	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
-	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
-	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
-	Status    string    `json:"status" example:"active"`
-	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
-}
-
-// GetWebhookResponse represents legacy get webhook response
-type GetWebhookResponse struct {
-	Status  int                    `json:"status" example:"200"`
-	Message string                 `json:"message" example:"Webhook retrieved successfully"`
-	Data    GetWebhookResponseData `json:"data"`
-}
-
-// GetWebhookResponseData represents legacy get webhook response data
-type GetWebhookResponseData struct {
-	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
-	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
-	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
-	Status    string    `json:"status" example:"active"`
-	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
-	UpdatedAt time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
-}
-
-// UpdateWebhookResponse represents legacy update webhook response
-type UpdateWebhookResponse struct {
-	Status  int                       `json:"status" example:"200"`
-	Message string                    `json:"message" example:"Webhook updated successfully"`
-	Data    UpdateWebhookResponseData `json:"data"`
-}
-
-// UpdateWebhookResponseData represents legacy update webhook response data
-type UpdateWebhookResponseData struct {
-	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
-	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
-	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
-	Status    string    `json:"status" example:"active"`
-	UpdatedAt time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
-}
-
-// ListWebhooksResponse represents legacy list webhooks response
-type ListWebhooksResponse struct {
-	Status  int                        `json:"status" example:"200"`
-	Message string                     `json:"message" example:"Webhooks retrieved successfully"`
-	Data    []ListWebhooksResponseData `json:"data"`
-}
-
-// ListWebhooksResponseData represents legacy list webhooks response data (single item)
-type ListWebhooksResponseData struct {
-	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
-	SessionID string    `json:"session_id" example:"default"`
-	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
-	Events    []string  `json:"events" example:"[\"message\", \"status\", \"connection\"]"`
-	Status    string    `json:"status" example:"active"`
-	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
-}
-
-// DeleteWebhookResponse represents legacy delete webhook response
-type DeleteWebhookResponse struct {
-	Status  int                       `json:"status" example:"200"`
-	Message string                    `json:"message" example:"Webhook deleted successfully"`
-	Data    DeleteWebhookResponseData `json:"data"`
-}
-
-// DeleteWebhookResponseData represents legacy delete webhook response data
-type DeleteWebhookResponseData struct {
-	WebhookID string `json:"webhook_id" example:"webhook_123456789"`
-	Status    string `json:"status" example:"deleted"`
-}
-
-// TestWebhookResponse represents legacy test webhook response
-type TestWebhookResponse struct {
-	Status  int                     `json:"status" example:"200"`
-	Message string                  `json:"message" example:"Webhook test completed"`
-	Data    TestWebhookResponseData `json:"data"`
-}
-
-// TestWebhookResponseData represents legacy test webhook response data
-type TestWebhookResponseData struct {
-	WebhookID    string `json:"webhook_id" example:"webhook_123456789"`
-	TestResult   string `json:"test_result" example:"success"`
-	ResponseCode int    `json:"response_code" example:"200"`
-	ResponseTime int64  `json:"response_time_ms" example:"150"`
-	Error        string `json:"error,omitempty" example:""`
-}
-
 // SupportedEventsResponse represents supported events response
 type SupportedEventsResponse struct {
-	Status  int                  `json:"status" example:"200"`
-	Message string               `json:"message" example:"Supported events retrieved successfully"`
-	Data    SupportedEventsData  `json:"data"`
+	Status  int                 `json:"status" example:"200"`
+	Message string              `json:"message" example:"Supported events retrieved successfully"`
+	Data    SupportedEventsData `json:"data"`
 }
 
 // SupportedEventsData represents supported events data
@@ -247,51 +144,58 @@ type SupportedEventsData struct {
 }
 
 // ============================================================================
-// INTERNAL HELPER FUNCTIONS
+// NEW STANDARDIZED RESPONSE STRUCTURES
 // ============================================================================
 
-// validateWebhookURL checks if a URL is valid (basic validation)
-func validateWebhookURL(url string) bool {
-	return url != "" && len(url) > 8 && url[:8] == "https://"
+// StandardWebhookResponse represents the new standardized webhook response format
+type StandardWebhookResponse struct {
+	Data    StandardWebhookData `json:"data"`
+	Message string              `json:"message" example:"Webhook retrieved successfully"`
+	Status  int                 `json:"status" example:"200"`
 }
 
-// validateWebhookSessionID checks if a session ID is valid
-func validateWebhookSessionID(sessionID string) bool {
-	return sessionID != "" && len(sessionID) >= 1
+// StandardWebhookData represents the data structure for standardized webhook responses
+type StandardWebhookData struct {
+	CreatedAt time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
+	Events    []string  `json:"events" example:"Message,Receipt,Connected"`
+	SessionID string    `json:"sessionID" example:"default"`
+	Status    string    `json:"status" example:"active"`
+	URL       string    `json:"url" example:"https://webhook.example.com/meow"`
 }
 
-// validateEventType checks if an event type is valid
-func validateEventType(eventType string) bool {
-	validEvents := []string{"message", "status", "connection", "call", "contact"}
-	for _, validEvent := range validEvents {
-		if eventType == validEvent {
-			return true
-		}
-	}
-	return false
+// StandardWebhookListResponse represents the standardized list webhooks response
+type StandardWebhookListResponse struct {
+	Data    []StandardWebhookData `json:"data"`
+	Message string                `json:"message" example:"Webhooks retrieved successfully"`
+	Status  int                   `json:"status" example:"200"`
 }
 
-// validateEvents checks if all events in the slice are valid
-func validateEvents(events []string) bool {
-	if len(events) == 0 {
-		return false
-	}
-	for _, event := range events {
-		if !validateEventType(event) {
-			return false
-		}
-	}
-	return true
+// StandardWebhookCreateResponse represents the standardized create webhook response
+type StandardWebhookCreateResponse struct {
+	Data    StandardWebhookData `json:"data"`
+	Message string              `json:"message" example:"Webhook created successfully"`
+	Status  int                 `json:"status" example:"201"`
 }
 
-// validateWebhookStatus checks if a webhook status is valid
-func validateWebhookStatus(status string) bool {
-	validStatuses := []string{"active", "inactive", "paused"}
-	for _, validStatus := range validStatuses {
-		if status == validStatus {
-			return true
-		}
-	}
-	return false
+// StandardWebhookUpdateResponse represents the standardized update webhook response
+type StandardWebhookUpdateResponse struct {
+	Data    StandardWebhookData `json:"data"`
+	Message string              `json:"message" example:"Webhook updated successfully"`
+	Status  int                 `json:"status" example:"200"`
 }
 
+// StandardWebhookDeleteResponse represents the standardized delete webhook response
+type StandardWebhookDeleteResponse struct {
+	Data    StandardWebhookDeleteData `json:"data"`
+	Message string                    `json:"message" example:"Webhook deleted successfully"`
+	Status  int                       `json:"status" example:"200"`
+}
+
+// StandardWebhookDeleteData represents the data for delete webhook response
+type StandardWebhookDeleteData struct {
+	SessionID string `json:"sessionID" example:"default"`
+	Status    string `json:"status" example:"deleted"`
+}
+
+// Note: Validation functions moved to internal/application/webhook.go
+// DTOs should only contain data structures, not business logic

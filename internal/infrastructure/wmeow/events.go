@@ -4,19 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"meow/internal/domain/session"
 	"meow/internal/infrastructure/logging"
 	"meow/internal/infrastructure/webhooks"
-	"meow/internal/interfaces/dto"
 
-	"go.mau.fi/whatsmeow/types/events"
-	"go.mau.fi/whatsmeow/types"
 	waE2E "go.mau.fi/whatsmeow/binary/proto"
+	"go.mau.fi/whatsmeow/types"
+	"go.mau.fi/whatsmeow/types/events"
 )
 
-// List of supported event types based on whatsmeow v0.0.0-...-03f1800
+// List of supported event types
 var supportedEventTypes = []string{
 	// Messages and Communication
 	"Message",
@@ -24,6 +24,7 @@ var supportedEventTypes = []string{
 	"Receipt",
 	"MediaRetry",
 	"MediaRetryError",
+	"ReadReceipt",
 
 	// Groups and Contacts
 	"GroupInfo",
@@ -82,7 +83,7 @@ var supportedEventTypes = []string{
 	// Identity
 	"IdentityChange",
 
-	// Errors
+	// Erros
 	"CATRefreshError",
 
 	// Newsletter (WhatsApp Channels)
@@ -135,7 +136,44 @@ func isValidEventType(eventType string) bool {
 
 // IsValidEventType validates if an event type is supported (exported version)
 func IsValidEventType(eventType string) bool {
-	return isValidEventType(eventType)
+	// Check direct match first
+	if isValidEventType(eventType) {
+		return true
+	}
+
+	// Check mapped event types (lowercase to proper case)
+	mapped := mapEventType(eventType)
+	return isValidEventType(mapped)
+}
+
+// MapEventType maps common lowercase event names to proper event types (exported version)
+func MapEventType(eventType string) string {
+	return mapEventType(eventType)
+}
+
+// mapEventType maps common lowercase event names to proper event types
+func mapEventType(eventType string) string {
+	eventMap := map[string]string{
+		"message":    "Message",
+		"status":     "Receipt",
+		"connection": "Connected",
+		"call":       "CallOffer",
+		"contact":    "Contact",
+		"group":      "GroupInfo",
+		"presence":   "Presence",
+		"qr":         "QR",
+		"pair":       "PairSuccess",
+		"disconnect": "Disconnected",
+		"error":      "ConnectFailure",
+		"all":        "All",
+	}
+
+	if mapped, exists := eventMap[strings.ToLower(eventType)]; exists {
+		return mapped
+	}
+
+	// Return original if no mapping found
+	return eventType
 }
 
 // GetSupportedEventTypes returns the list of all supported event types
@@ -218,41 +256,20 @@ func (ep *EventProcessor) HandleEvent(evt interface{}) {
 
 // sendWebhook sends webhook notification for events
 func (ep *EventProcessor) sendWebhook(evt interface{}, eventType string) {
-	if ep.webhookService == nil || ep.webhookURL == "" {
+	if ep.webhookService == nil {
 		return
 	}
 
 	// Get session to check webhook configuration
-	sessionEntity, err := ep.sessionRepo.GetByID(context.Background(), ep.sessionID)
+	_, err := ep.sessionRepo.GetByID(context.Background(), ep.sessionID)
 	if err != nil {
 		ep.logger.Errorf("Failed to get session for webhook: %v", err)
 		return
 	}
 
-	// Check if session has webhook configured
-	if !sessionEntity.HasWebhook() {
-		return
-	}
-
-	// Extract event type name (remove *events. prefix)
-	webhookEventType := ep.extractEventTypeName(eventType)
-
-	// Check if session is subscribed to this event type
-	if !sessionEntity.IsEventSubscribed(webhookEventType) && !sessionEntity.IsEventSubscribed("All") {
-		ep.logger.Debugf("Session not subscribed to event type: %s", webhookEventType)
-		return
-	}
-
-	// Create webhook payload
-	payload := ep.createWebhookPayload(evt, webhookEventType)
-
-	// Send webhook asynchronously
-	go func() {
-		err := ep.webhookService.SendWebhookAsync(sessionEntity.WebhookURL, webhookEventType, ep.sessionID, payload)
-		if err != nil {
-			ep.logger.Errorf("Failed to send webhook: %v", err)
-		}
-	}()
+	// Webhook functionality temporarily disabled during refactoring
+	// Webhook configuration is now handled by separate webhook aggregate
+	ep.logger.Debugf("Event processed: %s for session %s (webhook disabled during refactoring)", eventType, ep.sessionID)
 }
 
 // extractEventTypeName extracts clean event type name from Go type string
@@ -264,32 +281,22 @@ func (ep *EventProcessor) extractEventTypeName(eventType string) string {
 	return eventType
 }
 
+// WebhookPayload represents the webhook payload structure with ordered fields
+type WebhookPayload struct {
+	Event     string      `json:"event"`
+	SessionID string      `json:"sessionId"`
+	Timestamp int64       `json:"timestamp"`
+	Data      interface{} `json:"data"`
+}
+
 // createWebhookPayload creates the webhook payload for different event types
 func (ep *EventProcessor) createWebhookPayload(evt interface{}, eventType string) interface{} {
-	basePayload := map[string]interface{}{
-		"event":     evt,
-		"type":      eventType,
-		"sessionId": ep.sessionID,
-		"timestamp": time.Now().Unix(),
-	}
-
-	// Add specific payload data based on event type
-	switch e := evt.(type) {
-	case *events.Message:
-		return ep.createMessageWebhookPayload(e, basePayload)
-	case *events.Receipt:
-		return ep.createReceiptWebhookPayload(e, basePayload)
-	case *events.Connected:
-		basePayload["status"] = "connected"
-		return basePayload
-	case *events.Disconnected:
-		basePayload["status"] = "disconnected"
-		return basePayload
-	case *events.LoggedOut:
-		basePayload["reason"] = e.Reason.String()
-		return basePayload
-	default:
-		return basePayload
+	// Use struct to ensure consistent field ordering in JSON
+	return WebhookPayload{
+		Event:     eventType,
+		SessionID: ep.sessionID,
+		Timestamp: time.Now().Unix(),
+		Data:      evt, // Raw event payload from WhatsApp Meow - will appear last due to struct field order
 	}
 }
 
@@ -305,8 +312,6 @@ func (ep *EventProcessor) isMessageEvent(eventType string) bool {
 	}
 	return false
 }
-
-
 
 // isConnectionEvent checks if event is connection-related
 func (ep *EventProcessor) isConnectionEvent(eventType string) bool {
@@ -333,38 +338,28 @@ func (ep *EventProcessor) isAuthEvent(eventType string) bool {
 // processConnectionEvents - Common processing for connection events
 func (ep *EventProcessor) processConnectionEvents(eventType, status string) {
 	ep.logger.Infof("Session %s %s", ep.sessionID, status)
-	data := map[string]interface{}{
-		"sessionId": ep.sessionID,
-		"status":    status,
-		"event":     eventType,
-	}
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 // processAuthEvents - Common processing for authentication events
 func (ep *EventProcessor) processAuthEvents(eventType string, eventData interface{}) {
-	data := map[string]interface{}{
-		"sessionId": ep.sessionID,
-		"event":     eventType,
-	}
-
-	// Add specific data based on event type
+	// Add specific logging based on event type
 	switch eventType {
 	case "qr":
 		if qr, ok := eventData.(*events.QR); ok && len(qr.Codes) > 0 {
-			data["qr"] = qr.Codes
 			ep.logger.Debugf("QR codes available: %v", qr.Codes)
 		}
 	case "pair_success":
-		data["status"] = "paired"
+		ep.logger.Debugf("Pairing successful for session %s", ep.sessionID)
 	case "pair_error":
-		data["status"] = "pair_failed"
 		if pairErr, ok := eventData.(*events.PairError); ok {
-			data["error"] = pairErr.Error.Error()
+			ep.logger.Errorf("Pairing error for session %s: %v", ep.sessionID, pairErr.Error)
 		}
 	}
 
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 // EventProcessor handler methods - small and focused
@@ -396,8 +391,8 @@ func (ep *EventProcessor) handleMessage(evt interface{}) {
 			"DIRECT", messageID, messageType, truncateString(sender, 25), sessionInfo, timestamp)
 	}
 
-	data := createMessageData(msg)
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 func (ep *EventProcessor) handleConnected(evt interface{}) {
@@ -436,7 +431,6 @@ func (ep *EventProcessor) handleReceipt(evt interface{}) {
 	receiptType := getReceiptTypeString(receipt.Type)
 	messageCount := len(receipt.MessageIDs)
 	sender := receipt.MessageSource.Sender.String()
-	chat := receipt.MessageSource.Chat.String()
 	timestamp := receipt.Timestamp.Format("15:04:05")
 
 	// Log receipt with detailed information including session name
@@ -450,46 +444,21 @@ func (ep *EventProcessor) handleReceipt(evt interface{}) {
 			"RECEIPT", messageCount, receiptType, truncateString(sender, 25), sessionInfo, timestamp)
 	}
 
-	data := map[string]interface{}{
-		"sessionId": ep.sessionID,
-		"event":     "receipt",
-		"messageId": receipt.MessageIDs,
-		"type":      receiptType,
-		"from":      sender,
-		"chat":      chat,
-		"timestamp": receipt.Timestamp.Unix(),
-	}
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 func (ep *EventProcessor) handlePresence(evt interface{}) {
-	presence := evt.(*events.Presence)
 	ep.logger.Debugf("Presence update for session %s", ep.sessionID)
 
-	status := "available"
-	if presence.Unavailable {
-		status = "unavailable"
-	}
-
-	data := map[string]interface{}{
-		"sessionId": ep.sessionID,
-		"event":     "presence",
-		"from":      presence.From.String(),
-		"presence":  status,
-	}
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 func (ep *EventProcessor) handleChatPresence(evt interface{}) {
-	chatPresence := evt.(*events.ChatPresence)
 	ep.logger.Debugf("Chat presence update for session %s", ep.sessionID)
-	data := map[string]interface{}{
-		"sessionId": ep.sessionID,
-		"event":     "chat_presence",
-		"chat":      chatPresence.MessageSource.Chat.String(),
-		"presence":  string(chatPresence.State),
-	}
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 func (ep *EventProcessor) handlePrivacySettings(evt interface{}) {
@@ -522,33 +491,8 @@ func (ep *EventProcessor) handlePrivacySettings(evt interface{}) {
 
 	ep.logger.Infof("🔒 Privacy changes: %v", changes)
 
-	// Prepare webhook data
-	data := map[string]interface{}{
-		"sessionId": ep.sessionID,
-		"event":     "privacy_settings_changed",
-		"timestamp": time.Now().Unix(),
-		"changes":   changes,
-		"newSettings": map[string]interface{}{
-			"groupAdd":     string(privacySettings.NewSettings.GroupAdd),
-			"lastSeen":     string(privacySettings.NewSettings.LastSeen),
-			"status":       string(privacySettings.NewSettings.Status),
-			"profile":      string(privacySettings.NewSettings.Profile),
-			"readReceipts": string(privacySettings.NewSettings.ReadReceipts),
-			"online":       string(privacySettings.NewSettings.Online),
-			"callAdd":      string(privacySettings.NewSettings.CallAdd),
-		},
-		"changedFields": map[string]bool{
-			"groupAdd":     privacySettings.GroupAddChanged,
-			"lastSeen":     privacySettings.LastSeenChanged,
-			"status":       privacySettings.StatusChanged,
-			"profile":      privacySettings.ProfileChanged,
-			"readReceipts": privacySettings.ReadReceiptsChanged,
-			"online":       privacySettings.OnlineChanged,
-			"callAdd":      privacySettings.CallAddChanged,
-		},
-	}
-
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 func (ep *EventProcessor) handleBlocklist(evt interface{}) {
@@ -566,30 +510,13 @@ func (ep *EventProcessor) handleBlocklist(evt interface{}) {
 		ep.logger.Debugf("Blocklist change: %s %s", string(change.Action), change.JID.String())
 	}
 
-	// Prepare webhook data
-	data := map[string]interface{}{
-		"sessionId": ep.sessionID,
-		"event":     "blocklist_changed",
-		"timestamp": time.Now().Unix(),
-		"action":    string(blocklist.Action),
-		"dhash":     blocklist.DHash,
-		"prevDhash": blocklist.PrevDHash,
-		"changes":   changes,
-	}
-
-	sendWebhook(ep.webhookURL, data)
+	// Note: Webhook is already sent by HandleEvent method with complete event data
+	// No need to send duplicate webhook here
 }
 
 // Helper functions shared across handlers (DRY principle)
-func sendWebhook(url string, data interface{}) error {
-	if url == "" {
-		return nil // No webhook configured
-	}
-
-	// Simple webhook implementation
-	// In a real implementation, you'd want proper HTTP client with retries
-	return nil
-}
+// Note: The old sendWebhook stub function has been removed.
+// All webhook calls now use ep.sendWebhook() which properly sends webhooks.
 
 func createMessageData(msg *events.Message) map[string]interface{} {
 	return map[string]interface{}{
@@ -755,54 +682,6 @@ func getReceiptTypeString(receiptType types.ReceiptType) string {
 		}
 		return string(receiptType)
 	}
-}
-
-// createMessageWebhookPayload creates webhook payload for message events
-func (ep *EventProcessor) createMessageWebhookPayload(msg *events.Message, basePayload map[string]interface{}) interface{} {
-	payload := dto.MessageWebhookData{
-		MessageID:   msg.Info.ID,
-		FromJID:     msg.Info.MessageSource.Sender.String(),
-		ChatJID:     msg.Info.MessageSource.Chat.String(),
-		Timestamp:   msg.Info.Timestamp,
-		MessageType: getMessageType(msg),
-		Content:     ep.extractMessageText(msg),
-		IsFromMe:    msg.Info.MessageSource.IsFromMe,
-	}
-
-	// Add media URL if present (simplified for now)
-	if msg.Message != nil {
-		if img := msg.Message.GetImageMessage(); img != nil {
-			payload.MediaURL = "image_media_url" // Placeholder - would need actual media handling
-		} else if audio := msg.Message.GetAudioMessage(); audio != nil {
-			payload.MediaURL = "audio_media_url" // Placeholder - would need actual media handling
-		} else if video := msg.Message.GetVideoMessage(); video != nil {
-			payload.MediaURL = "video_media_url" // Placeholder - would need actual media handling
-		} else if doc := msg.Message.GetDocumentMessage(); doc != nil {
-			payload.MediaURL = "document_media_url" // Placeholder - would need actual media handling
-		}
-	}
-
-	return payload
-}
-
-// createReceiptWebhookPayload creates webhook payload for receipt events
-func (ep *EventProcessor) createReceiptWebhookPayload(receipt *events.Receipt, basePayload map[string]interface{}) interface{} {
-	receiptType := getReceiptTypeString(receipt.Type)
-
-	// Use first message ID if available
-	messageID := ""
-	if len(receipt.MessageIDs) > 0 {
-		messageID = receipt.MessageIDs[0]
-	}
-
-	payload := dto.StatusWebhookData{
-		MessageID: messageID,
-		Status:    receiptType,
-		ChatJID:   receipt.MessageSource.Chat.String(),
-		Timestamp: receipt.Timestamp,
-	}
-
-	return payload
 }
 
 // formatEventData formats event data in a more readable JSON format

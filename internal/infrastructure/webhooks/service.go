@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"meow/internal/infrastructure/logging"
-	"meow/internal/interfaces/dto"
 )
 
 type Service struct {
@@ -43,24 +42,10 @@ func (w *Service) SendWebhook(ctx context.Context, webhookURL, event, sessionID 
 		return fmt.Errorf("webhook URL is empty")
 	}
 
-	var dataMap map[string]interface{}
-	if data != nil {
-		if dm, ok := data.(map[string]interface{}); ok {
-			dataMap = dm
-		} else {
-			dataMap = map[string]interface{}{"data": data}
-		}
-	}
-
-	payload := dto.WebhookEventPayload{
-		EventType: event,
-		SessionID: sessionID,
-		Timestamp: time.Now(),
-		Data:      dataMap,
-	}
+	// Send the payload directly as received from the event processor
 	w.logger.Infof("Sending webhook to %s for event %s (session: %s)", webhookURL, event, sessionID)
 
-	err := w.httpClient.Post(ctx, webhookURL, payload, nil)
+	err := w.httpClient.Post(ctx, webhookURL, data, nil)
 	if err != nil {
 		w.logger.Errorf("Failed to send webhook to %s: %v", webhookURL, err)
 		return err
@@ -75,26 +60,11 @@ func (w *Service) SendWebhookWithRetry(ctx context.Context, webhookURL, event, s
 		return fmt.Errorf("webhook URL is empty")
 	}
 
-	var dataMap map[string]interface{}
-	if data != nil {
-		if dm, ok := data.(map[string]interface{}); ok {
-			dataMap = dm
-		} else {
-			dataMap = map[string]interface{}{"data": data}
-		}
-	}
-
-	payload := dto.WebhookEventPayload{
-		EventType: event,
-		SessionID: sessionID,
-		Timestamp: time.Now(),
-		Data:      dataMap,
-	}
 	operationName := fmt.Sprintf("webhook to %s for event %s", webhookURL, event)
 
 	return w.retryStrategy.ExecuteWithRetry(ctx, func() error {
 		w.logger.Debugf("Attempting to send %s (session: %s)", operationName, sessionID)
-		return w.httpClient.Post(ctx, webhookURL, payload, nil)
+		return w.httpClient.Post(ctx, webhookURL, data, nil)
 	}, operationName)
 }
 
@@ -116,24 +86,9 @@ func (w *Service) SendWebhookWithHeaders(ctx context.Context, webhookURL, event,
 		return fmt.Errorf("webhook URL is empty")
 	}
 
-	var dataMap map[string]interface{}
-	if data != nil {
-		if dm, ok := data.(map[string]interface{}); ok {
-			dataMap = dm
-		} else {
-			dataMap = map[string]interface{}{"data": data}
-		}
-	}
-
-	payload := dto.WebhookEventPayload{
-		EventType: event,
-		SessionID: sessionID,
-		Timestamp: time.Now(),
-		Data:      dataMap,
-	}
 	w.logger.Infof("Sending webhook with headers to %s for event %s (session: %s)", webhookURL, event, sessionID)
 
-	err := w.httpClient.Post(ctx, webhookURL, payload, headers)
+	err := w.httpClient.Post(ctx, webhookURL, data, headers)
 	if err != nil {
 		w.logger.Errorf("Failed to send webhook to %s: %v", webhookURL, err)
 		return err
@@ -148,25 +103,10 @@ func (w *Service) SendWebhookWithHeadersAndRetry(ctx context.Context, webhookURL
 		return fmt.Errorf("webhook URL is empty")
 	}
 
-	var dataMap map[string]interface{}
-	if data != nil {
-		if dm, ok := data.(map[string]interface{}); ok {
-			dataMap = dm
-		} else {
-			dataMap = map[string]interface{}{"data": data}
-		}
-	}
-
-	payload := dto.WebhookEventPayload{
-		EventType: event,
-		SessionID: sessionID,
-		Timestamp: time.Now(),
-		Data:      dataMap,
-	}
 	operationName := fmt.Sprintf("webhook with headers to %s for event %s", webhookURL, event)
 
 	return w.retryStrategy.ExecuteWithRetry(ctx, func() error {
 		w.logger.Debugf("Attempting to send %s (session: %s)", operationName, sessionID)
-		return w.httpClient.Post(ctx, webhookURL, payload, headers)
+		return w.httpClient.Post(ctx, webhookURL, data, headers)
 	}, operationName)
 }

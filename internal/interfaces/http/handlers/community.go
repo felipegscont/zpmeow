@@ -13,19 +13,19 @@ import (
 // CommunityHandler handles community-related HTTP requests
 type CommunityHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 }
 
 // NewCommunityHandler creates a new community handler
 func NewCommunityHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *CommunityHandler {
 	return &CommunityHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 
 // resolveSessionID resolves session ID or name to actual session ID
-func (h *CommunityHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) (string, error) {
+func (h *CommunityHandler) resolveSessionID(_ *gin.Context, sessionIDOrName string) (string, error) {
 	// For now, just return the sessionIDOrName as-is
 	// In the future, this could resolve session names to IDs
 	return sessionIDOrName, nil

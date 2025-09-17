@@ -482,11 +482,18 @@ func (c *Client) persistQRSuccess() {
 		}
 
 		c.logger.Infof("Assigning device JID %s to session %s", deviceJID, c.sessionID)
-		sessionEntity.WaJID = deviceJID
+		err = sessionEntity.SetWaJID(deviceJID)
+		if err != nil {
+			c.logger.Errorf("Failed to set WaJID for session %s: %v", c.sessionID, err)
+			return
+		}
 	}
 
 	sessionEntity.SetStatus(session.StatusConnected)
-	sessionEntity.SetQRCode("") // Clear QR code after successful pairing
+	err = sessionEntity.SetQRCode("") // Clear QR code after successful pairing
+	if err != nil {
+		c.logger.Errorf("Failed to clear QR code for session %s: %v", c.sessionID, err)
+	}
 
 	if err := c.sessionRepo.Update(ctx, sessionEntity); err != nil {
 		c.logger.Errorf("Failed to update session %s in database after QR scan: %v", c.sessionID, err)

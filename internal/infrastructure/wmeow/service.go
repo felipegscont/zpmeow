@@ -321,8 +321,8 @@ func (m *serviceImpl) getOrCreateClient(sessionID string) *Client {
 	// Get session to check for existing device_jid
 	sessionEntity, err := m.sessions.GetByID(context.Background(), sessionID)
 	var expectedDeviceJID string
-	if err == nil && sessionEntity.WaJID != "" {
-		expectedDeviceJID = sessionEntity.WaJID
+	if err == nil && !sessionEntity.WaJID.IsEmpty() {
+		expectedDeviceJID = sessionEntity.WaJID.Value()
 		m.logger.Infof("Creating client for session %s with expected device JID: %s", sessionID, expectedDeviceJID)
 	}
 
@@ -466,7 +466,7 @@ func (m *serviceImpl) ConnectOnStartup(ctx context.Context) error {
 	// Validate and start each session that has credentials
 	for _, sessionEntity := range sessions {
 		// Validate session integrity before attempting reconnection
-		if sessionEntity.WaJID == "" {
+		if sessionEntity.WaJID.IsEmpty() {
 			m.logger.Warnf("Session %s (%s) has no device_jid but was returned as active - fixing status",
 				sessionEntity.ID, sessionEntity.Name)
 
@@ -479,12 +479,15 @@ func (m *serviceImpl) ConnectOnStartup(ctx context.Context) error {
 		}
 
 		// Validate that device exists in whatsmeow_device table
-		if !m.deviceExistsInDatabase(sessionEntity.WaJID) {
+		if !m.deviceExistsInDatabase(sessionEntity.WaJID.Value()) {
 			m.logger.Warnf("Session %s (%s) has device_jid %s but device not found in whatsmeow_device table - marking as disconnected",
-				sessionEntity.ID, sessionEntity.Name, sessionEntity.WaJID)
+				sessionEntity.ID.Value(), sessionEntity.Name.Value(), sessionEntity.WaJID.Value())
 
 			sessionEntity.Status = session.StatusDisconnected
-			sessionEntity.WaJID = "" // Clear invalid device_jid
+			err := sessionEntity.SetWaJID("") // Clear invalid device_jid
+			if err != nil {
+				m.logger.Errorf("Failed to clear WaJID for session %s: %v", sessionEntity.ID.Value(), err)
+			}
 			if err := m.sessions.Update(ctx, sessionEntity); err != nil {
 				m.logger.Errorf("Failed to fix session %s: %v", sessionEntity.ID, err)
 			}
@@ -492,7 +495,7 @@ func (m *serviceImpl) ConnectOnStartup(ctx context.Context) error {
 		}
 
 		m.logger.Infof("Attempting to reconnect session %s (status: %s, wa_jid: %s)",
-			sessionEntity.ID.Value(), sessionEntity.Status, sessionEntity.WaJID)
+			sessionEntity.ID.Value(), sessionEntity.Status, sessionEntity.WaJID.Value())
 
 		if err := m.StartClient(sessionEntity.ID.Value()); err != nil {
 			m.logger.Errorf("Failed to start client for session %s: %v", sessionEntity.ID.Value(), err)

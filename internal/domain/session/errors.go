@@ -12,18 +12,18 @@ var (
 	ErrInvalidSessionStatus     = errors.New("invalid session status")
 	ErrInvalidProxyURL          = errors.New("invalid proxy URL")
 
-	ErrSessionAlreadyExists    = errors.New("session already exists")
-	ErrSessionNotFound         = errors.New("session not found")
-	ErrSessionAlreadyConnected = errors.New("session is already connected")
-	ErrSessionCannotConnect    = errors.New("session cannot be connected in current state")
-	ErrSessionNotConnected     = errors.New("session is not connected")
-	ErrSessionCannotDisconnect = errors.New("session cannot be disconnected in current state")
-	ErrSessionCannotDelete     = errors.New("session cannot be deleted in current state")
+	ErrSessionAlreadyExists         = errors.New("session already exists")
+	ErrSessionNotFound              = errors.New("session not found")
+	ErrSessionAlreadyConnected      = errors.New("session is already connected")
+	ErrSessionCannotConnect         = errors.New("session cannot be connected in current state")
+	ErrSessionNotConnected          = errors.New("session is not connected")
+	ErrSessionCannotDisconnect      = errors.New("session cannot be disconnected in current state")
+	ErrSessionCannotDelete          = errors.New("session cannot be deleted in current state")
+	ErrInvalidSession               = errors.New("invalid session")
+	ErrCannotDeleteConnectedSession = errors.New("cannot delete connected session")
 
-	ErrmeowServiceUnavailable = errors.New("meow service unavailable")
-	ErrQRCodeGenerationFailed = errors.New("QR code generation failed")
-	ErrPairingFailed          = errors.New("phone pairing failed")
-	ErrConnectionFailed       = errors.New("connection failed")
+	// Note: Technical errors moved to application/infrastructure layers
+	// Domain should only contain business rule violations
 
 	// Device Management Errors
 	ErrDeviceAlreadyInUse                    = errors.New("device is already in use by another session")

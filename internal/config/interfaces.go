@@ -87,8 +87,6 @@ type MeowConfigProvider interface {
 	GetReconnectDelay() time.Duration
 }
 
-
-
 // SecurityConfigProvider provides security configuration
 type SecurityConfigProvider interface {
 	GetRateLimitEnabled() bool

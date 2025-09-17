@@ -1,12 +1,14 @@
-package session
+package application
 
 import (
 	"context"
+
+	"meow/internal/domain/session"
 )
 
-// WAService defines the interface for WhatsApp operations
-// This interface abstracts the WhatsApp SDK implementation from the domain layer
-type WAService interface {
+// WhatsAppService defines the interface for WhatsApp operations
+// This belongs in Application layer as it defines use case capabilities
+type WhatsAppService interface {
 	// Session Management
 	StartClient(sessionID string) error
 	StopClient(sessionID string) error
@@ -14,7 +16,7 @@ type WAService interface {
 
 	// Connection Status
 	IsClientConnected(sessionID string) bool
-	GetClientStatus(sessionID string) Status
+	GetClientStatus(sessionID string) session.Status
 
 	// Authentication
 	GetQRCode(sessionID string) (string, error)

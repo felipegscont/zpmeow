@@ -16,14 +16,14 @@ import (
 // ChatHandler handles chat-related HTTP requests
 type ChatHandler struct {
 	sessionService *application.SessionApp
-	wmeowService    wmeow.Service
+	wmeowService   wmeow.Service
 }
 
 // NewChatHandler creates a new chat handler
 func NewChatHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ChatHandler {
 	return &ChatHandler{
 		sessionService: sessionService,
-		wmeowService:    wmeowService,
+		wmeowService:   wmeowService,
 	}
 }
 

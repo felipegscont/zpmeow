@@ -13,24 +13,35 @@ Esta camada contém apenas **conceitos de domínio puros**, seguindo rigorosamen
 
 ```
 internal/domain/
-└── session/                    # Contexto de Sessão meow
-    ├── entity.go              # Entidade Session + Status enum
+├── session/                    # Contexto de Sessão WhatsApp
+│   ├── entity.go              # Entidade Session + Status enum
+│   ├── repository.go          # Interface para persistência
+│   ├── service.go             # Interface de serviços de domínio
+│   ├── services.go            # Implementação de regras de negócio
+│   ├── valueobjects.go        # Value Objects (SessionName, ProxyURL, etc.)
+│   ├── identifier.go          # Serviço de identificação de sessões
+│   ├── interfaces.go          # Interfaces de domínio puras
+│   └── errors.go              # Erros específicos do domínio
+└── webhook/                    # Contexto de Webhook
+    ├── entity.go              # Entidade WebhookConfiguration
     ├── repository.go          # Interface para persistência
-    ├── service.go             # Interface de serviços de domínio
-    ├── domain_service.go      # Implementação de regras de negócio
-    ├── valueobjects.go        # Value Objects (SessionID, SessionName, etc.)
-    ├── validation.go          # Validações de domínio
+    ├── values.go              # Value Objects (WebhookURL, EventType, etc.)
     └── errors.go              # Erros específicos do domínio
 ```
 
-## 🎯 Session - Único Contexto de Domínio
+## 🎯 Contextos de Domínio
 
-### Por que apenas Session?
-
-- **Session** é a única entidade que possui **regras de negócio complexas**
+### Session - Contexto Principal
+- **Session** é a entidade central com **regras de negócio complexas**
 - Tem **ciclo de vida próprio** (criação, conexão, desconexão, exclusão)
 - Possui **invariantes de domínio** (transições de estado, validações)
-- É o **conceito central** do negócio meow API
+- É o **conceito central** do negócio WhatsApp API
+
+### Webhook - Contexto Separado
+- **WebhookConfiguration** como agregado independente
+- **Regras de negócio próprias** (validação de URL, eventos, ativação)
+- **Separação de responsabilidades** da Session
+- **Bounded Context** bem definido
 
 ### O que foi removido e por quê?
 
@@ -39,15 +50,10 @@ internal/domain/
 - **Sem regras de negócio**: Apenas transferência de dados
 - **Movido para**: `internal/shared/types` como DTO
 
-#### ❌ Media  
+#### ❌ Media
 - **Não é conceito de domínio**: É detalhe técnico de processamento
 - **Sem regras de negócio**: Apenas validações técnicas
 - **Movido para**: `internal/infra/media` como serviço de infraestrutura
-
-#### ❌ Webhooks
-- **Configuração de infraestrutura**: Não é regra de negócio
-- **Detalhe técnico**: Como notificar, não o que notificar
-- **Movido para**: `internal/infra/webhooks` como serviço de infraestrutura
 
 ## 🔧 Componentes do Session
 
@@ -56,7 +62,7 @@ internal/domain/
 - Enum `Status` com validações
 - Métodos de negócio (`CanConnect`, `IsAuthenticated`, etc.)
 
-### `domain_service.go`
+### `services.go`
 - Implementação de regras de negócio complexas
 - Validações que envolvem múltiplas entidades
 - Lógica que não pertence a uma entidade específica
@@ -67,13 +73,13 @@ internal/domain/
 
 ### `valueobjects.go`
 - Objetos de valor imutáveis
-- `SessionID`, `SessionName`, `ProxyURL`
+- `SessionName`, `ProxyURL` (SessionID movido para shared/types)
 - Validações intrínsecas aos value objects
 
-### `validation.go`
-- Funções puras de validação
-- Regras de formato, tamanho, caracteres permitidos
-- Validações de transição de estado
+### `identifier.go`
+- Serviço de identificação e resolução de sessões
+- Validação de formato UUID e nomes
+- Normalização de identificadores
 
 ### `errors.go`
 - Erros específicos do domínio

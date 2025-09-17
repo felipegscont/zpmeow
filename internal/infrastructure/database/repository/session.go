@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -34,10 +33,8 @@ func (r *PostgresRepo) Create(ctx context.Context, sessionEntity *session.Sessio
 		sessionEntity.ID = newID
 	}
 
-	eventsJSON, err := json.Marshal(sessionEntity.Events)
-	if err != nil {
-		return fmt.Errorf("failed to marshal events: %w", err)
-	}
+	// Events are now handled by separate webhook aggregate
+	eventsJSON := []byte("[]")
 
 	now := time.Now()
 	sessionEntity.CreatedAt = now
@@ -49,19 +46,19 @@ func (r *PostgresRepo) Create(ctx context.Context, sessionEntity *session.Sessio
 	`
 
 	// Ensure consistency: connected field should only be true if status is "connected" AND device_jid is not empty
-	isConnected := string(sessionEntity.Status) == "connected" && sessionEntity.WaJID != ""
+	isConnected := string(sessionEntity.Status) == "connected" && !sessionEntity.WaJID.IsEmpty()
 
-	_, err = r.db.ExecContext(ctx, query,
+	_, err := r.db.ExecContext(ctx, query,
 		sessionEntity.ID.Value(),
 		sessionEntity.Name.Value(),
-		sessionEntity.WaJID,
+		sessionEntity.WaJID.Value(),
 		string(sessionEntity.Status),
-		sessionEntity.QRCode,
+		sessionEntity.QRCode.Value(),
 		sessionEntity.ProxyURL.Value(),
-		sessionEntity.WebhookURL,
+		"", // webhook_url now handled by separate aggregate
 		string(eventsJSON),
 		isConnected, // connected field with validation
-		sessionEntity.ApiKey,
+		sessionEntity.ApiKey.Value(),
 		sessionEntity.CreatedAt,
 		sessionEntity.UpdatedAt,
 	)
@@ -137,10 +134,8 @@ func (r *PostgresRepo) GetAll(ctx context.Context) ([]*session.Session, error) {
 }
 
 func (r *PostgresRepo) Update(ctx context.Context, session *session.Session) error {
-	eventsJSON, err := json.Marshal(session.Events)
-	if err != nil {
-		return fmt.Errorf("failed to marshal events: %w", err)
-	}
+	// Events are now handled by separate webhook aggregate
+	eventsJSON := []byte("[]")
 
 	session.UpdatedAt = time.Now()
 
@@ -152,19 +147,19 @@ func (r *PostgresRepo) Update(ctx context.Context, session *session.Session) err
 	`
 
 	// Ensure consistency: connected field should only be true if status is "connected" AND device_jid is not empty
-	isConnected := string(session.Status) == "connected" && session.WaJID != ""
+	isConnected := string(session.Status) == "connected" && !session.WaJID.IsEmpty()
 
 	result, err := r.db.ExecContext(ctx, query,
 		session.ID.Value(),
 		session.Name.Value(),
-		session.WaJID,
+		session.WaJID.Value(),
 		string(session.Status),
-		session.QRCode,
+		session.QRCode.Value(),
 		session.ProxyURL.Value(),
-		session.WebhookURL,
+		"", // webhook_url now handled by separate aggregate
 		string(eventsJSON),
 		isConnected, // connected field with validation
-		session.ApiKey,
+		session.ApiKey.Value(),
 		session.UpdatedAt,
 	)
 
@@ -371,13 +366,7 @@ func (r *PostgresRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, 
 }
 
 func (r *PostgresRepo) modelToDomain(model *database.SessionModel) (*session.Session, error) {
-	var events []string
-	if model.Events != "" && model.Events != "null" {
-		err := json.Unmarshal([]byte(model.Events), &events)
-		if err != nil {
-			return nil, fmt.Errorf("failed to unmarshal events: %w", err)
-		}
-	}
+	// Events are now handled by separate webhook aggregate
 
 	status := session.Status(model.Status)
 
@@ -397,17 +386,31 @@ func (r *PostgresRepo) modelToDomain(model *database.SessionModel) (*session.Ses
 		return nil, fmt.Errorf("failed to create proxy URL: %w", err)
 	}
 
+	// Create value objects from database strings
+	waJID, err := session.NewWaJID(model.DeviceJID)
+	if err != nil {
+		return nil, fmt.Errorf("invalid WaJID from database: %w", err)
+	}
+
+	qrCode, err := session.NewQRCode(model.QRCode)
+	if err != nil {
+		return nil, fmt.Errorf("invalid QRCode from database: %w", err)
+	}
+
+	apiKey, err := session.NewApiKey(model.ApiKey)
+	if err != nil {
+		return nil, fmt.Errorf("invalid ApiKey from database: %w", err)
+	}
+
 	return &session.Session{
-		ID:         sessionID,
-		Name:       sessionName,
-		WaJID:      model.DeviceJID,
-		Status:     status,
-		QRCode:     model.QRCode,
-		ProxyURL:   proxyURL,
-		WebhookURL: model.WebhookURL,
-		Events:     events,
-		ApiKey:     model.ApiKey,
-		CreatedAt:  model.CreatedAt,
-		UpdatedAt:  model.UpdatedAt,
+		ID:        sessionID,
+		Name:      sessionName,
+		WaJID:     waJID,
+		Status:    status,
+		QRCode:    qrCode,
+		ProxyURL:  proxyURL,
+		ApiKey:    apiKey,
+		CreatedAt: model.CreatedAt,
+		UpdatedAt: model.UpdatedAt,
 	}, nil
 }

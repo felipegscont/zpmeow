@@ -42,12 +42,6 @@ func SetupRoutes(
 	router.GET("/ping", healthHandler.Ping)
 	router.GET("/health", healthHandler.Health)
 
-	// Global webhook routes (not session-specific, no auth required)
-	webhookGlobal := router.Group("/webhooks")
-	{
-		webhookGlobal.GET("/events", webhookHandler.GetSupportedEvents)
-	}
-
 	sessionGroup := router.Group("/sessions")
 	sessionGroup.Use(authMiddleware.AuthenticateGlobal())
 	{
@@ -198,10 +192,12 @@ func SetupRoutes(
 
 		// 9. Webhooks (integration/automation)
 		webhook := sessionAPIGroup.Group("/webhook")
-		webhook.POST("", webhookHandler.SetWebhook)
-		webhook.GET("", webhookHandler.GetWebhook)
-		webhook.PUT("", webhookHandler.UpdateWebhook)
-		webhook.DELETE("", webhookHandler.DeleteWebhook)
+		webhook.POST("", webhookHandler.SetWebhook) // SET webhook
+		webhook.GET("", webhookHandler.GetWebhook)  // GET webhook
+
+		// List available events
+		webhooks := sessionAPIGroup.Group("/webhooks")
+		webhooks.GET("/events", webhookHandler.ListEvents) // LIST events
 	}
 
 	// Configure Swagger to use dynamic host
