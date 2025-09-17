@@ -133,10 +133,19 @@ ROUTES.md
 # Media and upload directories
 uploads/
 downloads/
-media/
+/media/
 storage/
 static/uploads/
 public/uploads/
+# Exclude media files in root and common directories, but NOT source code
+**/uploads/media/
+**/public/media/
+**/static/media/
+**/assets/media/
+
+# IMPORTANT: Do NOT ignore source code directories
+!internal/infrastructure/media/
+!**/infrastructure/media/
 
 # Cache directories
 .cache/
