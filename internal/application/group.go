@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"zpmeow/internal/application/commands"
 	"zpmeow/internal/domain/session"
+	"zpmeow/internal/interfaces/dto"
 	"zpmeow/internal/shared/validation"
 )
 
@@ -81,17 +81,13 @@ func NewGroupService(
 	}
 }
 
-// CreateGroup creates a new group using command pattern
-func (s *GroupService) CreateGroup(ctx context.Context, cmd *commands.CreateGroupCommand) (interface{}, error) {
-	if err := cmd.Validate(); err != nil {
-		return nil, fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// CreateGroup creates a new group using DTO
+func (s *GroupService) CreateGroup(ctx context.Context, sessionID string, req *dto.CreateGroupRequest) (interface{}, error) {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.CreateGroup(ctx, cmd.SessionID, cmd.Name, cmd.Participants)
+	result, err := s.wameowService.CreateGroup(ctx, sessionID, req.Name, req.Participants)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create group: %w", err)
 	}
@@ -100,17 +96,13 @@ func (s *GroupService) CreateGroup(ctx context.Context, cmd *commands.CreateGrou
 	return result, nil
 }
 
-// GetGroupInfo gets group information using command pattern
-func (s *GroupService) GetGroupInfo(ctx context.Context, cmd *commands.GetGroupInfoCommand) (interface{}, error) {
-	if err := cmd.Validate(); err != nil {
-		return nil, fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// GetGroupInfo gets group information using DTO
+func (s *GroupService) GetGroupInfo(ctx context.Context, sessionID string, req *dto.GetGroupInfoRequest) (interface{}, error) {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	return s.wameowService.GetGroupInfo(ctx, cmd.SessionID, cmd.GroupJID)
+	return s.wameowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 }
 
 // ListGroups lists all groups
@@ -122,17 +114,13 @@ func (s *GroupService) ListGroups(ctx context.Context, sessionID string) (interf
 	return s.wameowService.ListGroups(ctx, sessionID)
 }
 
-// JoinGroup joins a group via invite link using command pattern
-func (s *GroupService) JoinGroup(ctx context.Context, cmd *commands.JoinGroupCommand) (interface{}, error) {
-	if err := cmd.Validate(); err != nil {
-		return nil, fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// JoinGroup joins a group via invite link using DTO
+func (s *GroupService) JoinGroup(ctx context.Context, sessionID string, req *dto.JoinGroupRequest) (interface{}, error) {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.JoinGroup(ctx, cmd.SessionID, cmd.InviteLink)
+	result, err := s.wameowService.JoinGroup(ctx, sessionID, req.InviteLink)
 	if err != nil {
 		return nil, fmt.Errorf("failed to join group: %w", err)
 	}
@@ -141,17 +129,13 @@ func (s *GroupService) JoinGroup(ctx context.Context, cmd *commands.JoinGroupCom
 	return result, nil
 }
 
-// JoinGroupWithInvite joins a group with invite details using command pattern
-func (s *GroupService) JoinGroupWithInvite(ctx context.Context, cmd *commands.JoinGroupWithInviteCommand) (interface{}, error) {
-	if err := cmd.Validate(); err != nil {
-		return nil, fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// JoinGroupWithInvite joins a group with invite details using DTO
+func (s *GroupService) JoinGroupWithInvite(ctx context.Context, sessionID string, req *dto.JoinGroupWithInviteRequest) (interface{}, error) {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	result, err := s.wameowService.JoinGroupWithInvite(ctx, cmd.SessionID, cmd.GroupJID, cmd.Inviter, cmd.Code, cmd.Expiration)
+	result, err := s.wameowService.JoinGroupWithInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to join group with invite: %w", err)
 	}
@@ -160,17 +144,13 @@ func (s *GroupService) JoinGroupWithInvite(ctx context.Context, cmd *commands.Jo
 	return result, nil
 }
 
-// LeaveGroup leaves a group using command pattern
-func (s *GroupService) LeaveGroup(ctx context.Context, cmd *commands.LeaveGroupCommand) error {
-	if err := cmd.Validate(); err != nil {
-		return fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// LeaveGroup leaves a group using DTO
+func (s *GroupService) LeaveGroup(ctx context.Context, sessionID string, req *dto.LeaveGroupRequest) error {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
-	err := s.wameowService.LeaveGroup(ctx, cmd.SessionID, cmd.GroupJID)
+	err := s.wameowService.LeaveGroup(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		return fmt.Errorf("failed to leave group: %w", err)
 	}
@@ -179,43 +159,31 @@ func (s *GroupService) LeaveGroup(ctx context.Context, cmd *commands.LeaveGroupC
 	return nil
 }
 
-// GetInviteLink gets group invite link using command pattern
-func (s *GroupService) GetInviteLink(ctx context.Context, cmd *commands.GetInviteLinkCommand) (string, error) {
-	if err := cmd.Validate(); err != nil {
-		return "", fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// GetInviteLink gets group invite link using DTO
+func (s *GroupService) GetInviteLink(ctx context.Context, sessionID string, req *dto.GetInviteLinkRequest) (string, error) {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return "", err
 	}
 
-	return s.wameowService.GetInviteLink(ctx, cmd.SessionID, cmd.GroupJID, cmd.Reset)
+	return s.wameowService.GetInviteLink(ctx, sessionID, req.GroupJID, req.Reset)
 }
 
-// UpdateParticipants updates group participants using command pattern
-func (s *GroupService) UpdateParticipants(ctx context.Context, cmd *commands.UpdateParticipantsCommand) error {
-	if err := cmd.Validate(); err != nil {
-		return fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// UpdateParticipants updates group participants using DTO
+func (s *GroupService) UpdateParticipants(ctx context.Context, sessionID string, req *dto.UpdateParticipantsRequest) error {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
-	return s.wameowService.UpdateParticipants(ctx, cmd.SessionID, cmd.GroupJID, cmd.Action, cmd.Participants)
+	return s.wameowService.UpdateParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 }
 
-// SetGroupName sets group name using command pattern
-func (s *GroupService) SetGroupName(ctx context.Context, cmd *commands.SetGroupNameCommand) error {
-	if err := cmd.Validate(); err != nil {
-		return fmt.Errorf("command validation failed: %w", err)
-	}
-
-	if err := s.validateSession(ctx, cmd.SessionID); err != nil {
+// SetGroupName sets group name using DTO
+func (s *GroupService) SetGroupName(ctx context.Context, sessionID string, req *dto.SetGroupNameRequest) error {
+	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
-	return s.wameowService.SetGroupName(ctx, cmd.SessionID, cmd.GroupJID, cmd.Name)
+	return s.wameowService.SetGroupName(ctx, sessionID, req.GroupJID, req.Name)
 }
 
 // Helper methods
