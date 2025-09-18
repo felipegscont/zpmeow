@@ -5,17 +5,13 @@ import (
 	"meow/internal/interfaces/dto"
 )
 
-// Converter handles conversions between domain entities and DTOs
 type Converter struct{}
 
-// NewConverter creates a new conversion service
 func NewConverter() *Converter {
 	return &Converter{}
 }
 
-// Session Conversions
 
-// SessionToInfo converts a session entity to session info DTO
 func (c *Converter) SessionToInfo(session *session.Session) dto.SessionInfo {
 	return dto.SessionInfo{
 		ID:        session.ID.Value(),
@@ -24,11 +20,9 @@ func (c *Converter) SessionToInfo(session *session.Session) dto.SessionInfo {
 		WaJID:     session.WaJID.Value(),
 		ProxyURL:  session.ProxyURL.Value(),
 		CreatedAt: session.CreatedAt,
-		// Note: WebhookURL and Events removed - now handled by separate webhook aggregate
 	}
 }
 
-// SessionsToInfoList converts a list of session entities to session info DTOs
 func (c *Converter) SessionsToInfoList(sessions []*session.Session) []dto.SessionInfo {
 	result := make([]dto.SessionInfo, len(sessions))
 	for i, s := range sessions {

@@ -10,13 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ContactHandler handles contact-related HTTP requests
 type ContactHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewContactHandler creates a new contact handler
 func NewContactHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ContactHandler {
 	return &ContactHandler{
 		sessionService: sessionService,
@@ -24,8 +22,6 @@ func NewContactHandler(sessionService *application.SessionApp, wmeowService wmeo
 	}
 }
 
-// CheckContact handles checking if contacts are on meow
-//
 //	@Summary		Check contacts on meow
 //	@Description	Check if phone numbers are registered on meow
 //	@Tags			Contacts
@@ -52,7 +48,6 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if len(req.Phones) == 0 {
 		c.JSON(http.StatusBadRequest, dto.NewContactErrorResponse(
 			http.StatusBadRequest,
@@ -63,7 +58,6 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 		return
 	}
 
-	// Check contacts via meow service
 	ctx := c.Request.Context()
 	results, err := h.wmeowService.CheckUser(ctx, sessionID, req.Phones)
 	if err != nil {
@@ -76,7 +70,6 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 		return
 	}
 
-	// Convert meow results to DTO format
 	var checkResults []dto.ContactCheckResult
 	for _, result := range results {
 		checkResults = append(checkResults, dto.ContactCheckResult{
@@ -91,8 +84,6 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetContactInfo handles getting contact information
-//
 //	@Summary		Get contact information
 //	@Description	Get detailed information about contacts
 //	@Tags			Contacts
@@ -119,7 +110,6 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if len(req.Phones) == 0 {
 		c.JSON(http.StatusBadRequest, dto.NewContactErrorResponse(
 			http.StatusBadRequest,
@@ -130,7 +120,6 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 		return
 	}
 
-	// Get contact info via meow service
 	ctx := c.Request.Context()
 	results, err := h.wmeowService.GetUserInfo(ctx, sessionID, req.Phones)
 	if err != nil {
@@ -143,7 +132,6 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert meow results to DTO format
 	var contactInfos []dto.ContactInfo
 	for _, result := range results {
 		contactInfos = append(contactInfos, dto.ContactInfo{
@@ -161,8 +149,6 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetAvatar handles getting contact avatar/profile picture
-//
 //	@Summary		Get contact avatar
 //	@Description	Get contact's profile picture/avatar
 //	@Tags			Contacts
@@ -189,7 +175,6 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.Phone == "" {
 		c.JSON(http.StatusBadRequest, dto.NewContactErrorResponse(
 			http.StatusBadRequest,
@@ -200,7 +185,6 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 		return
 	}
 
-	// Get avatar via meow service
 	ctx := c.Request.Context()
 	result, err := h.wmeowService.GetAvatar(ctx, sessionID, req.Phone)
 	if err != nil {
@@ -213,7 +197,6 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 		return
 	}
 
-	// Convert meow result to DTO format
 	avatarInfo := &dto.AvatarInfo{
 		Phone:     result.Phone,
 		JID:       result.JID,
@@ -225,8 +208,6 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetPresence handles setting global contact presence
-//
 //	@Summary		Set contact presence
 //	@Description	Set global contact presence (available/unavailable)
 //	@Tags			Contacts
@@ -253,7 +234,6 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.State == "" {
 		c.JSON(http.StatusBadRequest, dto.NewContactErrorResponse(
 			http.StatusBadRequest,
@@ -264,7 +244,6 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 		return
 	}
 
-	// Set contact presence via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.SetUserPresence(ctx, sessionID, req.State)
 	if err != nil {
@@ -281,8 +260,6 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetContacts handles getting contact list
-//
 //	@Summary		Get contacts
 //	@Description	Get all contacts from contact's meow
 //	@Tags			Contacts
@@ -296,7 +273,6 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 func (h *ContactHandler) GetContacts(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
-	// Get contacts via meow service
 	ctx := c.Request.Context()
 	results, err := h.wmeowService.GetContacts(ctx, sessionID)
 	if err != nil {
@@ -309,7 +285,6 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 		return
 	}
 
-	// Convert meow results to DTO format
 	var contacts []dto.ContactInfo
 	for _, result := range results {
 		contacts = append(contacts, dto.ContactInfo{
@@ -327,7 +302,6 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetBlockedContacts handles getting blocked contacts
 func (h *ContactHandler) GetBlockedContacts(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -335,7 +309,6 @@ func (h *ContactHandler) GetBlockedContacts(c *gin.Context) {
 	})
 }
 
-// UpdateProfile handles updating contact profile
 func (h *ContactHandler) UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -343,7 +316,6 @@ func (h *ContactHandler) UpdateProfile(c *gin.Context) {
 	})
 }
 
-// SetProfilePicture handles setting profile picture
 func (h *ContactHandler) SetProfilePicture(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -351,7 +323,6 @@ func (h *ContactHandler) SetProfilePicture(c *gin.Context) {
 	})
 }
 
-// RemoveProfilePicture handles removing profile picture
 func (h *ContactHandler) RemoveProfilePicture(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -359,7 +330,6 @@ func (h *ContactHandler) RemoveProfilePicture(c *gin.Context) {
 	})
 }
 
-// Router compatibility methods
 func (h *ContactHandler) CheckUser(c *gin.Context)     { h.CheckContact(c) }
 func (h *ContactHandler) GetUserInfo(c *gin.Context)   { h.GetContactInfo(c) }
 func (h *ContactHandler) CheckUsers(c *gin.Context)    { h.CheckContact(c) }

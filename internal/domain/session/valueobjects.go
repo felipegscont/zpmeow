@@ -10,14 +10,11 @@ import (
 )
 
 var (
-	// Compiled regex patterns for performance
 	sessionNameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 )
 
-// SessionID is imported from shared types
 type SessionID = types.SessionID
 
-// NewSessionID creates a new SessionID (re-exported for convenience)
 var NewSessionID = types.NewSessionID
 
 type SessionName struct {
@@ -149,12 +146,10 @@ func (sc SessionConfig) Validate() error {
 	return nil
 }
 
-// WaJID represents a WhatsApp JID (Jabber ID) value object
 type WaJID struct {
 	value string
 }
 
-// NewWaJID creates a new WaJID
 func NewWaJID(value string) (WaJID, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -162,7 +157,6 @@ func NewWaJID(value string) (WaJID, error) {
 		return WaJID{}, nil // Empty JID is allowed for new sessions
 	}
 
-	// Basic JID format validation (user@server or user@server/resource)
 	if !strings.Contains(trimmed, "@") {
 		return WaJID{}, fmt.Errorf("invalid JID format: must contain @")
 	}
@@ -175,22 +169,18 @@ func NewWaJID(value string) (WaJID, error) {
 	return WaJID{value: trimmed}, nil
 }
 
-// Value returns the JID value
 func (w WaJID) Value() string {
 	return w.value
 }
 
-// String returns the string representation
 func (w WaJID) String() string {
 	return w.value
 }
 
-// IsEmpty checks if the JID is empty
 func (w WaJID) IsEmpty() bool {
 	return w.value == ""
 }
 
-// User returns the user part of the JID
 func (w WaJID) User() string {
 	if w.value == "" {
 		return ""
@@ -202,14 +192,12 @@ func (w WaJID) User() string {
 	return ""
 }
 
-// Server returns the server part of the JID
 func (w WaJID) Server() string {
 	if w.value == "" {
 		return ""
 	}
 	parts := strings.Split(w.value, "@")
 	if len(parts) > 1 {
-		// Remove resource if present
 		server := parts[1]
 		if idx := strings.Index(server, "/"); idx != -1 {
 			server = server[:idx]
@@ -219,12 +207,10 @@ func (w WaJID) Server() string {
 	return ""
 }
 
-// QRCode represents a QR code value object
 type QRCode struct {
 	value string
 }
 
-// NewQRCode creates a new QRCode
 func NewQRCode(value string) (QRCode, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -232,7 +218,6 @@ func NewQRCode(value string) (QRCode, error) {
 		return QRCode{}, nil // Empty QR code is allowed
 	}
 
-	// Basic QR code validation (should be base64 or data URL)
 	if len(trimmed) < 10 {
 		return QRCode{}, fmt.Errorf("QR code too short")
 	}
@@ -240,32 +225,26 @@ func NewQRCode(value string) (QRCode, error) {
 	return QRCode{value: trimmed}, nil
 }
 
-// Value returns the QR code value
 func (q QRCode) Value() string {
 	return q.value
 }
 
-// String returns the string representation
 func (q QRCode) String() string {
 	return q.value
 }
 
-// IsEmpty checks if the QR code is empty
 func (q QRCode) IsEmpty() bool {
 	return q.value == ""
 }
 
-// IsDataURL checks if QR code is a data URL
 func (q QRCode) IsDataURL() bool {
 	return strings.HasPrefix(q.value, "data:")
 }
 
-// ApiKey represents an API key value object
 type ApiKey struct {
 	value string
 }
 
-// NewApiKey creates a new ApiKey
 func NewApiKey(value string) (ApiKey, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -273,7 +252,6 @@ func NewApiKey(value string) (ApiKey, error) {
 		return ApiKey{}, fmt.Errorf("API key cannot be empty")
 	}
 
-	// Basic API key validation (should be UUID format or similar)
 	if len(trimmed) < 10 {
 		return ApiKey{}, fmt.Errorf("API key too short")
 	}
@@ -285,12 +263,10 @@ func NewApiKey(value string) (ApiKey, error) {
 	return ApiKey{value: trimmed}, nil
 }
 
-// Value returns the API key value
 func (a ApiKey) Value() string {
 	return a.value
 }
 
-// String returns the string representation (masked for security)
 func (a ApiKey) String() string {
 	if len(a.value) <= 8 {
 		return "****"
@@ -298,12 +274,10 @@ func (a ApiKey) String() string {
 	return a.value[:4] + "****" + a.value[len(a.value)-4:]
 }
 
-// IsEmpty checks if the API key is empty
 func (a ApiKey) IsEmpty() bool {
 	return a.value == ""
 }
 
-// Equals checks if two API keys are equal
 func (a ApiKey) Equals(other ApiKey) bool {
 	return a.value == other.value
 }

@@ -10,12 +10,8 @@ import (
 	waTypes "go.mau.fi/whatsmeow/types"
 )
 
-// Pure functions for message sending - no structs needed
-// Following DRY principle with shared helper functions
 
-// Common message sending helpers to reduce duplication
 
-// sendMessageToJID - Helper function to send any message to a JID
 func sendMessageToJID(client *whatsmeow.Client, to string, message *waProto.Message) (*whatsmeow.SendResponse, error) {
 	jid, err := parsePhoneToJID(to)
 	if err != nil {
@@ -26,12 +22,10 @@ func sendMessageToJID(client *whatsmeow.Client, to string, message *waProto.Mess
 	return &resp, err
 }
 
-// createMediaMessage - Helper function to create media message with uploaded content
 func createMediaMessage(client *whatsmeow.Client, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
 	return uploadMedia(client, data, mediaType)
 }
 
-// validateMessageInput - Helper function to validate common message inputs
 func validateMessageInput(client *whatsmeow.Client, to string) error {
 	if client == nil {
 		return fmt.Errorf("client cannot be nil")
@@ -42,7 +36,6 @@ func validateMessageInput(client *whatsmeow.Client, to string) error {
 	return nil
 }
 
-// SendTextMessage sends a text message using pure function approach
 func SendTextMessage(client *whatsmeow.Client, to, text string) (*whatsmeow.SendResponse, error) {
 	if err := validateMessageInput(client, to); err != nil {
 		return nil, err
@@ -59,7 +52,6 @@ func SendTextMessage(client *whatsmeow.Client, to, text string) (*whatsmeow.Send
 	return sendMessageToJID(client, to, message)
 }
 
-// SendImageMessage sends an image message using pure function approach
 func SendImageMessage(client *whatsmeow.Client, to string, data []byte, caption string) (*whatsmeow.SendResponse, error) {
 	if err := validateMessageInput(client, to); err != nil {
 		return nil, err
@@ -91,7 +83,6 @@ func SendImageMessage(client *whatsmeow.Client, to string, data []byte, caption 
 	return sendMessageToJID(client, to, message)
 }
 
-// SendAudioMessage sends an audio message using pure function approach
 func SendAudioMessage(client *whatsmeow.Client, to string, data []byte, mimeType string) (*whatsmeow.SendResponse, error) {
 	if err := validateMessageInput(client, to); err != nil {
 		return nil, err
@@ -121,7 +112,6 @@ func SendAudioMessage(client *whatsmeow.Client, to string, data []byte, mimeType
 	return sendMessageToJID(client, to, message)
 }
 
-// SendVideoMessage sends a video message using pure function approach
 func SendVideoMessage(client *whatsmeow.Client, to string, data []byte, caption, mimeType string) (*whatsmeow.SendResponse, error) {
 	if err := validateMessageInput(client, to); err != nil {
 		return nil, err
@@ -152,7 +142,6 @@ func SendVideoMessage(client *whatsmeow.Client, to string, data []byte, caption,
 	return sendMessageToJID(client, to, message)
 }
 
-// SendDocumentMessage sends a document message using pure function approach
 func SendDocumentMessage(client *whatsmeow.Client, to string, data []byte, filename, caption, mimeType string) (*whatsmeow.SendResponse, error) {
 	jid, err := parsePhoneToJID(to)
 	if err != nil {
@@ -182,7 +171,6 @@ func SendDocumentMessage(client *whatsmeow.Client, to string, data []byte, filen
 	return &resp, err
 }
 
-// SendStickerMessage sends a sticker message using pure function approach
 func SendStickerMessage(client *whatsmeow.Client, to string, data []byte, mimeType string) (*whatsmeow.SendResponse, error) {
 	jid, err := parsePhoneToJID(to)
 	if err != nil {
@@ -210,7 +198,6 @@ func SendStickerMessage(client *whatsmeow.Client, to string, data []byte, mimeTy
 	return &resp, err
 }
 
-// SendContactMessage sends a contact message using pure function approach
 func SendContactMessage(client *whatsmeow.Client, to, contactName, contactPhone string) (*whatsmeow.SendResponse, error) {
 	jid, err := parsePhoneToJID(to)
 	if err != nil {
@@ -230,7 +217,6 @@ func SendContactMessage(client *whatsmeow.Client, to, contactName, contactPhone 
 	return &resp, err
 }
 
-// SendLocationMessage sends a location message using pure function approach
 func SendLocationMessage(client *whatsmeow.Client, to string, latitude, longitude float64, name, address string) (*whatsmeow.SendResponse, error) {
 	jid, err := parsePhoneToJID(to)
 	if err != nil {
@@ -250,24 +236,18 @@ func SendLocationMessage(client *whatsmeow.Client, to string, latitude, longitud
 	return &resp, err
 }
 
-// Additional message functions can be implemented here as pure functions
-// Following the same pattern as above
 
-// All remaining MessageSender methods removed - implement as pure functions when needed
 
-// Helper functions shared across message types (DRY principle)
 func parsePhoneToJID(phone string) (waTypes.JID, error) {
 	phone = strings.TrimSpace(phone)
 	if phone == "" {
 		return waTypes.EmptyJID, fmt.Errorf("phone number cannot be empty")
 	}
 
-	// Remove leading + if present
 	if phone[0] == '+' {
 		phone = phone[1:]
 	}
 
-	// Extract only digits
 	var digits strings.Builder
 	for _, r := range phone {
 		if r >= '0' && r <= '9' {
@@ -276,7 +256,6 @@ func parsePhoneToJID(phone string) (waTypes.JID, error) {
 	}
 	formattedPhone := digits.String()
 
-	// Validate phone number
 	if formattedPhone == "" {
 		return waTypes.EmptyJID, fmt.Errorf("phone number cannot be empty")
 	}

@@ -1,6 +1,5 @@
 package session
 
-// No imports needed - all validations moved to Value Objects
 
 var (
 	sessionNameMinLength = 3
@@ -22,7 +21,6 @@ type Service interface {
 
 	CanSubscribeToEvents(session *Session) bool
 
-	// Device Management
 	ValidateDeviceConnection(session *Session, deviceJID string) error
 }
 
@@ -53,7 +51,6 @@ func (s *DomainService) ValidateSessionConfiguration(session *Session) error {
 		return err
 	}
 
-	// Proxy validation is now handled by ProxyURL value object during creation
 
 	if session.IsConnected() && !session.IsAuthenticated() {
 		return ErrSessionNotConnected
@@ -75,12 +72,10 @@ func (s *DomainService) CanSubscribeToEvents(session *Session) bool {
 }
 
 func (s *DomainService) ValidateDeviceConnection(session *Session, deviceJID string) error {
-	// A session can only be connected if it has a device JID
 	if session.IsConnected() && deviceJID == "" {
 		return ErrSessionCannotBeConnectedWithoutDevice
 	}
 
-	// A session without device JID cannot be connected
 	if deviceJID == "" && session.IsConnected() {
 		return ErrSessionCannotBeConnectedWithoutDevice
 	}
@@ -88,11 +83,8 @@ func (s *DomainService) ValidateDeviceConnection(session *Session, deviceJID str
 	return nil
 }
 
-// Note: ValidateSessionName removed - validation now handled by NewSessionName() Value Object
 
-// Note: ValidateSessionID removed - validation now handled by NewSessionID() Value Object
 
-// Note: ValidateProxyURL removed - validation now handled by NewProxyURL() Value Object
 
 func ValidateSessionStatus(currentStatus, newStatus Status) error {
 	validTransitions := map[Status][]Status{

@@ -13,13 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// ChatHandler handles chat-related HTTP requests
 type ChatHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewChatHandler creates a new chat handler
 func NewChatHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ChatHandler {
 	return &ChatHandler{
 		sessionService: sessionService,
@@ -27,8 +25,6 @@ func NewChatHandler(sessionService *application.SessionApp, wmeowService wmeow.S
 	}
 }
 
-// SetPresence handles setting user presence in a chat
-//
 //	@Summary		Set presence in chat
 //	@Description	Set user presence state in a specific chat (composing, available, etc.)
 //	@Tags			Chat
@@ -55,7 +51,6 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.State == "" {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
 			http.StatusBadRequest,
@@ -66,7 +61,6 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 		return
 	}
 
-	// Set presence via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.SetPresence(ctx, sessionID, req.Phone, req.State, req.Media)
 	if err != nil {
@@ -83,8 +77,6 @@ func (h *ChatHandler) SetPresence(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// DownloadImage handles downloading image media
-//
 //	@Summary		Download image
 //	@Description	Download image media from a message
 //	@Tags			Chat
@@ -101,8 +93,6 @@ func (h *ChatHandler) DownloadImage(c *gin.Context) {
 	h.downloadMedia(c, "image")
 }
 
-// DownloadVideo handles downloading video media
-//
 //	@Summary		Download video
 //	@Description	Download video media from a message
 //	@Tags			Chat
@@ -119,8 +109,6 @@ func (h *ChatHandler) DownloadVideo(c *gin.Context) {
 	h.downloadMedia(c, "video")
 }
 
-// DownloadAudio handles downloading audio media
-//
 //	@Summary		Download audio
 //	@Description	Download audio media from a message
 //	@Tags			Chat
@@ -137,8 +125,6 @@ func (h *ChatHandler) DownloadAudio(c *gin.Context) {
 	h.downloadMedia(c, "audio")
 }
 
-// DownloadDocument handles downloading document media
-//
 //	@Summary		Download document
 //	@Description	Download document media from a message
 //	@Tags			Chat
@@ -155,7 +141,6 @@ func (h *ChatHandler) DownloadDocument(c *gin.Context) {
 	h.downloadMedia(c, "document")
 }
 
-// downloadMedia is a helper method for downloading media files
 func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 	sessionID := c.Param("sessionId")
 
@@ -170,7 +155,6 @@ func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 		return
 	}
 
-	// Validate required fields
 	if req.MessageID == "" {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
 			http.StatusBadRequest,
@@ -181,7 +165,6 @@ func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 		return
 	}
 
-	// Download media via meow service
 	ctx := c.Request.Context()
 	data, mimeType, err := h.wmeowService.DownloadMedia(ctx, sessionID, req.MessageID)
 	if err != nil {
@@ -194,7 +177,6 @@ func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 		return
 	}
 
-	// Create download response
 	response := &dto.MediaDownloadResponse{
 		Success:   true,
 		Code:      http.StatusOK,
@@ -208,8 +190,6 @@ func (h *ChatHandler) downloadMedia(c *gin.Context, mediaType string) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetChatHistory handles getting chat history
-//
 //	@Summary		Get chat history
 //	@Description	Get chat history for a specific contact
 //	@Tags			Chat
@@ -227,7 +207,6 @@ func (h *ChatHandler) GetChatHistory(c *gin.Context) {
 	phone := c.Query("phone")
 	limitStr := c.DefaultQuery("limit", "50")
 
-	// Validate phone parameter
 	if phone == "" {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
 			http.StatusBadRequest,
@@ -238,7 +217,6 @@ func (h *ChatHandler) GetChatHistory(c *gin.Context) {
 		return
 	}
 
-	// Parse limit
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
@@ -250,8 +228,6 @@ func (h *ChatHandler) GetChatHistory(c *gin.Context) {
 		return
 	}
 
-	// For now, return a simple response indicating the feature is available
-	// but would need proper implementation with message storage/retrieval
 	response := &dto.ChatHistoryResponse{
 		Success: true,
 		Code:    http.StatusOK,
@@ -266,12 +242,7 @@ func (h *ChatHandler) GetChatHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ============================================================================
-// NEW CHAT FUNCTIONALITY HANDLERS
-// ============================================================================
 
-// SetDisappearingTimer handles setting disappearing timer for a chat
-//
 //	@Summary		Set disappearing timer
 //	@Description	Set disappearing timer for messages in a chat
 //	@Tags			Chat
@@ -298,7 +269,6 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.JID == "" {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
 			http.StatusBadRequest,
@@ -319,7 +289,6 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	// Convert timer string to duration
 	var timer time.Duration
 	switch strings.ToLower(req.Timer) {
 	case "off", "0":
@@ -340,7 +309,6 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 		return
 	}
 
-	// Set disappearing timer via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.SetDisappearingTimer(ctx, sessionID, req.JID, timer)
 	if err != nil {
@@ -357,8 +325,6 @@ func (h *ChatHandler) SetDisappearingTimer(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ListChats handles listing all chats
-//
 //	@Summary		List chats
 //	@Description	List all chats (groups and/or contacts) for a session
 //	@Tags			Chat
@@ -376,11 +342,9 @@ func (h *ChatHandler) ListChats(c *gin.Context) {
 
 	var req dto.ListChatsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// If no body provided, default to "all"
 		req.Type = "all"
 	}
 
-	// Validate chat type
 	if req.Type == "" {
 		req.Type = "all"
 	}
@@ -401,7 +365,6 @@ func (h *ChatHandler) ListChats(c *gin.Context) {
 		return
 	}
 
-	// List chats via meow service
 	ctx := c.Request.Context()
 	chats, err := h.wmeowService.ListChats(ctx, sessionID, req.Type)
 	if err != nil {
@@ -414,7 +377,6 @@ func (h *ChatHandler) ListChats(c *gin.Context) {
 		return
 	}
 
-	// Convert to DTO format
 	dtoChats := make([]dto.ChatInfo, len(chats))
 	for i, chat := range chats {
 		dtoChats[i] = dto.ChatInfo{
@@ -434,8 +396,6 @@ func (h *ChatHandler) ListChats(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetChatInfo handles getting information about a specific chat
-//
 //	@Summary		Get chat info
 //	@Description	Get detailed information about a specific chat (group or contact)
 //	@Tags			Chat
@@ -462,7 +422,6 @@ func (h *ChatHandler) GetChatInfo(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.JID == "" {
 		c.JSON(http.StatusBadRequest, dto.NewGetChatInfoErrorResponse(
 			http.StatusBadRequest,
@@ -473,7 +432,6 @@ func (h *ChatHandler) GetChatInfo(c *gin.Context) {
 		return
 	}
 
-	// Get chat info via meow service
 	ctx := c.Request.Context()
 	chatInfo, err := h.wmeowService.GetChatInfo(ctx, sessionID, req.JID)
 	if err != nil {
@@ -486,7 +444,6 @@ func (h *ChatHandler) GetChatInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert to DTO format
 	dtoChatInfo := dto.ChatInfo{
 		JID:         chatInfo.JID,
 		Name:        chatInfo.Name,
@@ -503,8 +460,6 @@ func (h *ChatHandler) GetChatInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// PinChat handles pinning/unpinning a chat
-//
 //	@Summary		Pin/unpin chat
 //	@Description	Pin or unpin a chat to keep it at the top of the chat list
 //	@Tags			Chat
@@ -531,7 +486,6 @@ func (h *ChatHandler) PinChat(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.JID == "" {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
 			http.StatusBadRequest,
@@ -542,7 +496,6 @@ func (h *ChatHandler) PinChat(c *gin.Context) {
 		return
 	}
 
-	// Pin/unpin chat via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.PinChat(ctx, sessionID, req.JID, req.Pinned)
 	if err != nil {
@@ -564,8 +517,6 @@ func (h *ChatHandler) PinChat(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// MuteChat handles muting/unmuting a chat
-//
 //	@Summary		Mute/unmute chat
 //	@Description	Mute or unmute a chat for a specified duration
 //	@Tags			Chat
@@ -592,7 +543,6 @@ func (h *ChatHandler) MuteChat(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.JID == "" {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
 			http.StatusBadRequest,
@@ -603,7 +553,6 @@ func (h *ChatHandler) MuteChat(c *gin.Context) {
 		return
 	}
 
-	// Convert duration string to time.Duration
 	var duration time.Duration
 	if req.Muted && req.Duration != "" {
 		switch strings.ToLower(req.Duration) {
@@ -626,7 +575,6 @@ func (h *ChatHandler) MuteChat(c *gin.Context) {
 		}
 	}
 
-	// Mute/unmute chat via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.MuteChat(ctx, sessionID, req.JID, req.Muted, duration)
 	if err != nil {
@@ -648,8 +596,6 @@ func (h *ChatHandler) MuteChat(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ArchiveChat handles archiving/unarchiving a chat
-//
 //	@Summary		Archive/unarchive chat
 //	@Description	Archive or unarchive a chat (archiving automatically unpins the chat)
 //	@Tags			Chat
@@ -676,7 +622,6 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.JID == "" {
 		c.JSON(http.StatusBadRequest, dto.NewChatErrorResponse(
 			http.StatusBadRequest,
@@ -687,7 +632,6 @@ func (h *ChatHandler) ArchiveChat(c *gin.Context) {
 		return
 	}
 
-	// Archive/unarchive chat via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.ArchiveChat(ctx, sessionID, req.JID, req.Archived)
 	if err != nil {

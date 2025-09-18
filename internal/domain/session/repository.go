@@ -18,6 +18,5 @@ type Repository interface {
 	GetActive(ctx context.Context) ([]*Session, error)
 	GetInactive(ctx context.Context) ([]*Session, error)
 
-	// Device Management
 	ValidateDeviceUniqueness(ctx context.Context, sessionID, deviceJID string) error
 }

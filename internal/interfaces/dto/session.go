@@ -4,11 +4,7 @@ import (
 	"time"
 )
 
-// ============================================================================
-// SESSION REQUEST DTOs
-// ============================================================================
 
-// CreateSessionRequest represents the request to create a new session
 type CreateSessionRequest struct {
 	Name       string `json:"name" binding:"required" example:"default"`
 	ProxyURL   string `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
@@ -16,16 +12,11 @@ type CreateSessionRequest struct {
 	Events     string `json:"events,omitempty" example:"message,status"`
 }
 
-// PairPhoneRequest represents the request to pair a phone number
 type PairPhoneRequest struct {
 	PhoneNumber string `json:"phone_number" binding:"required" example:"5511999999999"`
 }
 
-// ============================================================================
-// SESSION DATA STRUCTURES
-// ============================================================================
 
-// SessionInfo represents session information
 type SessionInfo struct {
 	ID         string    `json:"id" example:"default"`
 	Name       string    `json:"name" example:"default"`
@@ -39,7 +30,6 @@ type SessionInfo struct {
 	UpdatedAt  time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
-// SessionConnectionInfo represents session connection information
 type SessionConnectionInfo struct {
 	QRCode      string    `json:"qr_code,omitempty" example:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."`
 	Connected   bool      `json:"connected" example:"true"`
@@ -48,11 +38,7 @@ type SessionConnectionInfo struct {
 	PairCode    string    `json:"pair_code,omitempty" example:"ABCD-1234"`
 }
 
-// ============================================================================
-// SESSION RESPONSE DTOs
-// ============================================================================
 
-// SessionResponse represents the standardized response format for session operations
 type SessionResponse struct {
 	Success bool                  `json:"success"`
 	Code    int                   `json:"code"`
@@ -60,7 +46,6 @@ type SessionResponse struct {
 	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
-// SessionData contains the response data for session operations
 type SessionData struct {
 	SessionID  string                 `json:"session_id,omitempty" example:"default"`
 	Action     string                 `json:"action" example:"create"`
@@ -73,18 +58,13 @@ type SessionData struct {
 	PairCode   string                 `json:"pair_code,omitempty" example:"ABCD-1234"`
 }
 
-// SessionErrorResponse represents error information for session operations
 type SessionErrorResponse struct {
 	Code    string `json:"code" example:"INVALID_SESSION_ID"`
 	Message string `json:"message" example:"Invalid session ID format"`
 	Details string `json:"details,omitempty" example:"Session ID must be alphanumeric"`
 }
 
-// ============================================================================
-// SPECIFIC RESPONSE DTOs FOR SWAGGER DOCUMENTATION
-// ============================================================================
 
-// CreateSessionResponse represents the response for session creation
 type CreateSessionResponse struct {
 	Success bool                  `json:"success" example:"true"`
 	Code    int                   `json:"code" example:"201"`
@@ -92,7 +72,6 @@ type CreateSessionResponse struct {
 	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
-// CreateSessionResponseData contains the data for session creation response
 type SessionCreateData struct {
 	SessionID string       `json:"session_id" example:"550e8400-e29b-41d4-a716-446655440000"`
 	Action    string       `json:"action" example:"create"`
@@ -101,7 +80,6 @@ type SessionCreateData struct {
 	Session   *SessionInfo `json:"session"`
 }
 
-// SessionInfoResponse represents the response for getting session information
 type SessionInfoResponse struct {
 	Success bool                    `json:"success" example:"true"`
 	Code    int                     `json:"code" example:"200"`
@@ -109,7 +87,6 @@ type SessionInfoResponse struct {
 	Error   *SessionErrorResponse   `json:"error,omitempty"`
 }
 
-// SessionInfoResponseData contains the data for session info response
 type SessionInfoResponseData struct {
 	SessionID string       `json:"session_id" example:"default"`
 	Action    string       `json:"action" example:"get"`
@@ -118,7 +95,6 @@ type SessionInfoResponseData struct {
 	Session   *SessionInfo `json:"session"`
 }
 
-// SessionListResponse represents the response for listing sessions
 type SessionListResponse struct {
 	Success bool                    `json:"success" example:"true"`
 	Code    int                     `json:"code" example:"200"`
@@ -126,7 +102,6 @@ type SessionListResponse struct {
 	Error   *SessionErrorResponse   `json:"error,omitempty"`
 }
 
-// SessionListResponseData contains the data for session list response
 type SessionListResponseData struct {
 	Action    string        `json:"action" example:"list"`
 	Status    string        `json:"status" example:"success"`
@@ -135,7 +110,6 @@ type SessionListResponseData struct {
 	Total     int           `json:"total" example:"5"`
 }
 
-// ConnectSessionResponse represents the response for session connection
 type ConnectSessionResponse struct {
 	Success bool                  `json:"success" example:"true"`
 	Code    int                   `json:"code" example:"200"`
@@ -143,7 +117,6 @@ type ConnectSessionResponse struct {
 	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
-// ConnectSessionResponseData contains the data for session connection response
 type SessionConnectData struct {
 	SessionID  string                 `json:"session_id" example:"default"`
 	Action     string                 `json:"action" example:"connect"`
@@ -154,7 +127,6 @@ type SessionConnectData struct {
 	QRCode     string                 `json:"qr_code,omitempty" example:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."`
 }
 
-// QRCodeResponse represents the response for QR code retrieval
 type QRCodeResponse struct {
 	Success bool                  `json:"success" example:"true"`
 	Code    int                   `json:"code" example:"200"`
@@ -162,7 +134,6 @@ type QRCodeResponse struct {
 	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
-// QRCodeResponseData contains the data for QR code response
 type QRCodeResponseData struct {
 	SessionID string    `json:"session_id" example:"default"`
 	Action    string    `json:"action" example:"qr"`
@@ -171,7 +142,6 @@ type QRCodeResponseData struct {
 	QRCode    string    `json:"qr_code" example:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."`
 }
 
-// PairPhoneResponse represents the response for phone pairing
 type PairPhoneResponse struct {
 	Success bool                  `json:"success" example:"true"`
 	Code    int                   `json:"code" example:"200"`
@@ -179,7 +149,6 @@ type PairPhoneResponse struct {
 	Error   *SessionErrorResponse `json:"error,omitempty"`
 }
 
-// PairPhoneResponseData contains the data for phone pairing response
 type PairPhoneResponseData struct {
 	SessionID   string    `json:"session_id" example:"default"`
 	Action      string    `json:"action" example:"pair"`
@@ -189,7 +158,6 @@ type PairPhoneResponseData struct {
 	PairCode    string    `json:"pair_code" example:"ABCD-1234"`
 }
 
-// SessionStatusResponse represents the response for session status
 type SessionStatusResponse struct {
 	Success bool                      `json:"success" example:"true"`
 	Code    int                       `json:"code" example:"200"`
@@ -197,7 +165,6 @@ type SessionStatusResponse struct {
 	Error   *SessionErrorResponse     `json:"error,omitempty"`
 }
 
-// SessionStatusResponseData contains the data for session status response
 type SessionStatusResponseData struct {
 	SessionID     string    `json:"session_id" example:"default"`
 	Action        string    `json:"action" example:"status"`
@@ -212,11 +179,7 @@ type SessionStatusResponseData struct {
 	UpdatedAt     time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
 
-// NewSessionSuccessResponse creates a successful session operation response
 func NewSessionSuccessResponse(sessionID, action string, session *SessionInfo) *SessionResponse {
 	return &SessionResponse{
 		Success: true,
@@ -231,7 +194,6 @@ func NewSessionSuccessResponse(sessionID, action string, session *SessionInfo) *
 	}
 }
 
-// NewSessionErrorResponse creates an error response for session operations
 func NewSessionErrorResponse(code int, errorCode, message, details string) *SessionResponse {
 	return &SessionResponse{
 		Success: false,

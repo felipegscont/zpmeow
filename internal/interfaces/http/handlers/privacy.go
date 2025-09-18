@@ -15,13 +15,11 @@ import (
 	"meow/internal/interfaces/dto"
 )
 
-// PrivacyHandler handles privacy-related HTTP requests
 type PrivacyHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewPrivacyHandler creates a new privacy handler
 func NewPrivacyHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *PrivacyHandler {
 	return &PrivacyHandler{
 		sessionService: sessionService,
@@ -29,8 +27,6 @@ func NewPrivacyHandler(sessionService *application.SessionApp, wmeowService wmeo
 	}
 }
 
-// SetAllPrivacySettings sets multiple privacy settings at once
-//
 //	@Summary		Set multiple privacy settings
 //	@Description	Set multiple privacy settings in a single request
 //	@Tags			Privacy
@@ -59,7 +55,6 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 		return
 	}
 
-	// Check if any settings were provided
 	if !req.HasAnySettings() {
 		c.JSON(http.StatusBadRequest, dto.PrivacySettingsResponse{
 			Success: false,
@@ -72,7 +67,6 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 		return
 	}
 
-	// Validate all settings
 	if validationErrors := req.Validate(); len(validationErrors) > 0 {
 		c.JSON(http.StatusBadRequest, dto.PrivacySettingsResponse{
 			Success: false,
@@ -88,7 +82,6 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 60*time.Second)
 	defer cancel()
 
-	// Get current settings first
 	currentSettings, err := h.wmeowService.GetPrivacySettings(ctx, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
@@ -102,7 +95,6 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 		return
 	}
 
-	// Update each setting that was provided
 	updatedSettings := []string{}
 
 	if req.GroupAdd != nil {
@@ -228,7 +220,6 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 		currentSettings.Online = *req.Online
 	}
 
-	// Convert to DTO
 	data := &dto.PrivacySettingsData{
 		GroupAdd:     currentSettings.GroupAdd,
 		LastSeen:     currentSettings.LastSeen,
@@ -246,8 +237,6 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	})
 }
 
-// GetBlocklist godoc
-//
 //	@Summary		Get blocked contacts list
 //	@Description	Get the list of blocked contacts (blocklist)
 //	@Tags			Privacy
@@ -272,10 +261,8 @@ func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
-	// Get blocklist
 	blocklist, err := h.wmeowService.GetBlocklist(ctx, sessionID)
 	if err != nil {
-		// Check for specific error types
 		if strings.Contains(err.Error(), "client not found") {
 			c.JSON(http.StatusNotFound, dto.BlocklistResponse{
 				Success: false,
@@ -306,8 +293,6 @@ func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 	})
 }
 
-// UpdateBlocklist godoc
-//
 //	@Summary		Update blocklist (block/unblock contact)
 //	@Description	Block or unblock a contact
 //	@Tags			Privacy
@@ -339,7 +324,6 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 		return
 	}
 
-	// Validate JID
 	if err := validateJID(req.JID); err != nil {
 		c.JSON(http.StatusBadRequest, dto.BlocklistResponse{
 			Success: false,
@@ -348,7 +332,6 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 		return
 	}
 
-	// Validate action
 	if err := validateBlocklistAction(req.Action); err != nil {
 		c.JSON(http.StatusBadRequest, dto.BlocklistResponse{
 			Success: false,
@@ -360,10 +343,8 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
-	// Update blocklist
 	updatedBlocklist, err := h.wmeowService.UpdateBlocklist(ctx, sessionID, req.JID, req.Action)
 	if err != nil {
-		// Check for specific error types
 		if strings.Contains(err.Error(), "client not found") {
 			c.JSON(http.StatusNotFound, dto.BlocklistResponse{
 				Success: false,
@@ -394,20 +375,16 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 	})
 }
 
-// Validation helper functions
 
-// validateJID validates if a string is a valid meow JID
 func validateJID(jidStr string) error {
 	if jidStr == "" {
 		return fmt.Errorf("JID cannot be empty")
 	}
 
-	// Basic format validation
 	if !strings.Contains(jidStr, "@") {
 		return fmt.Errorf("JID must contain '@' symbol")
 	}
 
-	// Try to parse with whatsmeow
 	_, err := waTypes.ParseJID(jidStr)
 	if err != nil {
 		return fmt.Errorf("invalid JID format: %w", err)
@@ -416,13 +393,11 @@ func validateJID(jidStr string) error {
 	return nil
 }
 
-// validateSessionID validates if a session ID is valid
 func validateSessionID(sessionID string) error {
 	if sessionID == "" {
 		return fmt.Errorf("session ID cannot be empty")
 	}
 
-	// Basic UUID format check (36 characters with hyphens)
 	if len(sessionID) != 36 {
 		return fmt.Errorf("session ID must be a valid UUID")
 	}
@@ -430,7 +405,6 @@ func validateSessionID(sessionID string) error {
 	return nil
 }
 
-// validateBlocklistAction validates if an action is valid for blocklist operations
 func validateBlocklistAction(action string) error {
 	if action == "" {
 		return fmt.Errorf("action cannot be empty")
@@ -443,7 +417,6 @@ func validateBlocklistAction(action string) error {
 	return nil
 }
 
-// createValidationError creates a standardized validation error response
 func createValidationError(field, message string) *dto.PrivacyErrorResponse {
 	return &dto.PrivacyErrorResponse{
 		Code:    "VALIDATION_ERROR",
@@ -452,7 +425,6 @@ func createValidationError(field, message string) *dto.PrivacyErrorResponse {
 	}
 }
 
-// createInternalError creates a standardized internal error response
 func createInternalError(operation, details string) *dto.PrivacyErrorResponse {
 	return &dto.PrivacyErrorResponse{
 		Code:    "INTERNAL_ERROR",
@@ -461,7 +433,6 @@ func createInternalError(operation, details string) *dto.PrivacyErrorResponse {
 	}
 }
 
-// createNotFoundError creates a standardized not found error response
 func createNotFoundError(resource string) *dto.PrivacyErrorResponse {
 	return &dto.PrivacyErrorResponse{
 		Code:    "NOT_FOUND",
@@ -470,8 +441,6 @@ func createNotFoundError(resource string) *dto.PrivacyErrorResponse {
 	}
 }
 
-// FindPrivacySettings gets specific privacy settings or all if none specified
-//
 //	@Summary		Find specific privacy settings
 //	@Description	Get specific privacy settings or all settings if none specified
 //	@Tags			Privacy
@@ -488,17 +457,13 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
 	var req dto.FindPrivacySettingsRequest
-	// Body is optional - if not provided, return all settings
 	if err := c.ShouldBindJSON(&req); err != nil {
-		// If there's an error binding JSON, it might be because no body was provided
-		// In that case, we'll return all settings
 		req.Settings = []string{}
 	}
 
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 30*time.Second)
 	defer cancel()
 
-	// Get all privacy settings
 	allSettings, err := h.wmeowService.GetPrivacySettings(ctx, sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.PrivacySettingsResponse{
@@ -512,7 +477,6 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 		return
 	}
 
-	// If no specific settings requested, return all
 	if len(req.Settings) == 0 {
 		data := &dto.PrivacySettingsData{
 			GroupAdd:     allSettings.GroupAdd,
@@ -532,7 +496,6 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 		return
 	}
 
-	// Filter settings based on request
 	filteredData := &dto.PrivacySettingsData{}
 	requestedSettings := []string{}
 

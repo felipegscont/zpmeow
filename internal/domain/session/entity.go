@@ -45,7 +45,6 @@ func NewSession(id, name string) (*Session, error) {
 		return nil, err
 	}
 
-	// Create empty value objects for new session
 	waJID, _ := NewWaJID("")
 	qrCode, _ := NewQRCode("")
 	apiKey, _ := NewApiKey("temp-key") // Temporary key, will be replaced by application layer
@@ -186,7 +185,6 @@ func (s *Session) HasApiKey() bool {
 	return !s.ApiKey.IsEmpty()
 }
 
-// RegenerateApiKey should be called from application layer with generated key
 func (s *Session) RegenerateApiKey(newApiKey string) error {
 	apiKey, err := NewApiKey(newApiKey)
 	if err != nil {
@@ -207,36 +205,28 @@ func (s *Session) SetApiKey(apiKey string) error {
 	return nil
 }
 
-// generateApiKey moved to application layer to avoid external dependencies in domain
 
-// Compatibility methods for gradual migration (will be removed in future versions)
 
-// GetWaJIDString returns WaJID as string for compatibility
 func (s *Session) GetWaJIDString() string {
 	return s.WaJID.Value()
 }
 
-// GetQRCodeString returns QRCode as string for compatibility
 func (s *Session) GetQRCodeString() string {
 	return s.QRCode.Value()
 }
 
-// GetApiKeyString returns ApiKey as string for compatibility
 func (s *Session) GetApiKeyString() string {
 	return s.ApiKey.Value()
 }
 
-// SetWaJIDString sets WaJID from string for compatibility
 func (s *Session) SetWaJIDString(jid string) error {
 	return s.SetWaJID(jid)
 }
 
-// SetQRCodeString sets QRCode from string for compatibility
 func (s *Session) SetQRCodeString(qr string) error {
 	return s.SetQRCode(qr)
 }
 
-// SetApiKeyString sets ApiKey from string for compatibility
 func (s *Session) SetApiKeyString(key string) error {
 	return s.SetApiKey(key)
 }

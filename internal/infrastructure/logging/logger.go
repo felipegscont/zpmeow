@@ -17,9 +17,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-// Logger interface for structured logging
 type Logger interface {
-	// Core logging methods
 	Debug(msg string)
 	Debugf(format string, args ...interface{})
 	Info(msg string)
@@ -31,12 +29,10 @@ type Logger interface {
 	Fatal(msg string)
 	Fatalf(format string, args ...interface{})
 
-	// Structured logging with context
 	With() LogContext
 	Sub(module string) Logger
 }
 
-// LogContext interface for building structured log entries
 type LogContext interface {
 	Str(key, val string) LogContext
 	Int(key string, val int) LogContext
@@ -47,22 +43,18 @@ type LogContext interface {
 	Logger() Logger
 }
 
-// ZerologLogger implements Logger interface using zerolog
 type ZerologLogger struct {
 	logger zerolog.Logger
 	module string
 }
 
-// ZerologContext implements LogContext interface
 type ZerologContext struct {
 	context zerolog.Context
 	base    *ZerologLogger
 }
 
-// Global logger instance
 var globalLogger Logger
 
-// LoggerConfig holds configuration for the logger
 type LoggerConfig interface {
 	GetLevel() string
 	GetFormat() string
@@ -76,28 +68,21 @@ type LoggerConfig interface {
 	GetFileFormat() string
 }
 
-// Initialize creates and configures the global logger
 func Initialize(config LoggerConfig) Logger {
-	// Set global log level
 	level := parseLogLevel(config.GetLevel())
 	zerolog.SetGlobalLevel(level)
 
-	// Configure time format
 	zerolog.TimeFieldFormat = time.RFC3339
 
 	var writers []io.Writer
 
-	// Console output with TTY detection
 	if config.GetFormat() == "console" || config.GetFormat() == "" {
-		// Detect TTY and configure output writer
 		var out io.Writer = os.Stdout
 
-		// Windows compatibility
 		if runtime.GOOS == "windows" {
 			out = colorable.NewColorableStdout()
 		}
 
-		// Detect if we should use colors
 		useColor := shouldUseColor(out, config.GetConsoleColor())
 
 		consoleWriter := zerolog.ConsoleWriter{
@@ -108,9 +93,7 @@ func Initialize(config LoggerConfig) Logger {
 		writers = append(writers, consoleWriter)
 	}
 
-	// File output with JSON format
 	if config.GetFileEnabled() {
-		// Ensure log directory exists
 		logDir := filepath.Dir(config.GetFilePath())
 		if err := os.MkdirAll(logDir, 0755); err != nil {
 			fmt.Printf("Failed to create log directory: %v\n", err)
@@ -126,7 +109,6 @@ func Initialize(config LoggerConfig) Logger {
 		writers = append(writers, fileWriter)
 	}
 
-	// Create multi-writer for dual output
 	var writer io.Writer
 	if len(writers) == 1 {
 		writer = writers[0]
@@ -136,7 +118,6 @@ func Initialize(config LoggerConfig) Logger {
 		writer = os.Stdout
 	}
 
-	// Create logger with context
 	logger := zerolog.New(writer).With().
 		Timestamp().
 		Logger()
@@ -149,10 +130,8 @@ func Initialize(config LoggerConfig) Logger {
 	return globalLogger
 }
 
-// GetLogger returns the global logger instance
 func GetLogger() Logger {
 	if globalLogger == nil {
-		// Fallback to default logger
 		globalLogger = &ZerologLogger{
 			logger: log.Logger,
 			module: "default",
@@ -161,43 +140,34 @@ func GetLogger() Logger {
 	return globalLogger
 }
 
-// SetLogger sets the global logger instance
 func SetLogger(logger Logger) {
 	globalLogger = logger
 }
 
-// GetWALogger creates a meow-compatible logger
 func GetWALogger(module string) waLog.Logger {
 	return NewWALogger(module)
 }
 
-// shouldUseColor determines if colors should be used based on TTY detection and FORCE_COLOR
 func shouldUseColor(out io.Writer, configColor bool) bool {
-	// Check FORCE_COLOR environment variable first
 	if forceColor := os.Getenv("FORCE_COLOR"); forceColor != "" {
 		return forceColor != "0" && forceColor != "false"
 	}
 
-	// If config explicitly disables color, respect it
 	if !configColor {
 		return false
 	}
 
-	// Check if output is a TTY
 	if f, ok := out.(*os.File); ok {
 		return isatty.IsTerminal(f.Fd()) || isatty.IsCygwinTerminal(f.Fd())
 	}
 
-	// For colorable writer (Windows), check the underlying file
 	if runtime.GOOS == "windows" {
-		// Try to get the underlying file descriptor
 		return isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd())
 	}
 
 	return false
 }
 
-// parseLogLevel converts string level to zerolog.Level
 func parseLogLevel(level string) zerolog.Level {
 	switch strings.ToLower(level) {
 	case "debug":
@@ -217,7 +187,6 @@ func parseLogLevel(level string) zerolog.Level {
 	}
 }
 
-// ZerologLogger implementation
 func (l *ZerologLogger) Debug(msg string) {
 	l.logger.Debug().Msg(msg)
 }
@@ -281,9 +250,7 @@ func (l *ZerologLogger) Sub(module string) Logger {
 	}
 }
 
-// ZerologContext implementation
 func (c *ZerologContext) Str(key, val string) LogContext {
-	// Truncate long values for console readability
 	if len(val) > 50 && (strings.Contains(key, "id") || strings.Contains(key, "uuid") || strings.Contains(key, "hash")) {
 		val = TruncateID(val)
 	}

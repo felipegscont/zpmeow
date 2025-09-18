@@ -18,13 +18,11 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// NewsletterHandler handles newsletter-related HTTP requests
 type NewsletterHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewNewsletterHandler creates a new newsletter handler
 func NewNewsletterHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *NewsletterHandler {
 	return &NewsletterHandler{
 		sessionService: sessionService,
@@ -32,12 +30,10 @@ func NewNewsletterHandler(sessionService *application.SessionApp, wmeowService w
 	}
 }
 
-// GetNewsletterMessageUpdates gets message updates from a newsletter
 func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -46,7 +42,6 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 		return
 	}
 
-	// Parse query parameters
 	var req dto.GetNewsletterMessageUpdatesRequest
 	req.JID = newsletterJID
 	req.Count = 50 // Default count
@@ -60,7 +55,6 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 		req.Before = before
 	}
 
-	// Convert to whatsmeow params
 	params, err := req.ToWhatsmeowParams()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -70,7 +64,6 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 		return
 	}
 
-	// Get newsletter message updates
 	updates, err := h.wmeowService.GetNewsletterMessageUpdates(c.Request.Context(), sessionID, newsletterJID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -87,12 +80,10 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 	})
 }
 
-// MarkNewsletterViewed marks newsletter messages as viewed
 func (h *NewsletterHandler) MarkNewsletterViewed(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -101,7 +92,6 @@ func (h *NewsletterHandler) MarkNewsletterViewed(c *gin.Context) {
 		return
 	}
 
-	// Parse request body
 	var req dto.MarkViewedRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -111,7 +101,6 @@ func (h *NewsletterHandler) MarkNewsletterViewed(c *gin.Context) {
 		return
 	}
 
-	// Convert server IDs to whatsmeow type
 	serverIDs := make([]waTypes.MessageServerID, len(req.ServerIDs))
 	for i, id := range req.ServerIDs {
 		serverID, err := strconv.Atoi(id)
@@ -125,7 +114,6 @@ func (h *NewsletterHandler) MarkNewsletterViewed(c *gin.Context) {
 		serverIDs[i] = waTypes.MessageServerID(serverID)
 	}
 
-	// Mark messages as viewed
 	err := h.wmeowService.NewsletterMarkViewed(c.Request.Context(), sessionID, newsletterJID, serverIDs)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -141,12 +129,10 @@ func (h *NewsletterHandler) MarkNewsletterViewed(c *gin.Context) {
 	})
 }
 
-// SendNewsletterReaction sends a reaction to a newsletter message
 func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -155,7 +141,6 @@ func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 		return
 	}
 
-	// Parse request body
 	var req dto.SendReactionRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -165,7 +150,6 @@ func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.ServerID == "" || req.Reaction == "" || req.MessageID == "" {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -174,7 +158,6 @@ func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 		return
 	}
 
-	// Convert server ID to int
 	serverID, err := strconv.Atoi(req.ServerID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -184,7 +167,6 @@ func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 		return
 	}
 
-	// Send reaction
 	err = h.wmeowService.NewsletterSendReaction(
 		c.Request.Context(),
 		sessionID,
@@ -207,12 +189,10 @@ func (h *NewsletterHandler) SendNewsletterReaction(c *gin.Context) {
 	})
 }
 
-// ToggleNewsletterMute toggles mute status for a newsletter
 func (h *NewsletterHandler) ToggleNewsletterMute(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -221,7 +201,6 @@ func (h *NewsletterHandler) ToggleNewsletterMute(c *gin.Context) {
 		return
 	}
 
-	// Parse request body
 	var req dto.ToggleMuteRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -231,7 +210,6 @@ func (h *NewsletterHandler) ToggleNewsletterMute(c *gin.Context) {
 		return
 	}
 
-	// Toggle mute
 	err := h.wmeowService.NewsletterToggleMute(c.Request.Context(), sessionID, newsletterJID, req.Mute)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -252,12 +230,10 @@ func (h *NewsletterHandler) ToggleNewsletterMute(c *gin.Context) {
 	})
 }
 
-// SubscribeLiveUpdates subscribes to live updates for a newsletter
 func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -266,7 +242,6 @@ func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 		return
 	}
 
-	// Subscribe to live updates
 	err := h.wmeowService.NewsletterSubscribeLiveUpdates(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -282,8 +257,6 @@ func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 	})
 }
 
-// UploadNewsletterMedia uploads media for newsletter use
-//
 //	@Summary		Upload media for newsletter
 //	@Description	Upload media files (image, video, audio, document) for use in newsletter messages. Returns MediaHandle required for sending media messages.
 //	@Tags			Newsletters
@@ -301,7 +274,6 @@ func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -310,7 +282,6 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 		return
 	}
 
-	// Parse request body
 	var req dto.UploadNewsletterMediaRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -320,7 +291,6 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.Data == "" || req.MediaType == "" {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -329,7 +299,6 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 		return
 	}
 
-	// Decode base64 data
 	data, err := base64.StdEncoding.DecodeString(req.Data)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -339,7 +308,6 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 		return
 	}
 
-	// Convert media type
 	var mediaType whatsmeow.MediaType
 	switch req.MediaType {
 	case "image":
@@ -358,7 +326,6 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 		return
 	}
 
-	// Upload media
 	resp, err := h.wmeowService.UploadNewsletter(c.Request.Context(), sessionID, data, mediaType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -377,12 +344,10 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 	})
 }
 
-// GetNewsletterByInvite gets newsletter information by invite key
 func (h *NewsletterHandler) GetNewsletterByInvite(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	inviteKey := c.Param("inviteKey")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.NewsletterInfoResponse{
 			Success: false,
@@ -391,7 +356,6 @@ func (h *NewsletterHandler) GetNewsletterByInvite(c *gin.Context) {
 		return
 	}
 
-	// Validate invite key
 	if inviteKey == "" {
 		c.JSON(http.StatusBadRequest, dto.NewsletterInfoResponse{
 			Success: false,
@@ -400,7 +364,6 @@ func (h *NewsletterHandler) GetNewsletterByInvite(c *gin.Context) {
 		return
 	}
 
-	// Get newsletter info by invite
 	info, err := h.wmeowService.GetNewsletterInfoWithInvite(c.Request.Context(), sessionID, inviteKey)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewsletterInfoResponse{
@@ -410,7 +373,6 @@ func (h *NewsletterHandler) GetNewsletterByInvite(c *gin.Context) {
 		return
 	}
 
-	// Convert to DTO
 	result := &dto.NewsletterInfo{
 		JID:         info.JID,
 		Name:        info.Name,
@@ -430,10 +392,8 @@ func (h *NewsletterHandler) GetNewsletterByInvite(c *gin.Context) {
 	})
 }
 
-// resolveSessionID resolves session ID or name to actual session ID
 func (h *NewsletterHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) (string, error) {
 	if h.sessionService == nil {
-		// Fallback: assume it's already an ID
 		return sessionIDOrName, nil
 	}
 
@@ -446,8 +406,6 @@ func (h *NewsletterHandler) resolveSessionID(c *gin.Context, sessionIDOrName str
 	return session.ID.Value(), nil
 }
 
-// CreateNewsletter handles creating a newsletter
-//
 //	@Summary		Create newsletter
 //	@Description	Create a new meow newsletter
 //	@Tags			Newsletters
@@ -463,7 +421,6 @@ func (h *NewsletterHandler) resolveSessionID(c *gin.Context, sessionIDOrName str
 func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
-	// Resolve session ID and validate session exists
 	resolvedSessionID, err := h.resolveSessionID(c, sessionID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.CreateNewsletterResponse{
@@ -473,7 +430,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Validate session is connected
 	if !h.wmeowService.IsClientConnected(resolvedSessionID) {
 		c.JSON(http.StatusBadRequest, dto.CreateNewsletterResponse{
 			Success: false,
@@ -482,7 +438,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Parse request body
 	var req dto.CreateNewsletterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.CreateNewsletterResponse{
@@ -492,7 +447,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if req.Name == "" {
 		c.JSON(http.StatusBadRequest, dto.CreateNewsletterResponse{
 			Success: false,
@@ -501,7 +455,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Convert to whatsmeow params
 	params, err := req.ToWhatsmeowParams()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.CreateNewsletterResponse{
@@ -511,7 +464,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Create newsletter
 	resp, err := h.wmeowService.CreateNewsletter(c.Request.Context(), resolvedSessionID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.CreateNewsletterResponse{
@@ -521,7 +473,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Build response
 	result := &dto.CreateNewsletterResult{
 		JID:         resp.ID.String(),
 		ServerID:    "",         // NewsletterMetadata doesn't have ServerID
@@ -536,8 +487,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 	})
 }
 
-// GetNewsletter handles getting newsletter information
-//
 //	@Summary		Get newsletter information
 //	@Description	Get information about a specific newsletter
 //	@Tags			Newsletters
@@ -555,7 +504,6 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.NewsletterInfoResponse{
 			Success: false,
@@ -564,7 +512,6 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Validate newsletter JID
 	if newsletterJID == "" {
 		c.JSON(http.StatusBadRequest, dto.NewsletterInfoResponse{
 			Success: false,
@@ -573,7 +520,6 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Get newsletter info
 	info, err := h.wmeowService.GetNewsletterInfo(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewsletterInfoResponse{
@@ -583,7 +529,6 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Convert to DTO
 	result := &dto.NewsletterInfo{
 		JID:         info.JID,
 		Name:        info.Name,
@@ -603,16 +548,8 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 	})
 }
 
-// UpdateNewsletter - REMOVED: Not supported by whatsmeow
-// This functionality does not exist in the whatsmeow library
-// Reference: Analysis of whatsmeow documentation and source code
 
-// DeleteNewsletter - REMOVED: Not supported by whatsmeow
-// This functionality does not exist in the whatsmeow library
-// Reference: Analysis of whatsmeow documentation and source code
 
-// ListNewsletters handles listing newsletters
-//
 //	@Summary		List newsletters
 //	@Description	Get a list of all subscribed newsletters for a session
 //	@Tags			Newsletters
@@ -627,7 +564,6 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.NewsletterListResponse{
 			Success: false,
@@ -636,7 +572,6 @@ func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 		return
 	}
 
-	// Get subscribed newsletters
 	newsletters, err := h.wmeowService.GetSubscribedNewsletters(c.Request.Context(), sessionID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewsletterListResponse{
@@ -646,7 +581,6 @@ func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 		return
 	}
 
-	// Convert to DTOs
 	result := make([]dto.NewsletterInfo, len(newsletters))
 	for i, newsletter := range newsletters {
 		result[i] = dto.NewsletterInfo{
@@ -663,7 +597,6 @@ func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 		}
 	}
 
-	// Build response
 	listResult := &dto.NewsletterList{
 		Newsletters: result,
 		Count:       len(result),
@@ -676,8 +609,6 @@ func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 	})
 }
 
-// SubscribeToNewsletter handles subscribing to a newsletter
-//
 //	@Summary		Subscribe to newsletter
 //	@Description	Subscribe to a newsletter to receive updates
 //	@Tags			Newsletters
@@ -695,7 +626,6 @@ func (h *NewsletterHandler) SubscribeToNewsletter(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session
 	_, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -705,7 +635,6 @@ func (h *NewsletterHandler) SubscribeToNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Validate newsletter JID
 	if newsletterJID == "" {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -714,7 +643,6 @@ func (h *NewsletterHandler) SubscribeToNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Follow newsletter
 	err = h.wmeowService.FollowNewsletter(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -730,8 +658,6 @@ func (h *NewsletterHandler) SubscribeToNewsletter(c *gin.Context) {
 	})
 }
 
-// UnsubscribeFromNewsletter handles unsubscribing from a newsletter
-//
 //	@Summary		Unsubscribe from newsletter
 //	@Description	Unsubscribe from a newsletter to stop receiving updates
 //	@Tags			Newsletters
@@ -749,7 +675,6 @@ func (h *NewsletterHandler) UnsubscribeFromNewsletter(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session
 	_, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -759,7 +684,6 @@ func (h *NewsletterHandler) UnsubscribeFromNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Validate newsletter JID
 	if newsletterJID == "" {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -768,7 +692,6 @@ func (h *NewsletterHandler) UnsubscribeFromNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Unfollow newsletter
 	err = h.wmeowService.UnfollowNewsletter(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -784,9 +707,6 @@ func (h *NewsletterHandler) UnsubscribeFromNewsletter(c *gin.Context) {
 	})
 }
 
-// SendNewsletterMessage handles sending a newsletter message
-// ✅ FULLY IMPLEMENTED - Uses SendMessage + MediaHandle approach based on whatsmeow issues #481, #697, #498
-//
 //	@Summary		Send newsletter message
 //	@Description	Send a text or media message to newsletter subscribers. For media messages, MediaHandle is required.
 //	@Tags			Newsletters
@@ -805,7 +725,6 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.SendNewsletterMessageResponse{
 			Success: false,
@@ -814,7 +733,6 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 		return
 	}
 
-	// Parse request body
 	var req dto.SendNewsletterMessageRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, dto.SendNewsletterMessageResponse{
@@ -824,7 +742,6 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 		return
 	}
 
-	// Validate that we have either content or media
 	if req.Content == "" && req.MediaHandle == "" {
 		c.JSON(http.StatusBadRequest, dto.SendNewsletterMessageResponse{
 			Success: false,
@@ -833,11 +750,9 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 		return
 	}
 
-	// Build message based on content type
 	var message *waE2E.Message
 
 	if req.MediaHandle != "" {
-		// Media message - determine type based on media_type
 		switch req.MediaType {
 		case "image":
 			message = &waE2E.Message{
@@ -862,7 +777,6 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 				},
 			}
 		default:
-			// Default to image if media_type not specified
 			message = &waE2E.Message{
 				ImageMessage: &waE2E.ImageMessage{
 					Caption: proto.String(req.Caption),
@@ -870,13 +784,11 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 			}
 		}
 	} else {
-		// Text message
 		message = &waE2E.Message{
 			Conversation: proto.String(req.Content),
 		}
 	}
 
-	// Send message to newsletter using the new implementation
 	resp, err := h.wmeowService.SendNewsletterMessage(c.Request.Context(), sessionID, newsletterJID, message, req.MediaHandle)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.SendNewsletterMessageResponse{
@@ -894,12 +806,10 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 	})
 }
 
-// GetNewsletterMessages gets messages from a newsletter
 func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	newsletterJID := c.Param("newsletterId")
 
-	// Validate session exists and is connected
 	if !h.wmeowService.IsClientConnected(sessionID) {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
 			Success: false,
@@ -908,7 +818,6 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 		return
 	}
 
-	// Parse query parameters
 	var req dto.GetNewsletterMessagesRequest
 	req.JID = newsletterJID
 	req.Count = 50 // Default count
@@ -922,7 +831,6 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 		req.Before = before
 	}
 
-	// Convert to whatsmeow params
 	params, err := req.ToWhatsmeowParams()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.StandardResponse{
@@ -932,7 +840,6 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 		return
 	}
 
-	// Get newsletter messages
 	messages, err := h.wmeowService.GetNewsletterMessages(c.Request.Context(), sessionID, newsletterJID, params)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{
@@ -949,10 +856,4 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 	})
 }
 
-// GetNewsletterSubscribers - REMOVED: Not supported by whatsmeow
-// This functionality does not exist in the whatsmeow library
-// Reference: Analysis of whatsmeow documentation and source code
 
-// GetNewsletterMetrics - REMOVED: Not supported by whatsmeow
-// This functionality does not exist in the whatsmeow library
-// Reference: Analysis of whatsmeow documentation and source code

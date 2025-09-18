@@ -9,7 +9,6 @@ import (
 	"meow/internal/shared/validation"
 )
 
-// NewsletterApp implements newsletter use cases following Clean Architecture
 type NewsletterApp struct {
 	meowService interface {
 		CreateNewsletter(ctx context.Context, sessionID, name, description string) (interface{}, error)
@@ -31,7 +30,6 @@ type NewsletterApp struct {
 	validator   *validation.Validator
 }
 
-// NewNewsletterApp creates a new NewsletterApp instance
 func NewNewsletterApp(
 	meowService interface{},
 	sessionRepo session.Repository,
@@ -59,7 +57,6 @@ func NewNewsletterApp(
 	}
 }
 
-// CreateNewsletter creates a new newsletter using DTO
 func (s *NewsletterApp) CreateNewsletter(ctx context.Context, sessionID string, req *dto.CreateNewsletterRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
@@ -70,11 +67,9 @@ func (s *NewsletterApp) CreateNewsletter(ctx context.Context, sessionID string, 
 		return nil, fmt.Errorf("failed to create newsletter: %w", err)
 	}
 
-	// whatsmeow will handle events automatically
 	return result, nil
 }
 
-// GetNewsletter gets newsletter information using DTO
 func (s *NewsletterApp) GetNewsletter(ctx context.Context, sessionID string, req *dto.GetNewsletterInfoRequest) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
@@ -88,7 +83,6 @@ func (s *NewsletterApp) GetNewsletter(ctx context.Context, sessionID string, req
 	return result, nil
 }
 
-// ListNewsletters lists all newsletters
 func (s *NewsletterApp) ListNewsletters(ctx context.Context, sessionID string) (interface{}, error) {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
@@ -102,7 +96,6 @@ func (s *NewsletterApp) ListNewsletters(ctx context.Context, sessionID string) (
 	return result, nil
 }
 
-// SubscribeToNewsletter subscribes to a newsletter using DTO
 func (s *NewsletterApp) SubscribeToNewsletter(ctx context.Context, sessionID string, newsletterJID string) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
@@ -113,13 +106,10 @@ func (s *NewsletterApp) SubscribeToNewsletter(ctx context.Context, sessionID str
 		return fmt.Errorf("failed to subscribe to newsletter: %w", err)
 	}
 
-	// whatsmeow will handle events automatically
 	return nil
 }
 
-// Helper methods
 
-// Helper methods
 
 func (s *NewsletterApp) validateSession(ctx context.Context, sessionID string) error {
 	sessionEntity, err := s.sessionRepo.GetByID(ctx, sessionID)

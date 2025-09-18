@@ -18,7 +18,6 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
-// Client - Unified meow client with all functionality
 type Client struct {
 	sessionID    string
 	client       *whatsmeow.Client
@@ -27,34 +26,28 @@ type Client struct {
 	logger       logging.Logger
 	waLogger     waLog.Logger
 
-	// Status and activity tracking
 	mu           sync.RWMutex
 	status       types.Status
 	lastActivity time.Time
 
-	// QR code management
 	qrCode       string
 	qrCodeBase64 string // Base64 encoded QR code image
 	qrLoopActive bool
 	qrLoopCancel context.CancelFunc
 
-	// Event handling
 	eventHandlerID uint32
 
-	// Context and channels for lifecycle management
 	ctx           context.Context
 	cancel        context.CancelFunc
 	killChannel   chan bool
 	qrStopChannel chan bool
 
-	// Configuration
 	maxRetries    int
 	retryCount    int
 	retryInterval time.Duration
 	qrTimeout     time.Duration
 	connTimeout   time.Duration
 
-	// Helpers
 	sessionHelper    *Helper
 	qrHelper         *QRHelper
 	connectionHelper *ConnHelper
@@ -64,12 +57,10 @@ type EventHandler interface {
 	HandleEvent(interface{})
 }
 
-// NewClient creates a new unified meow client
 func NewClient(sessionID string, container *sqlstore.Container, waLogger waLog.Logger, eventHandler EventHandler, sessionRepo session.Repository) (*Client, error) {
 	return NewClientWithDeviceJID(sessionID, "", container, waLogger, eventHandler, sessionRepo)
 }
 
-// NewClientWithDeviceJID creates a new unified meow client with expected device JID
 func NewClientWithDeviceJID(sessionID, expectedDeviceJID string, container *sqlstore.Container, waLogger waLog.Logger, eventHandler EventHandler, sessionRepo session.Repository) (*Client, error) {
 	if waLogger == nil {
 		waLogger = waLog.Noop
@@ -77,18 +68,15 @@ func NewClientWithDeviceJID(sessionID, expectedDeviceJID string, container *sqls
 
 	appLogger := logging.GetLogger().Sub("meow-client").Sub(sessionID)
 
-	// Get or create device store with expected device JID
 	deviceStore := GetDeviceStoreForSession(sessionID, expectedDeviceJID, container)
 	if deviceStore == nil {
 		return nil, fmt.Errorf("failed to create device store for session %s", sessionID)
 	}
 
-	// Configure device properties
 	store.DeviceProps.PlatformType = waCompanionReg.DeviceProps_UNKNOWN.Enum()
 	osName := "meow"
 	store.DeviceProps.Os = &osName
 
-	// Create meow client
 	waClient := whatsmeow.NewClient(deviceStore, waLogger)
 	if waClient == nil {
 		return nil, fmt.Errorf("failed to create meow client for session %s", sessionID)
@@ -96,7 +84,6 @@ func NewClientWithDeviceJID(sessionID, expectedDeviceJID string, container *sqls
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Create helpers
 	sessionHelper := NewHelper(sessionRepo, appLogger)
 	qrHelper := NewQRHelper(appLogger)
 	connectionHelper := NewConnHelper(appLogger)
@@ -122,7 +109,6 @@ func NewClientWithDeviceJID(sessionID, expectedDeviceJID string, container *sqls
 		connectionHelper: connectionHelper,
 	}
 
-	// Register event handler if provided
 	if eventHandler != nil {
 		client.eventHandlerID = waClient.AddEventHandler(eventHandler.HandleEvent)
 	}
@@ -130,12 +116,10 @@ func NewClientWithDeviceJID(sessionID, expectedDeviceJID string, container *sqls
 	return client, nil
 }
 
-// Client methods
 func (c *Client) Connect() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Validate client and store
 	if err := ValidateClientAndStore(c.client, c.sessionID, c.logger); err != nil {
 		return err
 	}
@@ -148,7 +132,6 @@ func (c *Client) Connect() error {
 	c.setStatus(types.StatusConnecting)
 	c.sessionHelper.UpdateSessionStatus(c.sessionID, session.StatusConnecting)
 
-	// Start client loop in background
 	go c.startClientLoop()
 
 	return nil
@@ -160,13 +143,10 @@ func (c *Client) Disconnect() error {
 
 	c.logger.Infof("Disconnecting client for session %s", c.sessionID)
 
-	// Stop QR loop if active
 	c.stopQRLoop()
 
-	// Disconnect client safely
 	c.connectionHelper.SafeDisconnect(c.client, c.sessionID)
 
-	// Cancel context
 	if c.cancel != nil {
 		c.cancel()
 	}
@@ -294,7 +274,6 @@ func (c *Client) GetSessionID() string {
 	return c.sessionID
 }
 
-// setStatus safely sets the status with logging
 func (c *Client) setStatus(status types.Status) {
 	c.status = status
 	c.lastActivity = time.Now()
@@ -304,7 +283,6 @@ func (c *Client) setStatus(status types.Status) {
 	}
 }
 
-// startClientLoop starts the main client loop
 func (c *Client) startClientLoop() {
 	defer func() {
 		if r := recover(); r != nil {
@@ -312,7 +290,6 @@ func (c *Client) startClientLoop() {
 		}
 	}()
 
-	// Check if device is registered
 	if !IsDeviceRegistered(c.client) {
 		c.logger.Infof("Device not registered for session %s, starting QR code process", c.sessionID)
 		c.handleNewDeviceRegistration()
@@ -322,7 +299,6 @@ func (c *Client) startClientLoop() {
 	}
 }
 
-// handleNewDeviceRegistration handles QR code generation for new devices
 func (c *Client) handleNewDeviceRegistration() {
 	qrChan, err := c.client.GetQRChannel(context.Background())
 	if err != nil {
@@ -341,7 +317,6 @@ func (c *Client) handleNewDeviceRegistration() {
 	c.handleQRLoop(qrChan)
 }
 
-// handleExistingDeviceConnection handles connection for already registered devices
 func (c *Client) handleExistingDeviceConnection() {
 	c.logger.Infof("Connecting existing device for session %s", c.sessionID)
 
@@ -353,7 +328,6 @@ func (c *Client) handleExistingDeviceConnection() {
 		return
 	}
 
-	// Wait a bit for connection to establish
 	time.Sleep(2 * time.Second)
 
 	if c.client.IsConnected() {
@@ -367,7 +341,6 @@ func (c *Client) handleExistingDeviceConnection() {
 	}
 }
 
-// handleQRLoop handles QR code events
 func (c *Client) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 	c.mu.Lock()
 	c.qrLoopActive = true
@@ -393,7 +366,6 @@ func (c *Client) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 			if !ok {
 				c.logger.Infof("QR channel closed for session %s", c.sessionID)
 				c.setStatus(types.StatusDisconnected)
-				// Clear QR code in database
 				c.sessionHelper.UpdateSessionQRCode(c.sessionID, "")
 				return
 			}
@@ -409,7 +381,6 @@ func (c *Client) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 				c.logger.Infof("QR code generated for session %s", c.sessionID)
 				c.setStatus(types.StatusConnecting)
 
-				// Update QR code in database
 				c.sessionHelper.UpdateSessionQRCode(c.sessionID, evt.Code)
 
 			case "success":
@@ -428,7 +399,6 @@ func (c *Client) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 
 				c.setStatus(types.StatusDisconnected)
 
-				// Update QR code in database (clear it)
 				c.sessionHelper.UpdateSessionQRCode(c.sessionID, "")
 				return
 
@@ -439,7 +409,6 @@ func (c *Client) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 	}
 }
 
-// stopQRLoop stops the QR code loop
 func (c *Client) stopQRLoop() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -452,7 +421,6 @@ func (c *Client) stopQRLoop() {
 	}
 }
 
-// persistQRSuccess persists successful QR scan to database
 func (c *Client) persistQRSuccess() {
 	if c.sessionRepo == nil {
 		c.logger.Warnf("No session repository available for session %s", c.sessionID)
@@ -474,10 +442,8 @@ func (c *Client) persistQRSuccess() {
 	}
 
 	if deviceJID != "" {
-		// Validate device uniqueness before assigning
 		if err := c.sessionRepo.ValidateDeviceUniqueness(ctx, c.sessionID, deviceJID); err != nil {
 			c.logger.Errorf("Device uniqueness validation failed for session %s: %v", c.sessionID, err)
-			// Don't update the session if device is already in use
 			return
 		}
 

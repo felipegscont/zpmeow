@@ -2,13 +2,11 @@ package types
 
 import "time"
 
-// Generic types used across the application
 
 type ID string
 
 type Timestamp time.Time
 
-// Status represents the connection status of a session
 type Status string
 
 const (
@@ -32,7 +30,6 @@ func (s Status) IsValid() bool {
 	}
 }
 
-// SendResponse represents a generic response for send operations
 type SendResponse struct {
 	ID        string `json:"id"`
 	Timestamp int64  `json:"timestamp"`

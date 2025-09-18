@@ -9,9 +9,6 @@ import (
 	"meow/internal/infrastructure/logging"
 )
 
-// ============================================================================
-// HEALTH HANDLER - SELF-CONTAINED WITH INTERNAL HELPERS
-// ============================================================================
 
 type HealthHandler struct {
 	logger logging.Logger
@@ -23,11 +20,7 @@ func NewHealthHandler() *HealthHandler {
 	}
 }
 
-// ============================================================================
-// HEALTH RESPONSE DTOs
-// ============================================================================
 
-// HealthStandardResponse represents the standardized response format for health operations
 type HealthStandardResponse struct {
 	Success bool                 `json:"success"`
 	Code    int                  `json:"code"`
@@ -35,7 +28,6 @@ type HealthStandardResponse struct {
 	Error   *HealthErrorResponse `json:"error,omitempty"`
 }
 
-// HealthData contains the response data for health operations
 type HealthData struct {
 	Status  string `json:"status" example:"ok"`
 	Message string `json:"message" example:"Service is healthy"`
@@ -43,18 +35,13 @@ type HealthData struct {
 	Service string `json:"service" example:"meow"`
 }
 
-// HealthErrorResponse represents error information for health operations
 type HealthErrorResponse struct {
 	Code    string `json:"code" example:"HEALTH_CHECK_FAILED"`
 	Message string `json:"message" example:"Health check failed"`
 	Details string `json:"details,omitempty" example:"Service is not responding"`
 }
 
-// ============================================================================
-// INTERNAL HELPER FUNCTIONS
-// ============================================================================
 
-// sendSuccessResponse sends a standardized success response
 func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, version string) {
 	response := &HealthStandardResponse{
 		Success: true,
@@ -77,8 +64,6 @@ func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, ver
 	c.Data(http.StatusOK, "application/json", jsonBytes)
 }
 
-// Health godoc
-//
 //	@Summary		Health check endpoint
 //	@Description	Returns the health status of the service using standardized response format
 //	@Tags			Health
@@ -89,15 +74,11 @@ func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, ver
 func (h *HealthHandler) Health(c *gin.Context) {
 	h.logger.Infof("Health check requested")
 
-	// Perform basic health checks here if needed
-	// For now, we'll assume the service is healthy if we can respond
 
 	h.sendSuccessResponse(c, "ok", "Service is healthy", "1.0.0")
 	h.logger.Infof("Health check completed successfully")
 }
 
-// Ping godoc
-//
 //	@Summary		Ping endpoint
 //	@Description	Simple ping endpoint that returns pong using standardized response format
 //	@Tags			Health

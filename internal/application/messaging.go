@@ -10,7 +10,6 @@ import (
 	"meow/internal/shared/validation"
 )
 
-// MessageApp implements messaging use cases following Clean Architecture
 type MessageApp struct {
 	meowService interface {
 		SendTextMessage(ctx context.Context, sessionID, chatJID, content string) (interface{}, error)
@@ -30,7 +29,6 @@ type MessageApp struct {
 	validator   *validation.Validator
 }
 
-// NewMessageApp creates a new MessageApp instance
 func NewMessageApp(
 	meowService interface{},
 	sessionRepo session.Repository,
@@ -56,31 +54,25 @@ func NewMessageApp(
 	}
 }
 
-// SendText sends a text message using DTO
 func (s *MessageApp) SendText(ctx context.Context, sessionID string, req *dto.SendTextRequest) (*dto.MessageResponse, error) {
-	// 1. Validate request
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
 	}
 
-	// 2. Validate session
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return nil, err
 	}
 
-	// 3. Send message via meow service
 	chatJID := s.resolveChatJID(req.Phone)
 	result, err := s.meowService.SendTextMessage(ctx, sessionID, chatJID, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send text message: %w", err)
 	}
 
-	// 4. Build response (whatsmeow will handle events)
 	response := s.buildMessageResponse(result)
 	return response, nil
 }
 
-// SendImage sends an image message using DTO
 func (s *MessageApp) SendImage(ctx context.Context, sessionID string, req *dto.SendImageRequest, imageData []byte) (*dto.MessageResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
@@ -100,7 +92,6 @@ func (s *MessageApp) SendImage(ctx context.Context, sessionID string, req *dto.S
 	return response, nil
 }
 
-// SendVideo sends a video message using DTO
 func (s *MessageApp) SendVideo(ctx context.Context, sessionID string, req *dto.SendVideoRequest, videoData []byte) (*dto.MessageResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
@@ -120,7 +111,6 @@ func (s *MessageApp) SendVideo(ctx context.Context, sessionID string, req *dto.S
 	return response, nil
 }
 
-// SendAudio sends an audio message using DTO
 func (s *MessageApp) SendAudio(ctx context.Context, sessionID string, req *dto.SendAudioRequest, audioData []byte) (*dto.MessageResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
@@ -140,7 +130,6 @@ func (s *MessageApp) SendAudio(ctx context.Context, sessionID string, req *dto.S
 	return response, nil
 }
 
-// SendDocument sends a document message using DTO
 func (s *MessageApp) SendDocument(ctx context.Context, sessionID string, req *dto.SendDocumentRequest, documentData []byte) (*dto.MessageResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
@@ -160,7 +149,6 @@ func (s *MessageApp) SendDocument(ctx context.Context, sessionID string, req *dt
 	return response, nil
 }
 
-// SendSticker sends a sticker message using DTO
 func (s *MessageApp) SendSticker(ctx context.Context, sessionID string, req *dto.SendStickerRequest, stickerData []byte) (*dto.MessageResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
@@ -180,7 +168,6 @@ func (s *MessageApp) SendSticker(ctx context.Context, sessionID string, req *dto
 	return response, nil
 }
 
-// SendContact sends a contact message using DTO
 func (s *MessageApp) SendContact(ctx context.Context, sessionID string, req *dto.SendContactRequest) (*dto.MessageResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
@@ -190,7 +177,6 @@ func (s *MessageApp) SendContact(ctx context.Context, sessionID string, req *dto
 		return nil, err
 	}
 
-	// Build vCard from contact info
 	vCard := fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nFN:%s\nTEL:%s\nEND:VCARD", req.ContactName, req.ContactPhone)
 
 	chatJID := s.resolveChatJID(req.Phone)
@@ -203,7 +189,6 @@ func (s *MessageApp) SendContact(ctx context.Context, sessionID string, req *dto
 	return response, nil
 }
 
-// SendLocation sends a location message using DTO
 func (s *MessageApp) SendLocation(ctx context.Context, sessionID string, req *dto.SendLocationRequest) (*dto.MessageResponse, error) {
 	if err := req.Validate(); err != nil {
 		return nil, fmt.Errorf("request validation failed: %w", err)
@@ -223,21 +208,18 @@ func (s *MessageApp) SendLocation(ctx context.Context, sessionID string, req *dt
 	return response, nil
 }
 
-// MarkAsRead marks messages as read using DTO
 func (s *MessageApp) MarkAsRead(ctx context.Context, sessionID string, req *dto.MarkAsReadRequest) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	// For now, mark the first message ID as read (the DTO supports multiple but meow service expects single)
 	if len(req.MessageIDs) > 0 {
 		return s.meowService.MarkAsRead(ctx, sessionID, chatJID, req.MessageIDs[0])
 	}
 	return fmt.Errorf("no message IDs provided")
 }
 
-// ReactToMessage reacts to a message using DTO
 func (s *MessageApp) ReactToMessage(ctx context.Context, sessionID string, req *dto.ReactToMessageRequest) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
@@ -247,7 +229,6 @@ func (s *MessageApp) ReactToMessage(ctx context.Context, sessionID string, req *
 	return s.meowService.ReactToMessage(ctx, sessionID, chatJID, req.MessageID, req.Emoji)
 }
 
-// EditMessage edits a message using DTO
 func (s *MessageApp) EditMessage(ctx context.Context, sessionID string, req *dto.EditMessageRequest) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
@@ -257,7 +238,6 @@ func (s *MessageApp) EditMessage(ctx context.Context, sessionID string, req *dto
 	return s.meowService.EditMessage(ctx, sessionID, chatJID, req.MessageID, req.NewText)
 }
 
-// DeleteMessage deletes a message using DTO
 func (s *MessageApp) DeleteMessage(ctx context.Context, sessionID string, req *dto.DeleteMessageRequest) error {
 	if err := s.validateSession(ctx, sessionID); err != nil {
 		return err
@@ -267,7 +247,6 @@ func (s *MessageApp) DeleteMessage(ctx context.Context, sessionID string, req *d
 	return s.meowService.DeleteMessage(ctx, sessionID, chatJID, req.MessageID)
 }
 
-// Helper methods
 
 func (s *MessageApp) validateSession(ctx context.Context, sessionID string) error {
 	sessionEntity, err := s.sessionRepo.GetByID(ctx, sessionID)
@@ -283,8 +262,6 @@ func (s *MessageApp) validateSession(ctx context.Context, sessionID string) erro
 }
 
 func (s *MessageApp) resolveChatJID(chatJID string) string {
-	// Add logic to resolve chat JID if needed
-	// For now, return as-is
 	return chatJID
 }
 
@@ -303,7 +280,6 @@ func (s *MessageApp) buildMessageResponse(result interface{}) *dto.MessageRespon
 	}
 }
 
-// Helper function to extract message ID from meow service response
 func extractMessageID(result interface{}) string {
 	if result == nil {
 		return "unknown"

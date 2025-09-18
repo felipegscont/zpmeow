@@ -10,13 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// CommunityHandler handles community-related HTTP requests
 type CommunityHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewCommunityHandler creates a new community handler
 func NewCommunityHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *CommunityHandler {
 	return &CommunityHandler{
 		sessionService: sessionService,
@@ -24,15 +22,10 @@ func NewCommunityHandler(sessionService *application.SessionApp, wmeowService wm
 	}
 }
 
-// resolveSessionID resolves session ID or name to actual session ID
 func (h *CommunityHandler) resolveSessionID(_ *gin.Context, sessionIDOrName string) (string, error) {
-	// For now, just return the sessionIDOrName as-is
-	// In the future, this could resolve session names to IDs
 	return sessionIDOrName, nil
 }
 
-// LinkGroup handles linking a group to a community
-//
 //	@Summary		Link group to community
 //	@Description	Link a group to a community
 //	@Tags			Community
@@ -57,7 +50,6 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewCommunityErrorResponse(
@@ -80,7 +72,6 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewCommunityErrorResponse(
 			http.StatusBadRequest,
@@ -91,7 +82,6 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Link group using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.LinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
 	if err != nil {
@@ -108,8 +98,6 @@ func (h *CommunityHandler) LinkGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// UnlinkGroup handles unlinking a group from a community
-//
 //	@Summary		Unlink group from community
 //	@Description	Unlink a group from a community
 //	@Tags			Community
@@ -134,7 +122,6 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewCommunityErrorResponse(
@@ -157,7 +144,6 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewCommunityErrorResponse(
 			http.StatusBadRequest,
@@ -168,7 +154,6 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 		return
 	}
 
-	// Unlink group using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.UnlinkGroup(ctx, sessionID, req.CommunityJID, req.GroupJID)
 	if err != nil {
@@ -185,8 +170,6 @@ func (h *CommunityHandler) UnlinkGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetSubGroups handles getting subgroups of a community
-//
 //	@Summary		Get community subgroups
 //	@Description	Get all subgroups of a community
 //	@Tags			Community
@@ -211,7 +194,6 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewCommunityErrorResponse(
@@ -234,7 +216,6 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewCommunityErrorResponse(
 			http.StatusBadRequest,
@@ -245,7 +226,6 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 		return
 	}
 
-	// Get subgroups using meow service
 	ctx := c.Request.Context()
 	subGroups, err := h.wmeowService.GetSubGroups(ctx, sessionID, req.CommunityJID)
 	if err != nil {
@@ -262,8 +242,6 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetLinkedGroupsParticipants handles getting participants of linked groups
-//
 //	@Summary		Get community participants
 //	@Description	Get all participants of linked groups in a community
 //	@Tags			Community
@@ -288,7 +266,6 @@ func (h *CommunityHandler) GetLinkedGroupsParticipants(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewCommunityErrorResponse(
@@ -311,7 +288,6 @@ func (h *CommunityHandler) GetLinkedGroupsParticipants(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewCommunityErrorResponse(
 			http.StatusBadRequest,
@@ -322,7 +298,6 @@ func (h *CommunityHandler) GetLinkedGroupsParticipants(c *gin.Context) {
 		return
 	}
 
-	// Get linked groups participants using meow service
 	ctx := c.Request.Context()
 	participants, err := h.wmeowService.GetLinkedGroupsParticipants(ctx, sessionID, req.CommunityJID)
 	if err != nil {

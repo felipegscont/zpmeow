@@ -6,30 +6,23 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
-// WhatsAppLogger interface for WhatsApp compatibility
 type WhatsAppLogger = waLog.Logger
 
-// WALoggerAdapter adapts our Logger to WhatsApp's logger interface
 type WALoggerAdapter struct {
 	logger Logger
 }
 
-// Errorf implements WhatsAppLogger interface
 func (w *WALoggerAdapter) Errorf(msg string, args ...interface{}) {
-	// Clean up WhatsApp verbose messages
 	cleanMsg := w.cleanWhatsAppMessage(msg)
 	w.logger.Errorf(cleanMsg, args...)
 }
 
-// Warnf implements WhatsAppLogger interface
 func (w *WALoggerAdapter) Warnf(msg string, args ...interface{}) {
 	cleanMsg := w.cleanWhatsAppMessage(msg)
 	w.logger.Warnf(cleanMsg, args...)
 }
 
-// Infof implements WhatsAppLogger interface
 func (w *WALoggerAdapter) Infof(msg string, args ...interface{}) {
-	// Block XML protocol messages at INFO level too
 	if strings.HasPrefix(strings.TrimSpace(msg), "<") {
 		return
 	}
@@ -37,34 +30,27 @@ func (w *WALoggerAdapter) Infof(msg string, args ...interface{}) {
 	w.logger.Infof(cleanMsg, args...)
 }
 
-// Debugf implements WhatsAppLogger interface
 func (w *WALoggerAdapter) Debugf(msg string, args ...interface{}) {
-	// COMPLETELY DISABLE whatsmeow debug logging - it's too verbose and not useful
 	return
 }
 
-// Sub implements WhatsAppLogger interface
 func (w *WALoggerAdapter) Sub(module string) waLog.Logger {
 	return &WALoggerAdapter{
 		logger: w.logger.Sub(module),
 	}
 }
 
-// shouldFilterXMLMessage checks if the message contains XML protocol data that should be filtered
 func (w *WALoggerAdapter) shouldFilterXMLMessage(msg string) bool {
 	trimmedMsg := strings.TrimSpace(msg)
 
-	// Filter out any message that starts with < (XML tags) - this should catch most XML
 	if strings.HasPrefix(trimmedMsg, "<") {
 		return true
 	}
 
-	// Filter out any message that contains XML-like content with angle brackets
 	if strings.Contains(trimmedMsg, "<") && strings.Contains(trimmedMsg, ">") {
 		return true
 	}
 
-	// Filter out specific WhatsApp protocol messages
 	xmlPatterns := []string{
 		"decrypting message from",
 		"stored message secret key",
@@ -118,13 +104,10 @@ func (w *WALoggerAdapter) shouldFilterXMLMessage(msg string) bool {
 	return false
 }
 
-// cleanmeowMessage cleans up verbose meow log messages
 func (w *WALoggerAdapter) cleanWhatsAppMessage(msg string) string {
-	// Remove excessive technical details
 	msg = strings.ReplaceAll(msg, "Successfully ", "")
 	msg = strings.ReplaceAll(msg, "Failed to ", "")
 
-	// Simplify common patterns
 	replacements := map[string]string{
 		"Sending message to":                     "Sending to",
 		"Received message from":                  "Received from",
@@ -222,7 +205,6 @@ func (w *WALoggerAdapter) cleanWhatsAppMessage(msg string) string {
 		msg = strings.ReplaceAll(msg, old, new)
 	}
 
-	// Remove redundant words
 	redundantWords := []string{
 		"successfully",
 		"properly",
@@ -373,7 +355,6 @@ func (w *WALoggerAdapter) cleanWhatsAppMessage(msg string) string {
 		msg = strings.Join(filteredWords, " ")
 	}
 
-	// Capitalize first letter
 	if len(msg) > 0 {
 		msg = strings.ToUpper(string(msg[0])) + msg[1:]
 	}
@@ -381,7 +362,6 @@ func (w *WALoggerAdapter) cleanWhatsAppMessage(msg string) string {
 	return SanitizeMessage(msg)
 }
 
-// NewWALogger creates a new WhatsApp-compatible logger
 func NewWALogger(module string) waLog.Logger {
 	return &WALoggerAdapter{
 		logger: GetLogger().Sub(module),

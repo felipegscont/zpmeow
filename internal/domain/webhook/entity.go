@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// WebhookConfiguration represents webhook configuration as a separate aggregate
 type WebhookConfiguration struct {
 	SessionID SessionID
 	URL       WebhookURL
@@ -14,7 +13,6 @@ type WebhookConfiguration struct {
 	UpdatedAt time.Time
 }
 
-// NewWebhookConfiguration creates a new webhook configuration
 func NewWebhookConfiguration(sessionID, url string, events []string) (*WebhookConfiguration, error) {
 	sid, err := NewSessionID(sessionID)
 	if err != nil {
@@ -42,18 +40,15 @@ func NewWebhookConfiguration(sessionID, url string, events []string) (*WebhookCo
 	}, nil
 }
 
-// IsActive returns whether the webhook is active
 func (w *WebhookConfiguration) IsActive() bool {
 	return w.Active && !w.URL.IsEmpty()
 }
 
-// IsEventSubscribed checks if the webhook is subscribed to a specific event
 func (w *WebhookConfiguration) IsEventSubscribed(event EventType) bool {
 	if !w.IsActive() {
 		return false
 	}
 
-	// Check for "All" subscription
 	for _, e := range w.Events {
 		if e == EventTypeAll || e == event {
 			return true
@@ -63,7 +58,6 @@ func (w *WebhookConfiguration) IsEventSubscribed(event EventType) bool {
 	return false
 }
 
-// UpdateURL updates the webhook URL
 func (w *WebhookConfiguration) UpdateURL(url string) error {
 	webhookURL, err := NewWebhookURL(url)
 	if err != nil {
@@ -75,7 +69,6 @@ func (w *WebhookConfiguration) UpdateURL(url string) error {
 	return nil
 }
 
-// UpdateEvents updates the subscribed events
 func (w *WebhookConfiguration) UpdateEvents(events []string) error {
 	eventTypes, err := ParseEventTypes(events)
 	if err != nil {
@@ -87,22 +80,17 @@ func (w *WebhookConfiguration) UpdateEvents(events []string) error {
 	return nil
 }
 
-// Activate activates the webhook
 func (w *WebhookConfiguration) Activate() {
 	w.Active = true
 	w.updateTimestamp()
 }
 
-// Deactivate deactivates the webhook
 func (w *WebhookConfiguration) Deactivate() {
 	w.Active = false
 	w.updateTimestamp()
 }
 
-// Note: Getter methods removed to maintain encapsulation
-// Access to internal state should be through business methods only
 
-// Validate validates the webhook configuration
 func (w *WebhookConfiguration) Validate() error {
 	if w.SessionID.IsEmpty() {
 		return ErrInvalidSessionID
@@ -119,22 +107,18 @@ func (w *WebhookConfiguration) Validate() error {
 	return nil
 }
 
-// updateTimestamp updates the UpdatedAt timestamp
 func (w *WebhookConfiguration) updateTimestamp() {
 	w.UpdatedAt = time.Now()
 }
 
-// CanReceiveEvent checks if webhook can receive a specific event
 func (w *WebhookConfiguration) CanReceiveEvent(event EventType) bool {
 	return w.IsActive() && w.IsEventSubscribed(event)
 }
 
-// GetEventCount returns the number of subscribed events
 func (w *WebhookConfiguration) GetEventCount() int {
 	return len(w.Events)
 }
 
-// HasEvent checks if a specific event is in the subscription list
 func (w *WebhookConfiguration) HasEvent(event EventType) bool {
 	for _, e := range w.Events {
 		if e == event {
@@ -144,7 +128,6 @@ func (w *WebhookConfiguration) HasEvent(event EventType) bool {
 	return false
 }
 
-// AddEvent adds an event to the subscription list
 func (w *WebhookConfiguration) AddEvent(event EventType) error {
 	if !event.IsValid() {
 		return ErrInvalidEventType
@@ -159,7 +142,6 @@ func (w *WebhookConfiguration) AddEvent(event EventType) error {
 	return nil
 }
 
-// RemoveEvent removes an event from the subscription list
 func (w *WebhookConfiguration) RemoveEvent(event EventType) {
 	for i, e := range w.Events {
 		if e == event {
@@ -170,11 +152,8 @@ func (w *WebhookConfiguration) RemoveEvent(event EventType) {
 	}
 }
 
-// ClearEvents removes all events from subscription
 func (w *WebhookConfiguration) ClearEvents() {
 	w.Events = []EventType{}
 	w.updateTimestamp()
 }
 
-// Note: Clone method removed - not a domain responsibility
-// Cloning should be handled by application or infrastructure layers

@@ -24,26 +24,22 @@ import (
 	waLog "go.mau.fi/whatsmeow/util/log"
 )
 
-// ButtonData represents a button in interactive messages
 type ButtonData struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`
 }
 
-// ListItem represents an item in a list message
 type ListItem struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
 }
 
-// ListSection represents a section in a list message
 type ListSection struct {
 	Title string     `json:"title"`
 	Rows  []ListItem `json:"rows"`
 }
 
-// GroupInfo represents information about a meow group
 type GroupInfo struct {
 	JID          string   `json:"jid"`
 	Name         string   `json:"name"`
@@ -58,7 +54,6 @@ type GroupInfo struct {
 	Ephemeral    bool     `json:"ephemeral"`
 }
 
-// ChatInfo represents information about a chat (group or contact)
 type ChatInfo struct {
 	JID         string    `json:"jid"`
 	Name        string    `json:"name"`
@@ -126,25 +121,21 @@ type Service interface {
 	GetSubGroups(ctx context.Context, sessionID, communityJID string) ([]string, error)
 	GetLinkedGroupsParticipants(ctx context.Context, sessionID, communityJID string) ([]string, error)
 
-	// User Operations
 	CheckUser(ctx context.Context, sessionID string, phones []string) ([]UserCheckResult, error)
 	GetUserInfo(ctx context.Context, sessionID string, phones []string) (map[string]UserInfoResult, error)
 	GetAvatar(ctx context.Context, sessionID, phone string) (*AvatarResult, error)
 	GetContacts(ctx context.Context, sessionID string) ([]ContactResult, error)
 	SetUserPresence(ctx context.Context, sessionID, state string) error
 
-	// Privacy Operations
 	GetPrivacySettings(ctx context.Context, sessionID string) (*PrivacySettingsResult, error)
 	TryFetchPrivacySettings(ctx context.Context, sessionID string, ignoreCache bool) (*PrivacySettingsResult, error)
 	SetPrivacySetting(ctx context.Context, sessionID string, settingType, settingValue string) (*PrivacySettingsResult, error)
 	GetBlocklist(ctx context.Context, sessionID string) ([]string, error)
 	UpdateBlocklist(ctx context.Context, sessionID, jidStr, action string) ([]string, error)
 
-	// Session Management Operations
 	UpdateSessionWebhook(sessionID, webhookURL string) error
 	UpdateSessionSubscriptions(sessionID string, events []string) error
 
-	// Chat Management Operations
 	SetDisappearingTimer(ctx context.Context, sessionID, chatJID string, timer time.Duration) error
 	ListChats(ctx context.Context, sessionID string, chatType string) ([]ChatInfo, error)
 	GetChatInfo(ctx context.Context, sessionID, chatJID string) (*ChatInfo, error)
@@ -152,7 +143,6 @@ type Service interface {
 	MuteChat(ctx context.Context, sessionID, chatJID string, muted bool, duration time.Duration) error
 	ArchiveChat(ctx context.Context, sessionID, chatJID string, archived bool) error
 
-	// Newsletter Operations
 	CreateNewsletter(ctx context.Context, sessionID string, params *whatsmeow.CreateNewsletterParams) (*waTypes.NewsletterMetadata, error)
 	GetNewsletterInfo(ctx context.Context, sessionID, newsletterJID string) (*NewsletterInfo, error)
 	GetNewsletterInfoWithInvite(ctx context.Context, sessionID, inviteKey string) (*NewsletterInfo, error)
@@ -166,13 +156,10 @@ type Service interface {
 	NewsletterToggleMute(ctx context.Context, sessionID, newsletterJID string, mute bool) error
 	NewsletterSubscribeLiveUpdates(ctx context.Context, sessionID, newsletterJID string) error
 	UploadNewsletter(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error)
-	// ✅ SendNewsletterMessage - IMPLEMENTED using SendMessage + MediaHandle approach
-	// Based on whatsmeow issues #481, #697, and #498
 	SendNewsletterMessage(ctx context.Context, sessionID, newsletterJID string, message *waE2E.Message, mediaHandle string) (*whatsmeow.SendResponse, error)
 	UploadNewsletterReader(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error)
 }
 
-// User operation result types
 type UserCheckResult struct {
 	Query        string `json:"query"`
 	IsInmeow     bool   `json:"is_in_meow"`
@@ -207,7 +194,6 @@ type ContactResult struct {
 	IsMuted      bool   `json:"is_muted"`
 }
 
-// Privacy operation result types
 type PrivacySettingsResult struct {
 	GroupAdd     string `json:"groupAdd"`     // Who can add to groups: "all", "contacts", "contact_blacklist", "none"
 	LastSeen     string `json:"lastSeen"`     // Who can see last seen: "all", "contacts", "contact_blacklist", "none"
@@ -218,7 +204,6 @@ type PrivacySettingsResult struct {
 	Online       string `json:"online"`       // Who can see online status: "all", "match_last_seen"
 }
 
-// Newsletter operation result types
 type NewsletterInfo struct {
 	JID         string    `json:"jid"`
 	Name        string    `json:"name"`
@@ -243,7 +228,6 @@ type NewsletterMessage struct {
 	Reactions map[string]int `json:"reactions,omitempty"`
 }
 
-// serviceImpl - Simplified implementation following KISS principles
 type serviceImpl struct {
 	clients        map[string]*Client
 	sessions       session.Repository
@@ -303,7 +287,6 @@ func (m *serviceImpl) LogoutClient(sessionID string) error {
 	return nil
 }
 
-// Helper methods for simplified client management
 func (m *serviceImpl) getClient(sessionID string) *Client {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -318,7 +301,6 @@ func (m *serviceImpl) getOrCreateClient(sessionID string) *Client {
 		return client
 	}
 
-	// Get session to check for existing device_jid
 	sessionEntity, err := m.sessions.GetByID(context.Background(), sessionID)
 	var expectedDeviceJID string
 	if err == nil && !sessionEntity.WaJID.IsEmpty() {
@@ -326,7 +308,6 @@ func (m *serviceImpl) getOrCreateClient(sessionID string) *Client {
 		m.logger.Infof("Creating client for session %s with expected device JID: %s", sessionID, expectedDeviceJID)
 	}
 
-	// Create event processor for this session
 	eventProcessor := NewEventProcessor(sessionID, "", m.sessions, m.webhookService)
 
 	client, err := NewClientWithDeviceJID(sessionID, expectedDeviceJID, m.container, m.waLogger, eventProcessor, m.sessions)
@@ -339,7 +320,6 @@ func (m *serviceImpl) getOrCreateClient(sessionID string) *Client {
 	return client
 }
 
-// validateAndGetClient - Helper method to validate session and get connected client
 func (m *serviceImpl) validateAndGetClient(sessionID string) (*Client, error) {
 	if sessionID == "" {
 		return nil, fmt.Errorf("session ID cannot be empty")
@@ -357,7 +337,6 @@ func (m *serviceImpl) validateAndGetClient(sessionID string) (*Client, error) {
 	return client, nil
 }
 
-// validateAndGetClientForSending - Helper method specifically for sending operations
 func (m *serviceImpl) validateAndGetClientForSending(sessionID string) (*Client, error) {
 	client := m.getClient(sessionID)
 	if client == nil {
@@ -366,7 +345,6 @@ func (m *serviceImpl) validateAndGetClientForSending(sessionID string) (*Client,
 	return client, nil
 }
 
-// validateButtons - Helper method to validate button data
 func (m *serviceImpl) validateButtons(buttons []ButtonData) error {
 	if len(buttons) == 0 {
 		return fmt.Errorf("at least one button is required")
@@ -377,7 +355,6 @@ func (m *serviceImpl) validateButtons(buttons []ButtonData) error {
 	return nil
 }
 
-// buildmeowButtons - Helper method to convert ButtonData to meow buttons
 func (m *serviceImpl) buildmeowButtons(buttons []ButtonData) []*waProto.ButtonsMessage_Button {
 	var waButtons []*waProto.ButtonsMessage_Button
 	for _, button := range buttons {
@@ -390,7 +367,6 @@ func (m *serviceImpl) buildmeowButtons(buttons []ButtonData) []*waProto.ButtonsM
 	return waButtons
 }
 
-// validateListSections - Helper method to validate list sections
 func (m *serviceImpl) validateListSections(sections []ListSection) error {
 	if len(sections) == 0 {
 		return fmt.Errorf("at least one section is required")
@@ -398,7 +374,6 @@ func (m *serviceImpl) validateListSections(sections []ListSection) error {
 	return nil
 }
 
-// buildmeowListSections - Helper method to convert ListSection to meow sections
 func (m *serviceImpl) buildmeowListSections(sections []ListSection) []*waProto.ListMessage_Section {
 	var waSections []*waProto.ListMessage_Section
 	for _, section := range sections {
@@ -455,7 +430,6 @@ func (m *serviceImpl) GetClientStatus(sessionID string) types.Status {
 func (m *serviceImpl) ConnectOnStartup(ctx context.Context) error {
 	m.logger.Infof("Connecting sessions with credentials on startup")
 
-	// Get sessions with device credentials (device_jid) from repository
 	sessions, err := m.sessions.GetActive(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get sessions with credentials: %w", err)
@@ -463,14 +437,11 @@ func (m *serviceImpl) ConnectOnStartup(ctx context.Context) error {
 
 	m.logger.Infof("Found %d sessions with credentials to reconnect", len(sessions))
 
-	// Validate and start each session that has credentials
 	for _, sessionEntity := range sessions {
-		// Validate session integrity before attempting reconnection
 		if sessionEntity.WaJID.IsEmpty() {
 			m.logger.Warnf("Session %s (%s) has no device_jid but was returned as active - fixing status",
 				sessionEntity.ID, sessionEntity.Name)
 
-			// Fix inconsistent state: session without device_jid cannot be connected
 			sessionEntity.Status = session.StatusDisconnected
 			if err := m.sessions.Update(ctx, sessionEntity); err != nil {
 				m.logger.Errorf("Failed to fix session %s status: %v", sessionEntity.ID, err)
@@ -478,7 +449,6 @@ func (m *serviceImpl) ConnectOnStartup(ctx context.Context) error {
 			continue
 		}
 
-		// Validate that device exists in whatsmeow_device table
 		if !m.deviceExistsInDatabase(sessionEntity.WaJID.Value()) {
 			m.logger.Warnf("Session %s (%s) has device_jid %s but device not found in whatsmeow_device table - marking as disconnected",
 				sessionEntity.ID.Value(), sessionEntity.Name.Value(), sessionEntity.WaJID.Value())
@@ -508,13 +478,11 @@ func (m *serviceImpl) ConnectOnStartup(ctx context.Context) error {
 	return nil
 }
 
-// deviceExistsInDatabase checks if a device JID exists in the whatsmeow_device table
 func (m *serviceImpl) deviceExistsInDatabase(deviceJID string) bool {
 	if deviceJID == "" {
 		return false
 	}
 
-	// Try to get device from container
 	devices, err := m.container.GetAllDevices(context.Background())
 	if err != nil {
 		m.logger.Errorf("Failed to get devices from container: %v", err)
@@ -536,13 +504,11 @@ func (m *serviceImpl) DeleteMessage(ctx context.Context, sessionID, phone, messa
 		return err
 	}
 
-	// Parse phone to JID
 	recipient, err := parsePhoneToJID(phone)
 	if err != nil {
 		return fmt.Errorf("invalid phone number %s: %w", phone, err)
 	}
 
-	// Build revoke message based on forEveryone flag
 	var revokeTarget waTypes.JID
 	if forEveryone {
 		revokeTarget = waTypes.EmptyJID // Delete for everyone
@@ -553,10 +519,8 @@ func (m *serviceImpl) DeleteMessage(ctx context.Context, sessionID, phone, messa
 		revokeTarget = *client.GetClient().Store.ID // Delete for me only
 	}
 
-	// Create revoke message
 	revokeMsg := client.GetClient().BuildRevoke(recipient, revokeTarget, messageID)
 
-	// Send revoke message
 	_, err = client.GetClient().SendMessage(ctx, recipient, revokeMsg)
 	if err != nil {
 		return fmt.Errorf("failed to delete message: %w", err)
@@ -579,20 +543,17 @@ func (m *serviceImpl) EditMessage(ctx context.Context, sessionID, phone, message
 		return nil, err
 	}
 
-	// Parse phone to JID
 	recipient, err := parsePhoneToJID(phone)
 	if err != nil {
 		return nil, fmt.Errorf("invalid phone number %s: %w", phone, err)
 	}
 
-	// Create edit message with new text
 	editMsg := client.GetClient().BuildEdit(recipient, messageID, &waProto.Message{
 		ExtendedTextMessage: &waProto.ExtendedTextMessage{
 			Text: &newText,
 		},
 	})
 
-	// Send edit message
 	resp, err := client.GetClient().SendMessage(ctx, recipient, editMsg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to edit message: %w", err)
@@ -614,19 +575,16 @@ func (m *serviceImpl) ReactToMessage(ctx context.Context, sessionID, phone, mess
 		return err
 	}
 
-	// Parse phone to JID
 	recipient, err := parsePhoneToJID(phone)
 	if err != nil {
 		return fmt.Errorf("invalid phone number %s: %w", phone, err)
 	}
 
-	// Handle remove reaction
 	reaction := emoji
 	if emoji == "remove" {
 		reaction = ""
 	}
 
-	// Determine if message is from me based on messageID prefix
 	fromMe := false
 	actualMessageID := messageID
 	if strings.HasPrefix(messageID, "me:") {
@@ -634,7 +592,6 @@ func (m *serviceImpl) ReactToMessage(ctx context.Context, sessionID, phone, mess
 		actualMessageID = messageID[len("me:"):]
 	}
 
-	// Create reaction message
 	recipientStr := recipient.String()
 	timestampMs := time.Now().UnixMilli()
 
@@ -651,7 +608,6 @@ func (m *serviceImpl) ReactToMessage(ctx context.Context, sessionID, phone, mess
 		},
 	}
 
-	// Send reaction message
 	_, err = client.GetClient().SendMessage(ctx, recipient, reactionMsg)
 	if err != nil {
 		return fmt.Errorf("failed to send reaction: %w", err)
@@ -759,21 +715,17 @@ func (m *serviceImpl) SendButtonMessage(ctx context.Context, sessionID, phone, t
 		return nil, err
 	}
 
-	// Parse phone to JID
 	recipient, err := parsePhoneToJID(phone)
 	if err != nil {
 		return nil, fmt.Errorf("invalid phone number %s: %w", phone, err)
 	}
 
-	// Validate buttons
 	if err := m.validateButtons(buttons); err != nil {
 		return nil, err
 	}
 
-	// Create buttons for meow
 	waButtons := m.buildmeowButtons(buttons)
 
-	// Create button message
 	buttonMsg := &waProto.Message{
 		ButtonsMessage: &waProto.ButtonsMessage{
 			ContentText: &title,
@@ -782,7 +734,6 @@ func (m *serviceImpl) SendButtonMessage(ctx context.Context, sessionID, phone, t
 		},
 	}
 
-	// Send message
 	resp, err := client.GetClient().SendMessage(ctx, recipient, buttonMsg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send button message: %w", err)
@@ -799,21 +750,17 @@ func (m *serviceImpl) SendListMessage(ctx context.Context, sessionID, phone, tit
 		return nil, err
 	}
 
-	// Parse phone to JID
 	recipient, err := parsePhoneToJID(phone)
 	if err != nil {
 		return nil, fmt.Errorf("invalid phone number %s: %w", phone, err)
 	}
 
-	// Validate sections
 	if err := m.validateListSections(sections); err != nil {
 		return nil, err
 	}
 
-	// Create sections for meow
 	waSections := m.buildmeowListSections(sections)
 
-	// Create list message
 	listMsg := &waProto.Message{
 		ListMessage: &waProto.ListMessage{
 			Title:       &title,
@@ -825,7 +772,6 @@ func (m *serviceImpl) SendListMessage(ctx context.Context, sessionID, phone, tit
 		},
 	}
 
-	// Send message
 	resp, err := client.GetClient().SendMessage(ctx, recipient, listMsg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send list message: %w", err)
@@ -846,13 +792,11 @@ func (m *serviceImpl) SendPollMessage(ctx context.Context, sessionID, phone, nam
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse phone to JID
 	recipient, err := parsePhoneToJID(phone)
 	if err != nil {
 		return nil, fmt.Errorf("invalid phone number %s: %w", phone, err)
 	}
 
-	// Validate options
 	if len(options) < 2 {
 		return nil, fmt.Errorf("at least 2 options are required for a poll")
 	}
@@ -860,7 +804,6 @@ func (m *serviceImpl) SendPollMessage(ctx context.Context, sessionID, phone, nam
 		return nil, fmt.Errorf("maximum 12 options allowed for a poll")
 	}
 
-	// Validate selectable count
 	if selectableCount <= 0 {
 		selectableCount = 1 // Default to single select
 	}
@@ -868,10 +811,8 @@ func (m *serviceImpl) SendPollMessage(ctx context.Context, sessionID, phone, nam
 		selectableCount = len(options)
 	}
 
-	// Create poll message using whatsmeow's BuildPollCreation
 	pollMsg := client.GetClient().BuildPollCreation(name, options, selectableCount)
 
-	// Send message
 	resp, err := client.GetClient().SendMessage(ctx, recipient, pollMsg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send poll message: %w", err)
@@ -888,7 +829,6 @@ func (m *serviceImpl) SetPresence(ctx context.Context, sessionID, phone, state, 
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
-	// Parse phone to JID if provided, otherwise use empty JID for global presence
 	var chatJID waTypes.JID
 	if phone != "" {
 		jid, err := parsePhoneToJID(phone)
@@ -898,7 +838,6 @@ func (m *serviceImpl) SetPresence(ctx context.Context, sessionID, phone, state, 
 		chatJID = jid
 	}
 
-	// Send presence - for chat-specific presence, use SendChatPresence
 	if !chatJID.IsEmpty() {
 		var chatPresence waTypes.ChatPresence
 		switch strings.ToLower(state) {
@@ -915,7 +854,6 @@ func (m *serviceImpl) SetPresence(ctx context.Context, sessionID, phone, state, 
 			return fmt.Errorf("failed to send chat presence: %w", err)
 		}
 	} else {
-		// Global presence
 		var presence waTypes.Presence
 		switch strings.ToLower(state) {
 		case "available":
@@ -946,7 +884,6 @@ func (m *serviceImpl) CreateGroup(ctx context.Context, sessionID, name string, p
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Convert participants to JIDs
 	var participantJIDs []waTypes.JID
 	for _, phone := range participants {
 		jid, err := parsePhoneToJID(phone)
@@ -961,19 +898,16 @@ func (m *serviceImpl) CreateGroup(ctx context.Context, sessionID, name string, p
 		return nil, fmt.Errorf("no valid participants provided")
 	}
 
-	// Create group request
 	req := whatsmeow.ReqCreateGroup{
 		Name:         name,
 		Participants: participantJIDs,
 	}
 
-	// Create group
 	groupInfo, err := client.GetClient().CreateGroup(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create group: %w", err)
 	}
 
-	// Convert to our GroupInfo format
 	result := &GroupInfo{
 		JID:       groupInfo.JID.String(),
 		Name:      groupInfo.Name,
@@ -986,12 +920,10 @@ func (m *serviceImpl) CreateGroup(ctx context.Context, sessionID, name string, p
 		Ephemeral: groupInfo.IsEphemeral,
 	}
 
-	// Add participants
 	for _, participant := range groupInfo.Participants {
 		result.Participants = append(result.Participants, participant.JID.String())
 	}
 
-	// Add admins
 	for _, participant := range groupInfo.Participants {
 		if participant.IsAdmin {
 			result.Admins = append(result.Admins, participant.JID.String())
@@ -1004,7 +936,6 @@ func (m *serviceImpl) CreateGroup(ctx context.Context, sessionID, name string, p
 	return result, nil
 }
 
-// All remaining group and user functions are stubs for now
 func (m *serviceImpl) ListGroups(ctx context.Context, sessionID string) ([]GroupInfo, error) {
 	client := m.getClient(sessionID)
 	if client == nil {
@@ -1015,13 +946,11 @@ func (m *serviceImpl) ListGroups(ctx context.Context, sessionID string) ([]Group
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Get joined groups
 	groups, err := client.GetClient().GetJoinedGroups()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joined groups: %w", err)
 	}
 
-	// Convert to our GroupInfo format
 	var results []GroupInfo
 	for _, group := range groups {
 		result := GroupInfo{
@@ -1036,12 +965,10 @@ func (m *serviceImpl) ListGroups(ctx context.Context, sessionID string) ([]Group
 			Ephemeral: group.IsEphemeral,
 		}
 
-		// Add participants
 		for _, participant := range group.Participants {
 			result.Participants = append(result.Participants, participant.JID.String())
 		}
 
-		// Add admins
 		for _, participant := range group.Participants {
 			if participant.IsAdmin {
 				result.Admins = append(result.Admins, participant.JID.String())
@@ -1066,19 +993,16 @@ func (m *serviceImpl) GetGroupInfo(ctx context.Context, sessionID, groupJID stri
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Get group info
 	groupInfo, err := client.GetClient().GetGroupInfo(jid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group info: %w", err)
 	}
 
-	// Convert to our GroupInfo format
 	result := &GroupInfo{
 		JID:       groupInfo.JID.String(),
 		Name:      groupInfo.Name,
@@ -1091,12 +1015,10 @@ func (m *serviceImpl) GetGroupInfo(ctx context.Context, sessionID, groupJID stri
 		Ephemeral: groupInfo.IsEphemeral,
 	}
 
-	// Add participants
 	for _, participant := range groupInfo.Participants {
 		result.Participants = append(result.Participants, participant.JID.String())
 	}
 
-	// Add admins
 	for _, participant := range groupInfo.Participants {
 		if participant.IsAdmin {
 			result.Admins = append(result.Admins, participant.JID.String())
@@ -1118,16 +1040,13 @@ func (m *serviceImpl) JoinGroup(ctx context.Context, sessionID, inviteLink strin
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Join group via invite link
 	groupJID, err := client.GetClient().JoinGroupWithLink(inviteLink)
 	if err != nil {
 		return nil, fmt.Errorf("failed to join group: %w", err)
 	}
 
-	// Get group info after joining
 	groupInfo, err := client.GetClient().GetGroupInfo(groupJID)
 	if err != nil {
-		// If we can't get group info, return basic info
 		result := &GroupInfo{
 			JID: groupJID.String(),
 		}
@@ -1136,7 +1055,6 @@ func (m *serviceImpl) JoinGroup(ctx context.Context, sessionID, inviteLink strin
 		return result, nil
 	}
 
-	// Convert to our GroupInfo format
 	result := &GroupInfo{
 		JID:       groupInfo.JID.String(),
 		Name:      groupInfo.Name,
@@ -1149,12 +1067,10 @@ func (m *serviceImpl) JoinGroup(ctx context.Context, sessionID, inviteLink strin
 		Ephemeral: groupInfo.IsEphemeral,
 	}
 
-	// Add participants
 	for _, participant := range groupInfo.Participants {
 		result.Participants = append(result.Participants, participant.JID.String())
 	}
 
-	// Add admins
 	for _, participant := range groupInfo.Participants {
 		if participant.IsAdmin {
 			result.Admins = append(result.Admins, participant.JID.String())
@@ -1177,28 +1093,23 @@ func (m *serviceImpl) JoinGroupWithInvite(ctx context.Context, sessionID, groupJ
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	groupJIDParsed, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Parse inviter JID
 	inviterJID, err := waTypes.ParseJID(inviter)
 	if err != nil {
 		return nil, fmt.Errorf("invalid inviter JID %s: %w", inviter, err)
 	}
 
-	// Join group via specific invite
 	err = client.GetClient().JoinGroupWithInvite(groupJIDParsed, inviterJID, code, expiration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to join group with invite: %w", err)
 	}
 
-	// Get group info after joining
 	groupInfo, err := client.GetClient().GetGroupInfo(groupJIDParsed)
 	if err != nil {
-		// If we can't get group info, return basic info
 		result := &GroupInfo{
 			JID: groupJIDParsed.String(),
 		}
@@ -1207,7 +1118,6 @@ func (m *serviceImpl) JoinGroupWithInvite(ctx context.Context, sessionID, groupJ
 		return result, nil
 	}
 
-	// Convert to our GroupInfo format
 	result := &GroupInfo{
 		JID:       groupInfo.JID.String(),
 		Name:      groupInfo.Name,
@@ -1220,12 +1130,10 @@ func (m *serviceImpl) JoinGroupWithInvite(ctx context.Context, sessionID, groupJ
 		Ephemeral: groupInfo.IsEphemeral,
 	}
 
-	// Add participants
 	for _, participant := range groupInfo.Participants {
 		result.Participants = append(result.Participants, participant.JID.String())
 	}
 
-	// Add admins
 	for _, participant := range groupInfo.Participants {
 		if participant.IsAdmin {
 			result.Admins = append(result.Admins, participant.JID.String())
@@ -1248,13 +1156,11 @@ func (m *serviceImpl) LeaveGroup(ctx context.Context, sessionID, groupJID string
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Leave group
 	err = client.GetClient().LeaveGroup(jid)
 	if err != nil {
 		return fmt.Errorf("failed to leave group: %w", err)
@@ -1275,13 +1181,11 @@ func (m *serviceImpl) GetInviteLink(ctx context.Context, sessionID, groupJID str
 		return "", fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return "", fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Get invite link
 	inviteLink, err := client.GetClient().GetGroupInviteLink(jid, reset)
 	if err != nil {
 		return "", fmt.Errorf("failed to get invite link: %w", err)
@@ -1302,13 +1206,11 @@ func (m *serviceImpl) SetGroupEphemeral(ctx context.Context, sessionID, groupJID
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Convert duration to time.Duration
 	var expiration time.Duration
 	if ephemeral && duration > 0 {
 		expiration = time.Duration(duration) * time.Second
@@ -1318,7 +1220,6 @@ func (m *serviceImpl) SetGroupEphemeral(ctx context.Context, sessionID, groupJID
 		expiration = 0 // Disable ephemeral
 	}
 
-	// Set group ephemeral
 	err = client.GetClient().SetDisappearingTimer(jid, expiration, time.Time{})
 	if err != nil {
 		return fmt.Errorf("failed to set group ephemeral: %w", err)
@@ -1345,19 +1246,16 @@ func (m *serviceImpl) GetGroupRequestParticipants(ctx context.Context, sessionID
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Get group request participants
 	requestParticipants, err := client.GetClient().GetGroupRequestParticipants(jid)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group request participants: %w", err)
 	}
 
-	// Convert JIDs to strings
 	var participants []string
 	for _, participant := range requestParticipants {
 		participants = append(participants, participant.JID.String())
@@ -1379,13 +1277,11 @@ func (m *serviceImpl) UpdateGroupRequestParticipants(ctx context.Context, sessio
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	groupJIDParsed, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Convert participants to JIDs
 	var participantJIDs []waTypes.JID
 	for _, phone := range participants {
 		jid, err := parsePhoneToJID(phone)
@@ -1400,7 +1296,6 @@ func (m *serviceImpl) UpdateGroupRequestParticipants(ctx context.Context, sessio
 		return fmt.Errorf("no valid participants provided")
 	}
 
-	// Parse action
 	var requestChange whatsmeow.ParticipantRequestChange
 	switch action {
 	case "approve":
@@ -1411,7 +1306,6 @@ func (m *serviceImpl) UpdateGroupRequestParticipants(ctx context.Context, sessio
 		return fmt.Errorf("invalid action %s. Valid actions: approve, reject", action)
 	}
 
-	// Update group request participants
 	_, err = client.GetClient().UpdateGroupRequestParticipants(groupJIDParsed, participantJIDs, requestChange)
 	if err != nil {
 		return fmt.Errorf("failed to %s group request participants: %w", action, err)
@@ -1433,19 +1327,16 @@ func (m *serviceImpl) LinkGroup(ctx context.Context, sessionID, communityJID, gr
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse community JID
 	communityJIDParsed, err := waTypes.ParseJID(communityJID)
 	if err != nil {
 		return fmt.Errorf("invalid community JID %s: %w", communityJID, err)
 	}
 
-	// Parse group JID
 	groupJIDParsed, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Link group to community
 	err = client.GetClient().LinkGroup(communityJIDParsed, groupJIDParsed)
 	if err != nil {
 		return fmt.Errorf("failed to link group to community: %w", err)
@@ -1467,19 +1358,16 @@ func (m *serviceImpl) UnlinkGroup(ctx context.Context, sessionID, communityJID, 
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse community JID
 	communityJIDParsed, err := waTypes.ParseJID(communityJID)
 	if err != nil {
 		return fmt.Errorf("invalid community JID %s: %w", communityJID, err)
 	}
 
-	// Parse group JID
 	groupJIDParsed, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Unlink group from community
 	err = client.GetClient().UnlinkGroup(communityJIDParsed, groupJIDParsed)
 	if err != nil {
 		return fmt.Errorf("failed to unlink group from community: %w", err)
@@ -1501,19 +1389,16 @@ func (m *serviceImpl) GetSubGroups(ctx context.Context, sessionID, communityJID 
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse community JID
 	communityJIDParsed, err := waTypes.ParseJID(communityJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid community JID %s: %w", communityJID, err)
 	}
 
-	// Get subgroups
 	subGroups, err := client.GetClient().GetSubGroups(communityJIDParsed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subgroups: %w", err)
 	}
 
-	// Convert JIDs to strings
 	var groups []string
 	for _, group := range subGroups {
 		groups = append(groups, group.JID.String())
@@ -1535,19 +1420,16 @@ func (m *serviceImpl) GetLinkedGroupsParticipants(ctx context.Context, sessionID
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse community JID
 	communityJIDParsed, err := waTypes.ParseJID(communityJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid community JID %s: %w", communityJID, err)
 	}
 
-	// Get linked groups participants
 	participants, err := client.GetClient().GetLinkedGroupsParticipants(communityJIDParsed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get linked groups participants: %w", err)
 	}
 
-	// Convert JIDs to strings
 	var participantList []string
 	for _, participant := range participants {
 		participantList = append(participantList, participant.String())
@@ -1569,7 +1451,6 @@ func (m *serviceImpl) CheckUser(ctx context.Context, sessionID string, phones []
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Validate and clean phone numbers
 	var validPhones []string
 
 	for _, phone := range phones {
@@ -1585,13 +1466,11 @@ func (m *serviceImpl) CheckUser(ctx context.Context, sessionID string, phones []
 		return nil, fmt.Errorf("no valid phone numbers provided")
 	}
 
-	// Check if users are on WhatsApp
 	resp, err := client.GetClient().IsOnWhatsApp(validPhones)
 	if err != nil {
 		return nil, fmt.Errorf("failed to check users on WhatsApp: %w", err)
 	}
 
-	// Convert response to our format
 	var results []UserCheckResult
 	for _, item := range resp {
 		verifiedName := ""
@@ -1624,7 +1503,6 @@ func (m *serviceImpl) GetUserInfo(ctx context.Context, sessionID string, phones 
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Convert phones to JIDs for whatsmeow
 	var jids []waTypes.JID
 	phoneToJIDMap := make(map[string]string) // phone -> jid string mapping
 
@@ -1642,13 +1520,11 @@ func (m *serviceImpl) GetUserInfo(ctx context.Context, sessionID string, phones 
 		return nil, fmt.Errorf("no valid phone numbers provided")
 	}
 
-	// Get user info from meow
 	resp, err := client.GetClient().GetUserInfo(jids)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
-	// Convert response to our format
 	results := make(map[string]UserInfoResult)
 	for jid, info := range resp {
 		verifiedName := ""
@@ -1684,13 +1560,11 @@ func (m *serviceImpl) GetAvatar(ctx context.Context, sessionID, phone string) (*
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse phone to JID
 	jid, err := parsePhoneToJID(phone)
 	if err != nil {
 		return nil, fmt.Errorf("invalid phone number %s: %w", phone, err)
 	}
 
-	// Get profile picture info
 	pictureInfo, err := client.GetClient().GetProfilePictureInfo(jid, &whatsmeow.GetProfilePictureParams{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get avatar: %w", err)
@@ -1718,13 +1592,11 @@ func (m *serviceImpl) GetContacts(ctx context.Context, sessionID string) ([]Cont
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Get contacts from store
 	contacts, err := client.GetClient().Store.Contacts.GetAllContacts(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get contacts: %w", err)
 	}
 
-	// Convert to our ContactResult format
 	var results []ContactResult
 	for jid, contact := range contacts {
 		result := ContactResult{
@@ -1745,7 +1617,6 @@ func (m *serviceImpl) GetContacts(ctx context.Context, sessionID string) ([]Cont
 }
 
 func (m *serviceImpl) SetUserPresence(ctx context.Context, sessionID, state string) error {
-	// SetUserPresence is global presence, so we call SetPresence with empty phone
 	return m.SetPresence(ctx, sessionID, "", state, "")
 }
 
@@ -1759,13 +1630,11 @@ func (m *serviceImpl) GetInviteInfo(ctx context.Context, sessionID, inviteLink s
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Get invite info
 	groupInfo, err := client.GetClient().GetGroupInfoFromLink(inviteLink)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get invite info: %w", err)
 	}
 
-	// Convert to our GroupInfo format
 	result := &GroupInfo{
 		JID:       groupInfo.JID.String(),
 		Name:      groupInfo.Name,
@@ -1778,12 +1647,10 @@ func (m *serviceImpl) GetInviteInfo(ctx context.Context, sessionID, inviteLink s
 		Ephemeral: groupInfo.IsEphemeral,
 	}
 
-	// Add participants
 	for _, participant := range groupInfo.Participants {
 		result.Participants = append(result.Participants, participant.JID.String())
 	}
 
-	// Add admins
 	for _, participant := range groupInfo.Participants {
 		if participant.IsAdmin {
 			result.Admins = append(result.Admins, participant.JID.String())
@@ -1806,25 +1673,21 @@ func (m *serviceImpl) GetGroupInfoFromInvite(ctx context.Context, sessionID, gro
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	groupJIDParsed, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Parse inviter JID
 	inviterJID, err := waTypes.ParseJID(inviter)
 	if err != nil {
 		return nil, fmt.Errorf("invalid inviter JID %s: %w", inviter, err)
 	}
 
-	// Get group info from specific invite
 	groupInfo, err := client.GetClient().GetGroupInfoFromInvite(groupJIDParsed, inviterJID, code, expiration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group info from invite: %w", err)
 	}
 
-	// Convert to our GroupInfo format
 	result := &GroupInfo{
 		JID:       groupInfo.JID.String(),
 		Name:      groupInfo.Name,
@@ -1837,12 +1700,10 @@ func (m *serviceImpl) GetGroupInfoFromInvite(ctx context.Context, sessionID, gro
 		Ephemeral: groupInfo.IsEphemeral,
 	}
 
-	// Add participants
 	for _, participant := range groupInfo.Participants {
 		result.Participants = append(result.Participants, participant.JID.String())
 	}
 
-	// Add admins
 	for _, participant := range groupInfo.Participants {
 		if participant.IsAdmin {
 			result.Admins = append(result.Admins, participant.JID.String())
@@ -1865,13 +1726,11 @@ func (m *serviceImpl) UpdateParticipants(ctx context.Context, sessionID, groupJI
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	groupJIDParsed, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Convert participants to JIDs
 	var participantJIDs []waTypes.JID
 	for _, phone := range participants {
 		jid, err := parsePhoneToJID(phone)
@@ -1886,7 +1745,6 @@ func (m *serviceImpl) UpdateParticipants(ctx context.Context, sessionID, groupJI
 		return fmt.Errorf("no valid participants provided")
 	}
 
-	// Parse action
 	var participantChange whatsmeow.ParticipantChange
 	switch action {
 	case "add":
@@ -1901,7 +1759,6 @@ func (m *serviceImpl) UpdateParticipants(ctx context.Context, sessionID, groupJI
 		return fmt.Errorf("invalid action: %s (must be add, remove, promote, or demote)", action)
 	}
 
-	// Update participants
 	_, err = client.GetClient().UpdateGroupParticipants(groupJIDParsed, participantJIDs, participantChange)
 	if err != nil {
 		return fmt.Errorf("failed to %s participants: %w", action, err)
@@ -1923,13 +1780,11 @@ func (m *serviceImpl) SetGroupName(ctx context.Context, sessionID, groupJID, nam
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Set group name
 	err = client.GetClient().SetGroupName(jid, name)
 	if err != nil {
 		return fmt.Errorf("failed to set group name: %w", err)
@@ -1951,13 +1806,11 @@ func (m *serviceImpl) SetGroupTopic(ctx context.Context, sessionID, groupJID, to
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Set group topic
 	err = client.GetClient().SetGroupTopic(jid, "", "", topic)
 	if err != nil {
 		return fmt.Errorf("failed to set group topic: %w", err)
@@ -1979,18 +1832,15 @@ func (m *serviceImpl) SetGroupPhoto(ctx context.Context, sessionID, groupJID str
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Let whatsmeow validate the image format
 	if len(photo) == 0 {
 		return fmt.Errorf("photo data cannot be empty")
 	}
 
-	// Set group photo
 	pictureID, err := client.GetClient().SetGroupPhoto(jid, photo)
 	if err != nil {
 		return fmt.Errorf("failed to set group photo: %w", err)
@@ -2012,13 +1862,11 @@ func (m *serviceImpl) RemoveGroupPhoto(ctx context.Context, sessionID, groupJID 
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Remove group photo by setting it to nil
 	_, err = client.GetClient().SetGroupPhoto(jid, nil)
 	if err != nil {
 		return fmt.Errorf("failed to remove group photo: %w", err)
@@ -2040,13 +1888,11 @@ func (m *serviceImpl) SetGroupAnnounce(ctx context.Context, sessionID, groupJID 
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Set group announce setting
 	err = client.GetClient().SetGroupAnnounce(jid, announceOnly)
 	if err != nil {
 		return fmt.Errorf("failed to set group announce: %w", err)
@@ -2073,13 +1919,11 @@ func (m *serviceImpl) SetGroupLocked(ctx context.Context, sessionID, groupJID st
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Set group locked setting
 	err = client.GetClient().SetGroupLocked(jid, locked)
 	if err != nil {
 		return fmt.Errorf("failed to set group locked: %w", err)
@@ -2106,13 +1950,11 @@ func (m *serviceImpl) SetGroupJoinApprovalMode(ctx context.Context, sessionID, g
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Set group join approval mode
 	err = client.GetClient().SetGroupJoinApprovalMode(jid, requireApproval)
 	if err != nil {
 		return fmt.Errorf("failed to set group join approval mode: %w", err)
@@ -2139,13 +1981,11 @@ func (m *serviceImpl) SetGroupMemberAddMode(ctx context.Context, sessionID, grou
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse group JID
 	jid, err := waTypes.ParseJID(groupJID)
 	if err != nil {
 		return fmt.Errorf("invalid group JID %s: %w", groupJID, err)
 	}
 
-	// Parse member add mode
 	var memberAddMode waTypes.GroupMemberAddMode
 	switch strings.ToLower(mode) {
 	case "all", "everyone":
@@ -2156,7 +1996,6 @@ func (m *serviceImpl) SetGroupMemberAddMode(ctx context.Context, sessionID, grou
 		return fmt.Errorf("invalid member add mode: %s. Valid options: all, admin", mode)
 	}
 
-	// Set group member add mode
 	err = client.GetClient().SetGroupMemberAddMode(jid, memberAddMode)
 	if err != nil {
 		return fmt.Errorf("failed to set group member add mode: %w", err)
@@ -2178,7 +2017,6 @@ func (m *serviceImpl) UpdateSessionSubscriptions(sessionID string, events []stri
 	return nil
 }
 
-// Privacy Operations Implementation
 
 func (m *serviceImpl) GetPrivacySettings(ctx context.Context, sessionID string) (*PrivacySettingsResult, error) {
 	client := m.getClient(sessionID)
@@ -2190,10 +2028,8 @@ func (m *serviceImpl) GetPrivacySettings(ctx context.Context, sessionID string) 
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Get privacy settings from meow
 	settings := client.GetClient().GetPrivacySettings(ctx)
 
-	// Convert to our result format
 	result := &PrivacySettingsResult{
 		GroupAdd:     string(settings.GroupAdd),
 		LastSeen:     string(settings.LastSeen),
@@ -2218,13 +2054,11 @@ func (m *serviceImpl) TryFetchPrivacySettings(ctx context.Context, sessionID str
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Force fetch privacy settings from server
 	settings, err := client.GetClient().TryFetchPrivacySettings(ctx, ignoreCache)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch privacy settings from server: %w", err)
 	}
 
-	// Convert to our result format
 	result := &PrivacySettingsResult{
 		GroupAdd:     string(settings.GroupAdd),
 		LastSeen:     string(settings.LastSeen),
@@ -2249,21 +2083,18 @@ func (m *serviceImpl) SetPrivacySetting(ctx context.Context, sessionID string, s
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Convert string types to whatsmeow types
 	privacySettingType := waTypes.PrivacySettingType(settingType)
 	privacySetting := waTypes.PrivacySetting(settingValue)
 
 	m.logger.Debugf("🔧 Setting privacy: type='%s' value='%s' for session %s", settingType, settingValue, sessionID)
 	m.logger.Debugf("🔧 Converted types: privacySettingType='%s' privacySetting='%s'", string(privacySettingType), string(privacySetting))
 
-	// Set privacy setting
 	settings, err := client.GetClient().SetPrivacySetting(ctx, privacySettingType, privacySetting)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to set privacy setting %s to %s: %v", settingType, settingValue, err)
 		return nil, fmt.Errorf("failed to set privacy setting %s to %s: %w", settingType, settingValue, err)
 	}
 
-	// Convert to our result format
 	result := &PrivacySettingsResult{
 		GroupAdd:     string(settings.GroupAdd),
 		LastSeen:     string(settings.LastSeen),
@@ -2280,7 +2111,6 @@ func (m *serviceImpl) SetPrivacySetting(ctx context.Context, sessionID string, s
 	return result, nil
 }
 
-// Simplified parsePhoneToJID helper
 func (m *serviceImpl) parsePhoneToJID(phone string) (waTypes.JID, error) {
 	return parsePhoneToJID(phone) // Use the helper function from messages.go
 }
@@ -2295,14 +2125,12 @@ func (m *serviceImpl) GetBlocklist(ctx context.Context, sessionID string) ([]str
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Get blocklist from meow
 	blocklist, err := client.GetClient().GetBlocklist()
 	if err != nil {
 		m.logger.Errorf("❌ Failed to get blocklist for session %s: %v", sessionID, err)
 		return nil, fmt.Errorf("failed to get blocklist: %w", err)
 	}
 
-	// Convert JIDs to strings
 	jidList := make([]string, len(blocklist.JIDs))
 	for i, jid := range blocklist.JIDs {
 		jidList[i] = jid.String()
@@ -2322,19 +2150,16 @@ func (m *serviceImpl) UpdateBlocklist(ctx context.Context, sessionID, jidStr, ac
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse JID
 	jid, err := waTypes.ParseJID(jidStr)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to parse JID %s for session %s: %v", jidStr, sessionID, err)
 		return nil, fmt.Errorf("invalid JID format: %w", err)
 	}
 
-	// Validate action
 	if action != "block" && action != "unblock" {
 		return nil, fmt.Errorf("invalid action '%s', must be 'block' or 'unblock'", action)
 	}
 
-	// Convert action to the correct type
 	var blocklistAction waEvents.BlocklistChangeAction
 	switch action {
 	case "block":
@@ -2345,14 +2170,12 @@ func (m *serviceImpl) UpdateBlocklist(ctx context.Context, sessionID, jidStr, ac
 		return nil, fmt.Errorf("invalid action '%s', must be 'block' or 'unblock'", action)
 	}
 
-	// Update blocklist
 	updatedBlocklist, err := client.GetClient().UpdateBlocklist(jid, blocklistAction)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to %s user %s for session %s: %v", action, jidStr, sessionID, err)
 		return nil, fmt.Errorf("failed to %s user: %w", action, err)
 	}
 
-	// Convert updated blocklist to string list
 	jidList := make([]string, len(updatedBlocklist.JIDs))
 	for i, jid := range updatedBlocklist.JIDs {
 		jidList[i] = jid.String()
@@ -2362,11 +2185,7 @@ func (m *serviceImpl) UpdateBlocklist(ctx context.Context, sessionID, jidStr, ac
 	return jidList, nil
 }
 
-// ============================================================================
-// CHAT MANAGEMENT OPERATIONS
-// ============================================================================
 
-// SetDisappearingTimer sets the disappearing timer for a chat
 func (m *serviceImpl) SetDisappearingTimer(ctx context.Context, sessionID, chatJID string, timer time.Duration) error {
 	m.logger.Debugf("🕐 Setting disappearing timer for chat %s in session %s to %v", chatJID, sessionID, timer)
 
@@ -2379,13 +2198,11 @@ func (m *serviceImpl) SetDisappearingTimer(ctx context.Context, sessionID, chatJ
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse JID
 	jid, err := waTypes.ParseJID(chatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
 	}
 
-	// Set disappearing timer
 	err = client.GetClient().SetDisappearingTimer(jid, timer, time.Now())
 	if err != nil {
 		m.logger.Errorf("❌ Failed to set disappearing timer for chat %s in session %s: %v", chatJID, sessionID, err)
@@ -2400,7 +2217,6 @@ func (m *serviceImpl) SetDisappearingTimer(ctx context.Context, sessionID, chatJ
 	return nil
 }
 
-// ListChats lists all chats (groups and/or contacts) for a session
 func (m *serviceImpl) ListChats(ctx context.Context, sessionID string, chatType string) ([]ChatInfo, error) {
 	m.logger.Debugf("📋 Listing chats for session %s (type: %s)", sessionID, chatType)
 
@@ -2415,7 +2231,6 @@ func (m *serviceImpl) ListChats(ctx context.Context, sessionID string, chatType 
 
 	var chats []ChatInfo
 
-	// Get groups if requested
 	if chatType == "all" || chatType == "groups" {
 		groups, err := client.GetClient().GetJoinedGroups()
 		if err != nil {
@@ -2437,12 +2252,10 @@ func (m *serviceImpl) ListChats(ctx context.Context, sessionID string, chatType 
 		}
 	}
 
-	// Get contacts if requested
 	if chatType == "all" || chatType == "contacts" {
 		contacts, err := m.GetContacts(ctx, sessionID)
 		if err != nil {
 			m.logger.Errorf("❌ Failed to get contacts for session %s: %v", sessionID, err)
-			// Don't return error, just log it and continue without contacts
 		} else {
 			for _, contact := range contacts {
 				chatInfo := ChatInfo{
@@ -2463,7 +2276,6 @@ func (m *serviceImpl) ListChats(ctx context.Context, sessionID string, chatType 
 	return chats, nil
 }
 
-// GetChatInfo gets information about a specific chat
 func (m *serviceImpl) GetChatInfo(ctx context.Context, sessionID, chatJID string) (*ChatInfo, error) {
 	m.logger.Debugf("ℹ️ Getting chat info for %s in session %s", chatJID, sessionID)
 
@@ -2476,7 +2288,6 @@ func (m *serviceImpl) GetChatInfo(ctx context.Context, sessionID, chatJID string
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse JID to determine if it's a group or contact
 	jid, err := waTypes.ParseJID(chatJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid chat JID: %w", err)
@@ -2485,7 +2296,6 @@ func (m *serviceImpl) GetChatInfo(ctx context.Context, sessionID, chatJID string
 	var chatInfo ChatInfo
 
 	if jid.Server == waTypes.GroupServer {
-		// It's a group
 		groupInfo, err := client.GetClient().GetGroupInfo(jid)
 		if err != nil {
 			m.logger.Errorf("❌ Failed to get group info for %s in session %s: %v", chatJID, sessionID, err)
@@ -2502,7 +2312,6 @@ func (m *serviceImpl) GetChatInfo(ctx context.Context, sessionID, chatJID string
 			Archived:    false, // Future: Get from app state
 		}
 	} else {
-		// It's a contact
 		userInfo, err := m.GetUserInfo(ctx, sessionID, []string{chatJID})
 		if err != nil {
 			m.logger.Errorf("❌ Failed to get user info for %s in session %s: %v", chatJID, sessionID, err)
@@ -2528,7 +2337,6 @@ func (m *serviceImpl) GetChatInfo(ctx context.Context, sessionID, chatJID string
 	return &chatInfo, nil
 }
 
-// PinChat pins or unpins a chat using App State
 func (m *serviceImpl) PinChat(ctx context.Context, sessionID, chatJID string, pinned bool) error {
 	m.logger.Debugf("📌 %s chat %s in session %s", map[bool]string{true: "Pinning", false: "Unpinning"}[pinned], chatJID, sessionID)
 
@@ -2541,16 +2349,13 @@ func (m *serviceImpl) PinChat(ctx context.Context, sessionID, chatJID string, pi
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse JID
 	jid, err := waTypes.ParseJID(chatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
 	}
 
-	// Build pin patch
 	patch := appstate.BuildPin(jid, pinned)
 
-	// Send app state patch
 	err = client.GetClient().SendAppState(ctx, patch)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to %s chat %s in session %s: %v", map[bool]string{true: "pin", false: "unpin"}[pinned], chatJID, sessionID, err)
@@ -2561,7 +2366,6 @@ func (m *serviceImpl) PinChat(ctx context.Context, sessionID, chatJID string, pi
 	return nil
 }
 
-// MuteChat mutes or unmutes a chat using App State
 func (m *serviceImpl) MuteChat(ctx context.Context, sessionID, chatJID string, muted bool, duration time.Duration) error {
 	m.logger.Debugf("🔇 %s chat %s in session %s for %v", map[bool]string{true: "Muting", false: "Unmuting"}[muted], chatJID, sessionID, duration)
 
@@ -2574,16 +2378,13 @@ func (m *serviceImpl) MuteChat(ctx context.Context, sessionID, chatJID string, m
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse JID
 	jid, err := waTypes.ParseJID(chatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
 	}
 
-	// Build mute patch
 	patch := appstate.BuildMute(jid, muted, duration)
 
-	// Send app state patch
 	err = client.GetClient().SendAppState(ctx, patch)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to %s chat %s in session %s: %v", map[bool]string{true: "mute", false: "unmute"}[muted], chatJID, sessionID, err)
@@ -2598,7 +2399,6 @@ func (m *serviceImpl) MuteChat(ctx context.Context, sessionID, chatJID string, m
 	return nil
 }
 
-// ArchiveChat archives or unarchives a chat using App State
 func (m *serviceImpl) ArchiveChat(ctx context.Context, sessionID, chatJID string, archived bool) error {
 	m.logger.Debugf("📦 %s chat %s in session %s", map[bool]string{true: "Archiving", false: "Unarchiving"}[archived], chatJID, sessionID)
 
@@ -2611,17 +2411,13 @@ func (m *serviceImpl) ArchiveChat(ctx context.Context, sessionID, chatJID string
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse JID
 	jid, err := waTypes.ParseJID(chatJID)
 	if err != nil {
 		return fmt.Errorf("invalid chat JID: %w", err)
 	}
 
-	// Build archive patch
-	// Note: BuildArchive automatically unpins the chat when archiving
 	patch := appstate.BuildArchive(jid, archived, time.Time{}, nil)
 
-	// Send app state patch
 	err = client.GetClient().SendAppState(ctx, patch)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to %s chat %s in session %s: %v", map[bool]string{true: "archive", false: "unarchive"}[archived], chatJID, sessionID, err)
@@ -2632,11 +2428,7 @@ func (m *serviceImpl) ArchiveChat(ctx context.Context, sessionID, chatJID string
 	return nil
 }
 
-// ============================================================================
-// NEWSLETTER OPERATIONS
-// ============================================================================
 
-// CreateNewsletter creates a new newsletter
 func (m *serviceImpl) CreateNewsletter(ctx context.Context, sessionID string, params *whatsmeow.CreateNewsletterParams) (*waTypes.NewsletterMetadata, error) {
 	m.logger.Debugf("📰 Creating newsletter '%s' in session %s", params.Name, sessionID)
 
@@ -2649,12 +2441,10 @@ func (m *serviceImpl) CreateNewsletter(ctx context.Context, sessionID string, pa
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Validate parameters
 	if params.Name == "" {
 		return nil, fmt.Errorf("newsletter name is required")
 	}
 
-	// Create newsletter using whatsmeow
 	resp, err := client.GetClient().CreateNewsletter(*params)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to create newsletter '%s' in session %s: %v", params.Name, sessionID, err)
@@ -2665,7 +2455,6 @@ func (m *serviceImpl) CreateNewsletter(ctx context.Context, sessionID string, pa
 	return resp, nil
 }
 
-// UploadNewsletterReader uploads media for newsletter using a reader
 func (m *serviceImpl) UploadNewsletterReader(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
 	m.logger.Debugf("📰 Uploading newsletter media (reader) for session %s", sessionID)
 
@@ -2678,10 +2467,8 @@ func (m *serviceImpl) UploadNewsletterReader(ctx context.Context, sessionID stri
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Convert []byte to bytes.Reader for UploadNewsletterReader
 	reader := bytes.NewReader(data)
 
-	// Upload media using whatsmeow UploadNewsletterReader
 	resp, err := client.GetClient().UploadNewsletterReader(ctx, reader, mediaType)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to upload newsletter media (reader) for session %s: %v", sessionID, err)
@@ -2692,7 +2479,6 @@ func (m *serviceImpl) UploadNewsletterReader(ctx context.Context, sessionID stri
 	return &resp, nil
 }
 
-// GetNewsletterInfo gets information about a newsletter
 func (m *serviceImpl) GetNewsletterInfo(ctx context.Context, sessionID, newsletterJID string) (*NewsletterInfo, error) {
 	m.logger.Debugf("📰 Getting newsletter info for %s in session %s", newsletterJID, sessionID)
 
@@ -2705,20 +2491,17 @@ func (m *serviceImpl) GetNewsletterInfo(ctx context.Context, sessionID, newslett
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Get newsletter info using whatsmeow
 	info, err := client.GetClient().GetNewsletterInfo(jid)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to get newsletter info for %s in session %s: %v", newsletterJID, sessionID, err)
 		return nil, fmt.Errorf("failed to get newsletter info: %w", err)
 	}
 
-	// Convert to our NewsletterInfo type
 	result := &NewsletterInfo{
 		JID:         info.ID.String(),
 		Name:        info.ThreadMeta.Name.Text,
@@ -2736,7 +2519,6 @@ func (m *serviceImpl) GetNewsletterInfo(ctx context.Context, sessionID, newslett
 	return result, nil
 }
 
-// GetNewsletterInfoWithInvite gets newsletter information using an invite key
 func (m *serviceImpl) GetNewsletterInfoWithInvite(ctx context.Context, sessionID, inviteKey string) (*NewsletterInfo, error) {
 	m.logger.Debugf("📰 Getting newsletter info with invite key in session %s", sessionID)
 
@@ -2749,19 +2531,16 @@ func (m *serviceImpl) GetNewsletterInfoWithInvite(ctx context.Context, sessionID
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Validate invite key
 	if inviteKey == "" {
 		return nil, fmt.Errorf("invite key is required")
 	}
 
-	// Get newsletter info using whatsmeow
 	info, err := client.GetClient().GetNewsletterInfoWithInvite(inviteKey)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to get newsletter info with invite in session %s: %v", sessionID, err)
 		return nil, fmt.Errorf("failed to get newsletter info with invite: %w", err)
 	}
 
-	// Convert to our NewsletterInfo type
 	result := &NewsletterInfo{
 		JID:         info.ID.String(),
 		Name:        info.ThreadMeta.Name.Text,
@@ -2779,7 +2558,6 @@ func (m *serviceImpl) GetNewsletterInfoWithInvite(ctx context.Context, sessionID
 	return result, nil
 }
 
-// FollowNewsletter follows a newsletter
 func (m *serviceImpl) FollowNewsletter(ctx context.Context, sessionID, newsletterJID string) error {
 	m.logger.Debugf("📰 Following newsletter %s in session %s", newsletterJID, sessionID)
 
@@ -2792,13 +2570,11 @@ func (m *serviceImpl) FollowNewsletter(ctx context.Context, sessionID, newslette
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Follow newsletter using whatsmeow
 	err = client.GetClient().FollowNewsletter(jid)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to follow newsletter %s in session %s: %v", newsletterJID, sessionID, err)
@@ -2809,7 +2585,6 @@ func (m *serviceImpl) FollowNewsletter(ctx context.Context, sessionID, newslette
 	return nil
 }
 
-// UnfollowNewsletter unfollows a newsletter
 func (m *serviceImpl) UnfollowNewsletter(ctx context.Context, sessionID, newsletterJID string) error {
 	m.logger.Debugf("📰 Unfollowing newsletter %s in session %s", newsletterJID, sessionID)
 
@@ -2822,13 +2597,11 @@ func (m *serviceImpl) UnfollowNewsletter(ctx context.Context, sessionID, newslet
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Unfollow newsletter using whatsmeow
 	err = client.GetClient().UnfollowNewsletter(jid)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to unfollow newsletter %s in session %s: %v", newsletterJID, sessionID, err)
@@ -2839,7 +2612,6 @@ func (m *serviceImpl) UnfollowNewsletter(ctx context.Context, sessionID, newslet
 	return nil
 }
 
-// GetSubscribedNewsletters gets all subscribed newsletters
 func (m *serviceImpl) GetSubscribedNewsletters(ctx context.Context, sessionID string) ([]NewsletterInfo, error) {
 	m.logger.Debugf("📰 Getting subscribed newsletters in session %s", sessionID)
 
@@ -2852,14 +2624,12 @@ func (m *serviceImpl) GetSubscribedNewsletters(ctx context.Context, sessionID st
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Get subscribed newsletters using whatsmeow
 	newsletters, err := client.GetClient().GetSubscribedNewsletters()
 	if err != nil {
 		m.logger.Errorf("❌ Failed to get subscribed newsletters in session %s: %v", sessionID, err)
 		return nil, fmt.Errorf("failed to get subscribed newsletters: %w", err)
 	}
 
-	// Convert to our NewsletterInfo type
 	result := make([]NewsletterInfo, len(newsletters))
 	for i, newsletter := range newsletters {
 		result[i] = NewsletterInfo{
@@ -2880,7 +2650,6 @@ func (m *serviceImpl) GetSubscribedNewsletters(ctx context.Context, sessionID st
 	return result, nil
 }
 
-// GetNewsletterMessages gets messages from a newsletter
 func (m *serviceImpl) GetNewsletterMessages(ctx context.Context, sessionID, newsletterJID string, params *whatsmeow.GetNewsletterMessagesParams) ([]NewsletterMessage, error) {
 	m.logger.Debugf("📰 Getting newsletter messages for %s in session %s", newsletterJID, sessionID)
 
@@ -2893,20 +2662,17 @@ func (m *serviceImpl) GetNewsletterMessages(ctx context.Context, sessionID, news
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Get newsletter messages using whatsmeow
 	messages, err := client.GetClient().GetNewsletterMessages(jid, params)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to get newsletter messages for %s in session %s: %v", newsletterJID, sessionID, err)
 		return nil, fmt.Errorf("failed to get newsletter messages: %w", err)
 	}
 
-	// Convert to our NewsletterMessage type
 	result := make([]NewsletterMessage, len(messages))
 	for i, msg := range messages {
 		result[i] = NewsletterMessage{
@@ -2925,7 +2691,6 @@ func (m *serviceImpl) GetNewsletterMessages(ctx context.Context, sessionID, news
 	return result, nil
 }
 
-// GetNewsletterMessageUpdates gets message updates from a newsletter
 func (m *serviceImpl) GetNewsletterMessageUpdates(ctx context.Context, sessionID, newsletterJID string, params *whatsmeow.GetNewsletterMessagesParams) ([]NewsletterMessage, error) {
 	m.logger.Debugf("📰 Getting newsletter message updates for %s in session %s", newsletterJID, sessionID)
 
@@ -2938,20 +2703,17 @@ func (m *serviceImpl) GetNewsletterMessageUpdates(ctx context.Context, sessionID
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Get newsletter message updates using whatsmeow (using same method as GetNewsletterMessages)
 	updates, err := client.GetClient().GetNewsletterMessages(jid, params)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to get newsletter message updates for %s in session %s: %v", newsletterJID, sessionID, err)
 		return nil, fmt.Errorf("failed to get newsletter message updates: %w", err)
 	}
 
-	// Convert to our NewsletterMessage type
 	result := make([]NewsletterMessage, len(updates))
 	for i, update := range updates {
 		result[i] = NewsletterMessage{
@@ -2970,17 +2732,12 @@ func (m *serviceImpl) GetNewsletterMessageUpdates(ctx context.Context, sessionID
 	return result, nil
 }
 
-// ============================================================================
-// NEWSLETTER MESSAGE HELPER FUNCTIONS
-// ============================================================================
 
-// extractMessageContent extracts text content from a newsletter message
 func extractMessageContent(msg *waTypes.NewsletterMessage) string {
 	if msg.Message == nil {
 		return ""
 	}
 
-	// Try to extract text from various message types
 	if msg.Message.Conversation != nil {
 		return *msg.Message.Conversation
 	}
@@ -3004,7 +2761,6 @@ func extractMessageContent(msg *waTypes.NewsletterMessage) string {
 	return ""
 }
 
-// extractMediaType extracts media type from a newsletter message
 func extractMediaType(msg *waTypes.NewsletterMessage) string {
 	if msg.Message == nil {
 		return ""
@@ -3033,7 +2789,6 @@ func extractMediaType(msg *waTypes.NewsletterMessage) string {
 	return "text"
 }
 
-// extractMediaURL extracts media URL from a newsletter message
 func extractMediaURL(msg *waTypes.NewsletterMessage) string {
 	if msg.Message == nil {
 		return ""
@@ -3058,13 +2813,8 @@ func extractMediaURL(msg *waTypes.NewsletterMessage) string {
 	return ""
 }
 
-// extractReactions is no longer needed as reactions are directly available in NewsletterMessage.ReactionCounts
 
-// ============================================================================
-// NEWSLETTER INTERACTION OPERATIONS
-// ============================================================================
 
-// NewsletterMarkViewed marks newsletter messages as viewed
 func (m *serviceImpl) NewsletterMarkViewed(ctx context.Context, sessionID, newsletterJID string, serverIDs []waTypes.MessageServerID) error {
 	m.logger.Debugf("📰 Marking %d newsletter messages as viewed for %s in session %s", len(serverIDs), newsletterJID, sessionID)
 
@@ -3077,13 +2827,11 @@ func (m *serviceImpl) NewsletterMarkViewed(ctx context.Context, sessionID, newsl
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Mark messages as viewed using whatsmeow
 	err = client.GetClient().NewsletterMarkViewed(jid, serverIDs)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to mark newsletter messages as viewed for %s in session %s: %v", newsletterJID, sessionID, err)
@@ -3094,7 +2842,6 @@ func (m *serviceImpl) NewsletterMarkViewed(ctx context.Context, sessionID, newsl
 	return nil
 }
 
-// NewsletterSendReaction sends a reaction to a newsletter message
 func (m *serviceImpl) NewsletterSendReaction(ctx context.Context, sessionID, newsletterJID string, serverID waTypes.MessageServerID, reaction string, messageID waTypes.MessageID) error {
 	m.logger.Debugf("📰 Sending reaction '%s' to newsletter message %s in %s for session %s", reaction, serverID, newsletterJID, sessionID)
 
@@ -3107,18 +2854,15 @@ func (m *serviceImpl) NewsletterSendReaction(ctx context.Context, sessionID, new
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Validate reaction
 	if reaction == "" {
 		return fmt.Errorf("reaction cannot be empty")
 	}
 
-	// Send reaction using whatsmeow
 	err = client.GetClient().NewsletterSendReaction(jid, serverID, reaction, messageID)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to send reaction to newsletter message %s in %s for session %s: %v", serverID, newsletterJID, sessionID, err)
@@ -3129,7 +2873,6 @@ func (m *serviceImpl) NewsletterSendReaction(ctx context.Context, sessionID, new
 	return nil
 }
 
-// NewsletterToggleMute toggles mute status for a newsletter
 func (m *serviceImpl) NewsletterToggleMute(ctx context.Context, sessionID, newsletterJID string, mute bool) error {
 	m.logger.Debugf("📰 %s newsletter %s in session %s", map[bool]string{true: "Muting", false: "Unmuting"}[mute], newsletterJID, sessionID)
 
@@ -3142,13 +2885,11 @@ func (m *serviceImpl) NewsletterToggleMute(ctx context.Context, sessionID, newsl
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Toggle mute using whatsmeow
 	err = client.GetClient().NewsletterToggleMute(jid, mute)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to %s newsletter %s in session %s: %v", map[bool]string{true: "mute", false: "unmute"}[mute], newsletterJID, sessionID, err)
@@ -3159,7 +2900,6 @@ func (m *serviceImpl) NewsletterToggleMute(ctx context.Context, sessionID, newsl
 	return nil
 }
 
-// NewsletterSubscribeLiveUpdates subscribes to live updates for a newsletter
 func (m *serviceImpl) NewsletterSubscribeLiveUpdates(ctx context.Context, sessionID, newsletterJID string) error {
 	m.logger.Debugf("📰 Subscribing to live updates for newsletter %s in session %s", newsletterJID, sessionID)
 
@@ -3172,13 +2912,11 @@ func (m *serviceImpl) NewsletterSubscribeLiveUpdates(ctx context.Context, sessio
 		return fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Subscribe to live updates using whatsmeow
 	_, err = client.GetClient().NewsletterSubscribeLiveUpdates(ctx, jid)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to subscribe to live updates for newsletter %s in session %s: %v", newsletterJID, sessionID, err)
@@ -3189,11 +2927,7 @@ func (m *serviceImpl) NewsletterSubscribeLiveUpdates(ctx context.Context, sessio
 	return nil
 }
 
-// ============================================================================
-// NEWSLETTER UPLOAD OPERATIONS
-// ============================================================================
 
-// UploadNewsletter uploads media for newsletter
 func (m *serviceImpl) UploadNewsletter(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
 	m.logger.Debugf("📰 Uploading newsletter media (%d bytes, type: %s) in session %s", len(data), mediaType, sessionID)
 
@@ -3206,12 +2940,10 @@ func (m *serviceImpl) UploadNewsletter(ctx context.Context, sessionID string, da
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Validate data
 	if len(data) == 0 {
 		return nil, fmt.Errorf("media data cannot be empty")
 	}
 
-	// Upload media using whatsmeow
 	resp, err := client.GetClient().UploadNewsletter(ctx, data, mediaType)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to upload newsletter media in session %s: %v", sessionID, err)
@@ -3222,8 +2954,6 @@ func (m *serviceImpl) UploadNewsletter(ctx context.Context, sessionID string, da
 	return &resp, nil
 }
 
-// SendNewsletterMessage sends a message to a newsletter using SendMessage + MediaHandle
-// Based on research from whatsmeow issues #481, #697, and #498
 func (m *serviceImpl) SendNewsletterMessage(ctx context.Context, sessionID, newsletterJID string, message *waE2E.Message, mediaHandle string) (*whatsmeow.SendResponse, error) {
 	m.logger.Debugf("📰 Sending message to newsletter %s in session %s", newsletterJID, sessionID)
 
@@ -3236,22 +2966,17 @@ func (m *serviceImpl) SendNewsletterMessage(ctx context.Context, sessionID, news
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	// Parse newsletter JID
 	jid, err := waTypes.ParseJID(newsletterJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid newsletter JID %s: %w", newsletterJID, err)
 	}
 
-	// Validate that we have a message
 	if message == nil {
 		return nil, fmt.Errorf("message cannot be nil")
 	}
 
-	// For newsletters, MediaHandle is required for media messages
-	// Based on whatsmeow issue #697 and discussion #498
 	extra := whatsmeow.SendRequestExtra{}
 
-	// Check if this is a media message and require MediaHandle
 	isMediaMessage := message.ImageMessage != nil || message.VideoMessage != nil ||
 		message.AudioMessage != nil || message.DocumentMessage != nil ||
 		message.StickerMessage != nil
@@ -3264,7 +2989,6 @@ func (m *serviceImpl) SendNewsletterMessage(ctx context.Context, sessionID, news
 		m.logger.Debugf("📰 Using MediaHandle for newsletter media message: %s", mediaHandle)
 	}
 
-	// Send message using whatsmeow with MediaHandle for newsletters
 	resp, err := client.GetClient().SendMessage(ctx, jid, message, extra)
 	if err != nil {
 		m.logger.Errorf("❌ Failed to send message to newsletter %s in session %s: %v", newsletterJID, sessionID, err)
@@ -3275,7 +2999,6 @@ func (m *serviceImpl) SendNewsletterMessage(ctx context.Context, sessionID, news
 	return &resp, nil
 }
 
-// truncateString truncates a string to the specified length with ellipsis
 func (m *serviceImpl) truncateString(s string, maxLen int) string {
 	if len(s) <= maxLen {
 		return s

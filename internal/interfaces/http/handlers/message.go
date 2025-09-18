@@ -15,13 +15,11 @@ import (
 	"go.mau.fi/whatsmeow"
 )
 
-// MessageHandler handles message-related HTTP requests (both sending and actions)
 type MessageHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewMessageHandler creates a new message handler
 func NewMessageHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *MessageHandler {
 	return &MessageHandler{
 		sessionService: sessionService,
@@ -29,10 +27,8 @@ func NewMessageHandler(sessionService *application.SessionApp, wmeowService wmeo
 	}
 }
 
-// resolveSessionID resolves session ID or name to actual session ID
 func (h *MessageHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) (string, error) {
 	if h.sessionService == nil {
-		// Fallback: assume it's already an ID
 		return sessionIDOrName, nil
 	}
 
@@ -45,11 +41,8 @@ func (h *MessageHandler) resolveSessionID(c *gin.Context, sessionIDOrName string
 	return session.ID.Value(), nil
 }
 
-// decodeMediaData decodes base64 data URL to bytes or downloads from URL
 func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
-	// Check if it's a HTTP/HTTPS URL
 	if strings.HasPrefix(dataURL, "http://") || strings.HasPrefix(dataURL, "https://") {
-		// Download from URL
 		resp, err := http.Get(dataURL)
 		if err != nil {
 			return nil, fmt.Errorf("failed to download from URL: %w", err)
@@ -63,18 +56,14 @@ func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
 		return io.ReadAll(resp.Body)
 	}
 
-	// Check if it's a data URL (data:mime/type;base64,data)
 	if strings.HasPrefix(dataURL, "data:") {
-		// Find the comma that separates the header from the data
 		commaIndex := strings.Index(dataURL, ",")
 		if commaIndex == -1 {
 			return nil, fmt.Errorf("invalid data URL format")
 		}
 
-		// Extract the base64 data part
 		base64Data := dataURL[commaIndex+1:]
 
-		// Decode base64
 		data, err := base64.StdEncoding.DecodeString(base64Data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to decode base64 data: %w", err)
@@ -83,7 +72,6 @@ func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
 		return data, nil
 	}
 
-	// If it's neither URL nor data URL, assume it's raw base64
 	data, err := base64.StdEncoding.DecodeString(dataURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to decode base64 data: %w", err)
@@ -92,12 +80,7 @@ func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
 	return data, nil
 }
 
-// ============================================================================
-// MESSAGE SENDING METHODS
-// ============================================================================
 
-// SendText handles sending text messages
-//
 //	@Summary		Send text message
 //	@Description	Send a text message to a meow contact
 //	@Tags			Messages
@@ -122,7 +105,6 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -145,7 +127,6 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -156,7 +137,6 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	// Send text message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendTextMessage(ctx, sessionID, req.Phone, req.Body)
 	if err != nil {
@@ -169,13 +149,10 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	// Create standardized response
 	response := dto.NewTextResponse(true, http.StatusOK, req.Phone, resp.ID, req.Body, true)
 	c.JSON(http.StatusOK, response)
 }
 
-// SendMedia handles sending media messages
-//
 //	@Summary		Send media message
 //	@Description	Send a media message (image, video, audio, document) to a meow contact
 //	@Tags			Messages
@@ -200,7 +177,6 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -223,7 +199,6 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -234,7 +209,6 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 		return
 	}
 
-	// Decode media data
 	mediaData, err := h.decodeMediaData(req.MediaURL)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
@@ -246,7 +220,6 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 		return
 	}
 
-	// Send media message based on type using meow service
 	ctx := c.Request.Context()
 	var resp *whatsmeow.SendResponse
 	switch req.MediaType {
@@ -280,7 +253,6 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 		return
 	}
 
-	// Create appropriate response based on media type
 	var response *dto.MessageResponse
 	switch req.MediaType {
 	case "image":
@@ -298,12 +270,7 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ============================================================================
-// MESSAGE ACTION METHODS
-// ============================================================================
 
-// MarkAsRead handles marking messages as read
-//
 //	@Summary		Mark messages as read
 //	@Description	Mark one or more messages as read in a chat
 //	@Tags			Messages
@@ -330,7 +297,6 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.Phone == "" {
 		c.JSON(http.StatusBadRequest, dto.NewMessageActionErrorResponse(
 			http.StatusBadRequest,
@@ -351,7 +317,6 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 		return
 	}
 
-	// Mark messages as read via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.MarkAsRead(ctx, sessionID, req.Phone, req.MessageIDs)
 	if err != nil {
@@ -368,8 +333,6 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ReactToMessage handles reacting to a message
-//
 //	@Summary		React to message
 //	@Description	Add or remove reaction to a message
 //	@Tags			Messages
@@ -397,7 +360,6 @@ func (h *MessageHandler) ReactToMessage(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.Phone == "" {
 		c.JSON(http.StatusBadRequest, dto.NewMessageActionErrorResponse(
 			http.StatusBadRequest,
@@ -428,7 +390,6 @@ func (h *MessageHandler) ReactToMessage(c *gin.Context) {
 		return
 	}
 
-	// React to message via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.ReactToMessage(ctx, sessionID, req.Phone, req.MessageID, req.Emoji)
 	if err != nil {
@@ -445,8 +406,6 @@ func (h *MessageHandler) ReactToMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// DeleteMessage handles deleting a message
-//
 //	@Summary		Delete message
 //	@Description	Delete a message for everyone or just for me
 //	@Tags			Messages
@@ -474,7 +433,6 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.Phone == "" {
 		c.JSON(http.StatusBadRequest, dto.NewMessageActionErrorResponse(
 			http.StatusBadRequest,
@@ -495,7 +453,6 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 		return
 	}
 
-	// Delete message via meow service
 	ctx := c.Request.Context()
 	err := h.wmeowService.DeleteMessage(ctx, sessionID, req.Phone, req.MessageID, req.ForEveryone)
 	if err != nil {
@@ -512,8 +469,6 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// EditMessage handles editing a message
-//
 //	@Summary		Edit message
 //	@Description	Edit the text content of a message
 //	@Tags			Messages
@@ -541,7 +496,6 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	// Validate required fields
 	if req.Phone == "" {
 		c.JSON(http.StatusBadRequest, dto.NewMessageActionErrorResponse(
 			http.StatusBadRequest,
@@ -572,7 +526,6 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	// Edit message via meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.EditMessage(ctx, sessionID, req.Phone, req.MessageID, req.NewText)
 	if err != nil {
@@ -589,12 +542,7 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// ============================================================================
-// ADDITIONAL MESSAGE SENDING METHODS
-// ============================================================================
 
-// SendLocation handles sending location messages
-//
 //	@Summary		Send location message
 //	@Description	Send a location message to a meow contact
 //	@Tags			Messages
@@ -619,7 +567,6 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -642,7 +589,6 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -653,7 +599,6 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	// Send location message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendLocationMessage(ctx, sessionID, req.Phone, req.Latitude, req.Longitude, req.Name, req.Address)
 	if err != nil {
@@ -666,13 +611,10 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	// Create successful response
 	messageResponse := dto.NewLocationResponse(true, http.StatusOK, req.Phone, resp.ID, req.Latitude, req.Longitude, req.Name, "", true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// SendContact handles sending contact messages
-//
 //	@Summary		Send contact message
 //	@Description	Send a contact message to a meow contact
 //	@Tags			Messages
@@ -697,7 +639,6 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -720,7 +661,6 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -731,7 +671,6 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 		return
 	}
 
-	// Send contact message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendContactMessage(ctx, sessionID, req.Phone, req.ContactName, req.ContactPhone)
 	if err != nil {
@@ -744,14 +683,11 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 		return
 	}
 
-	// Create vCard for response
 	vcard := "BEGIN:VCARD\nVERSION:3.0\nFN:" + req.ContactName + "\nTEL:" + req.ContactPhone + "\nEND:VCARD"
 	messageResponse := dto.NewContactResponse(true, http.StatusOK, req.Phone, resp.ID, req.ContactName, vcard, true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// SendImage handles sending image messages
-//
 //	@Summary		Send image message
 //	@Description	Send an image message to a meow contact
 //	@Tags			Messages
@@ -776,7 +712,6 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -799,7 +734,6 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -810,7 +744,6 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Decode image data
 	imageData, err := h.decodeMediaData(req.Image)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
@@ -822,7 +755,6 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Send image message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendImageMessage(ctx, sessionID, req.Phone, imageData, req.Caption, "image/jpeg")
 	if err != nil {
@@ -835,13 +767,10 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Create successful response
 	messageResponse := dto.NewImageResponse(true, http.StatusOK, req.Phone, resp.ID, req.Image, req.Caption, true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// SendAudio handles sending audio messages
-//
 //	@Summary		Send audio message
 //	@Description	Send an audio message to a meow contact
 //	@Tags			Messages
@@ -866,7 +795,6 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -889,7 +817,6 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -900,7 +827,6 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Decode audio data
 	audioData, err := h.decodeMediaData(req.Audio)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
@@ -912,7 +838,6 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Send audio message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendAudioMessage(ctx, sessionID, req.Phone, audioData, "audio/mpeg")
 	if err != nil {
@@ -925,13 +850,10 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Create successful response
 	messageResponse := dto.NewAudioResponse(true, http.StatusOK, req.Phone, resp.ID, req.Audio, req.PTT, true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// SendDocument handles sending document messages
-//
 //	@Summary		Send document message
 //	@Description	Send a document message to a meow contact
 //	@Tags			Messages
@@ -956,7 +878,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -979,7 +900,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -990,7 +910,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Decode document data
 	documentData, err := h.decodeMediaData(req.Document)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
@@ -1002,7 +921,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Use provided filename and mimetype, or defaults
 	filename := req.FileName
 	if filename == "" {
 		filename = "document"
@@ -1012,7 +930,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		mimeType = "application/octet-stream"
 	}
 
-	// Send document message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendDocumentMessage(ctx, sessionID, req.Phone, documentData, filename, "", mimeType)
 	if err != nil {
@@ -1025,13 +942,10 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Create successful response
 	messageResponse := dto.NewDocumentResponse(true, http.StatusOK, req.Phone, resp.ID, req.Document, filename, mimeType, true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// SendVideo handles sending video messages
-//
 //	@Summary		Send video message
 //	@Description	Send a video message to a meow contact
 //	@Tags			Messages
@@ -1056,7 +970,6 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -1079,7 +992,6 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -1090,7 +1002,6 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Decode video data
 	videoData, err := h.decodeMediaData(req.Video)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
@@ -1102,7 +1013,6 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Send video message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendVideoMessage(ctx, sessionID, req.Phone, videoData, req.Caption, "video/mp4")
 	if err != nil {
@@ -1115,13 +1025,10 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Create successful response
 	messageResponse := dto.NewVideoResponse(true, http.StatusOK, req.Phone, resp.ID, req.Video, req.Caption, req.GifPlayback, true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// SendSticker handles sending sticker messages
-//
 //	@Summary		Send sticker message
 //	@Description	Send a sticker message to a meow contact
 //	@Tags			Messages
@@ -1146,7 +1053,6 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewMessageErrorResponse(
@@ -1169,7 +1075,6 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
 			http.StatusBadRequest,
@@ -1180,7 +1085,6 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Decode sticker data
 	stickerData, err := h.decodeMediaData(req.Sticker)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
@@ -1192,7 +1096,6 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Send sticker message using meow service
 	ctx := c.Request.Context()
 	resp, err := h.wmeowService.SendStickerMessage(ctx, sessionID, req.Phone, stickerData, "image/webp")
 	if err != nil {
@@ -1205,17 +1108,11 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Create successful response
 	messageResponse := dto.NewStickerResponse(true, http.StatusOK, req.Phone, resp.ID, req.Sticker, true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// ============================================================================
-// PLACEHOLDER METHODS FOR FUTURE IMPLEMENTATION
-// ============================================================================
 
-// SendButton handles sending button messages (placeholder)
-//
 //	@Summary		Send button message
 //	@Description	Send a button message to a meow contact (not yet implemented)
 //	@Tags			Messages
@@ -1234,8 +1131,6 @@ func (h *MessageHandler) SendButton(c *gin.Context) {
 	))
 }
 
-// SendList handles sending list messages (placeholder)
-//
 //	@Summary		Send list message
 //	@Description	Send a list message to a meow contact (not yet implemented)
 //	@Tags			Messages
@@ -1254,8 +1149,6 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 	))
 }
 
-// SendPoll handles sending poll messages (placeholder)
-//
 //	@Summary		Send poll message
 //	@Description	Send a poll message to a meow contact (not yet implemented)
 //	@Tags			Messages

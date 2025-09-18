@@ -11,16 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// WebhookHandler handles webhook-related HTTP requests
 type WebhookHandler struct {
 	sessionService *application.SessionApp
 	webhookApp     application.WebhookService
 }
 
-// resolveSessionID resolves session ID or name to actual session ID
 func (h *WebhookHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) (string, error) {
 	if h.sessionService == nil {
-		// Fallback: assume it's already an ID
 		return sessionIDOrName, nil
 	}
 
@@ -33,7 +30,6 @@ func (h *WebhookHandler) resolveSessionID(c *gin.Context, sessionIDOrName string
 	return session.ID.Value(), nil
 }
 
-// NewWebhookHandler creates a new webhook handler
 func NewWebhookHandler(sessionService *application.SessionApp, webhookApp application.WebhookService) *WebhookHandler {
 	return &WebhookHandler{
 		sessionService: sessionService,
@@ -41,8 +37,6 @@ func NewWebhookHandler(sessionService *application.SessionApp, webhookApp applic
 	}
 }
 
-// SetWebhook handles setting/configuring a webhook
-//
 //	@Summary		Set webhook
 //	@Description	Set a webhook URL to receive meow events
 //	@Tags			Webhooks
@@ -58,7 +52,6 @@ func NewWebhookHandler(sessionService *application.SessionApp, webhookApp applic
 func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.WebhookResponse{
@@ -87,17 +80,14 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 		return
 	}
 
-	// Validate and map event types using wmeow service
 	validEvents := make([]string, 0)
 	for _, event := range req.Events {
 		if wmeow.IsValidEventType(event) {
-			// Map to proper event type if needed
 			mappedEvent := wmeow.MapEventType(event)
 			validEvents = append(validEvents, mappedEvent)
 		}
 	}
 
-	// If no valid events, return error
 	if len(validEvents) == 0 {
 		c.JSON(http.StatusBadRequest, dto.WebhookResponse{
 			Success: false,
@@ -111,7 +101,6 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 		return
 	}
 
-	// Set webhook for session using application service (includes validation)
 	err = h.webhookApp.SetWebhook(c.Request.Context(), sessionID, req.URL, validEvents)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.WebhookResponse{
@@ -139,8 +128,6 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 	})
 }
 
-// GetWebhook handles getting webhook information
-//
 //	@Summary		Get webhook information
 //	@Description	Get information about registered webhooks for a session
 //	@Tags			Webhooks
@@ -156,7 +143,6 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.WebhookResponse{
@@ -211,8 +197,6 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 	})
 }
 
-// ListEvents handles listing supported webhook event types
-//
 //	@Summary		List supported events
 //	@Description	Get list of all supported webhook event types
 //	@Tags			Webhooks

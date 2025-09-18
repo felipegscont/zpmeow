@@ -4,27 +4,20 @@ import (
 	"time"
 )
 
-// ============================================================================
-// GROUP REQUEST DTOs
-// ============================================================================
 
-// CreateGroupRequest represents the request to create a new group
 type CreateGroupRequest struct {
 	Name         string   `json:"name" binding:"required" example:"My Group"`
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-// GetGroupInfoRequest represents the request to get group information
 type GetGroupInfoRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 }
 
-// JoinGroupRequest represents the request to join a group via invite link
 type JoinGroupRequest struct {
 	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.meow.com/ABC123"`
 }
 
-// JoinGroupWithInviteRequest represents the request to join a group via specific invite
 type JoinGroupWithInviteRequest struct {
 	GroupJID   string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.meow.net"`
@@ -32,23 +25,19 @@ type JoinGroupWithInviteRequest struct {
 	Expiration int64  `json:"expiration" binding:"required" example:"1640995200"`
 }
 
-// LeaveGroupRequest represents the request to leave a group
 type LeaveGroupRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 }
 
-// GetInviteLinkRequest represents the request to get group invite link
 type GetInviteLinkRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Reset    bool   `json:"reset,omitempty" example:"false"`
 }
 
-// GetInviteInfoRequest represents the request to get invite info from link
 type GetInviteInfoRequest struct {
 	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.meow.com/ABC123"`
 }
 
-// GetGroupInfoFromInviteRequest represents the request to get group info from specific invite
 type GroupInviteInfoReq struct {
 	GroupJID   string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.meow.net"`
@@ -56,84 +45,68 @@ type GroupInviteInfoReq struct {
 	Expiration int64  `json:"expiration" binding:"required" example:"1640995200"`
 }
 
-// UpdateParticipantsRequest represents the request to update group participants
 type UpdateParticipantsRequest struct {
 	GroupJID     string   `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Action       string   `json:"action" binding:"required" example:"add"`
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-// SetGroupNameRequest represents the request to set group name
 type SetGroupNameRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Name     string `json:"name" binding:"required" example:"New Group Name"`
 }
 
-// SetGroupTopicRequest represents the request to set group topic
 type SetGroupTopicRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Topic    string `json:"topic" binding:"required" example:"Group topic description"`
 }
 
-// SetGroupPhotoRequest represents the request to set group photo
 type SetGroupPhotoRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Photo    string `json:"photo" binding:"required" example:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..."`
 }
 
-// RemoveGroupPhotoRequest represents the request to remove group photo
 type RemoveGroupPhotoRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 }
 
-// SetGroupAnnounceRequest represents the request to set group announce setting
 type SetGroupAnnounceRequest struct {
 	GroupJID     string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	AnnounceOnly bool   `json:"announce_only" example:"true"`
 }
 
-// SetGroupLockedRequest represents the request to set group locked setting
 type SetGroupLockedRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Locked   bool   `json:"locked" example:"true"`
 }
 
-// SetGroupEphemeralRequest represents the request to set group ephemeral setting
 type SetGroupEphemeralRequest struct {
 	GroupJID  string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Ephemeral bool   `json:"ephemeral" example:"true"`
 	Duration  int    `json:"duration,omitempty" example:"86400"`
 }
 
-// SetGroupJoinApprovalRequest represents the request to set group join approval mode
 type GroupJoinApprovalReq struct {
 	GroupJID        string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	RequireApproval bool   `json:"require_approval" binding:"required" example:"true"`
 }
 
-// SetGroupMemberAddModeRequest represents the request to set group member add mode
 type GroupMemberModeReq struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Mode     string `json:"mode" binding:"required" example:"admin" enum:"all,admin"`
 }
 
-// GetGroupRequestsReq represents the request to get group request participants
 type GetGroupRequestsReq struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 }
 
-// UpdateGroupRequestsReq represents the request to update group request participants
 type UpdateGroupRequestsReq struct {
 	GroupJID     string   `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Action       string   `json:"action" binding:"required" example:"approve"`
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-// ============================================================================
-// GROUP DATA STRUCTURES
-// ============================================================================
 
-// GroupInfo represents group information
 type GroupInfo struct {
 	JID          string   `json:"jid" example:"120363025246125486@g.us"`
 	Name         string   `json:"name" example:"My Group"`
@@ -148,11 +121,7 @@ type GroupInfo struct {
 	Ephemeral    bool     `json:"ephemeral" example:"false"`
 }
 
-// ============================================================================
-// GROUP RESPONSE DTOs
-// ============================================================================
 
-// GroupResponse represents the standardized response format for group operations
 type GroupResponse struct {
 	Success bool                `json:"success"`
 	Code    int                 `json:"code"`
@@ -160,7 +129,6 @@ type GroupResponse struct {
 	Error   *GroupErrorResponse `json:"error,omitempty"`
 }
 
-// GroupData contains the response data for group operations
 type GroupData struct {
 	SessionID  string      `json:"session_id,omitempty" example:"default"`
 	Action     string      `json:"action" example:"create"`
@@ -172,18 +140,13 @@ type GroupData struct {
 	Message    string      `json:"message,omitempty" example:"Operation completed successfully"`
 }
 
-// GroupErrorResponse represents error information for group operations
 type GroupErrorResponse struct {
 	Code    string `json:"code" example:"INVALID_GROUP_JID"`
 	Message string `json:"message" example:"Invalid group JID format"`
 	Details string `json:"details,omitempty" example:"Group JID must end with @g.us"`
 }
 
-// ============================================================================
-// SPECIFIC RESPONSE DTOs FOR SWAGGER DOCUMENTATION
-// ============================================================================
 
-// CreateGroupResponse represents the response for group creation
 type CreateGroupResponse struct {
 	Success bool                    `json:"success" example:"true"`
 	Code    int                     `json:"code" example:"201"`
@@ -191,7 +154,6 @@ type CreateGroupResponse struct {
 	Error   *GroupErrorResponse     `json:"error,omitempty"`
 }
 
-// CreateGroupResponseData contains the data for group creation response
 type CreateGroupResponseData struct {
 	SessionID string     `json:"session_id" example:"default"`
 	Action    string     `json:"action" example:"create"`
@@ -200,7 +162,6 @@ type CreateGroupResponseData struct {
 	Group     *GroupInfo `json:"group"`
 }
 
-// ListGroupsResponse represents the response for listing groups
 type ListGroupsResponse struct {
 	Success bool                   `json:"success" example:"true"`
 	Code    int                    `json:"code" example:"200"`
@@ -208,7 +169,6 @@ type ListGroupsResponse struct {
 	Error   *GroupErrorResponse    `json:"error,omitempty"`
 }
 
-// ListGroupsResponseData contains the data for group list response
 type ListGroupsResponseData struct {
 	SessionID string      `json:"session_id" example:"default"`
 	Action    string      `json:"action" example:"list"`
@@ -218,7 +178,6 @@ type ListGroupsResponseData struct {
 	Total     int         `json:"total" example:"5"`
 }
 
-// GetGroupInfoResponse represents the response for getting group information
 type GetGroupInfoResponse struct {
 	Success bool                     `json:"success" example:"true"`
 	Code    int                      `json:"code" example:"200"`
@@ -226,7 +185,6 @@ type GetGroupInfoResponse struct {
 	Error   *GroupErrorResponse      `json:"error,omitempty"`
 }
 
-// GetGroupInfoResponseData contains the data for group info response
 type GetGroupInfoResponseData struct {
 	SessionID string     `json:"session_id" example:"default"`
 	Action    string     `json:"action" example:"info"`
@@ -235,7 +193,6 @@ type GetGroupInfoResponseData struct {
 	Group     *GroupInfo `json:"group"`
 }
 
-// JoinGroupResponse represents the response for joining a group
 type JoinGroupResponse struct {
 	Success bool                  `json:"success" example:"true"`
 	Code    int                   `json:"code" example:"200"`
@@ -243,7 +200,6 @@ type JoinGroupResponse struct {
 	Error   *GroupErrorResponse   `json:"error,omitempty"`
 }
 
-// JoinGroupResponseData contains the data for join group response
 type JoinGroupResponseData struct {
 	SessionID string     `json:"session_id" example:"default"`
 	Action    string     `json:"action" example:"join"`
@@ -252,7 +208,6 @@ type JoinGroupResponseData struct {
 	Group     *GroupInfo `json:"group"`
 }
 
-// GetInviteLinkResponse represents the response for getting invite link
 type GetInviteLinkResponse struct {
 	Success bool                      `json:"success" example:"true"`
 	Code    int                       `json:"code" example:"200"`
@@ -260,7 +215,6 @@ type GetInviteLinkResponse struct {
 	Error   *GroupErrorResponse       `json:"error,omitempty"`
 }
 
-// GetInviteLinkResponseData contains the data for invite link response
 type GetInviteLinkResponseData struct {
 	SessionID  string    `json:"session_id" example:"default"`
 	Action     string    `json:"action" example:"invite_link"`
@@ -270,11 +224,7 @@ type GetInviteLinkResponseData struct {
 	InviteLink string    `json:"invite_link" example:"https://chat.meow.com/ABC123"`
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
 
-// NewGroupSuccessResponse creates a successful group operation response
 func NewGroupSuccessResponse(sessionID, action string, group *GroupInfo) *GroupResponse {
 	return &GroupResponse{
 		Success: true,
@@ -289,7 +239,6 @@ func NewGroupSuccessResponse(sessionID, action string, group *GroupInfo) *GroupR
 	}
 }
 
-// NewGroupListResponse creates a successful group list response
 func NewGroupListResponse(sessionID string, groups []GroupInfo) *GroupResponse {
 	return &GroupResponse{
 		Success: true,
@@ -304,7 +253,6 @@ func NewGroupListResponse(sessionID string, groups []GroupInfo) *GroupResponse {
 	}
 }
 
-// NewGroupErrorResponse creates an error response for group operations
 func NewGroupErrorResponse(code int, errorCode, message, details string) *GroupResponse {
 	return &GroupResponse{
 		Success: false,
@@ -321,7 +269,6 @@ func NewGroupErrorResponse(code int, errorCode, message, details string) *GroupR
 	}
 }
 
-// NewInviteLinkResponse creates a successful invite link response
 func NewInviteLinkResponse(sessionID, groupJID, inviteLink string) *GroupResponse {
 	return &GroupResponse{
 		Success: true,
@@ -336,7 +283,6 @@ func NewInviteLinkResponse(sessionID, groupJID, inviteLink string) *GroupRespons
 	}
 }
 
-// NewGroupOperationResponse creates a response for simple group operations
 func NewGroupOperationResponse(sessionID, action, message string) *GroupResponse {
 	return &GroupResponse{
 		Success: true,
@@ -351,11 +297,7 @@ func NewGroupOperationResponse(sessionID, action, message string) *GroupResponse
 	}
 }
 
-// ============================================================================
-// VALIDATION FUNCTIONS
-// ============================================================================
 
-// Validate validates a CreateGroupRequest
 func (r *CreateGroupRequest) Validate() error {
 	if r.Name == "" {
 		return &GroupValidationError{Field: "name", Message: "Group name is required"}
@@ -371,7 +313,6 @@ func (r *CreateGroupRequest) Validate() error {
 	return nil
 }
 
-// Validate validates an UpdateParticipantsRequest
 func (r *UpdateParticipantsRequest) Validate() error {
 	if r.GroupJID == "" {
 		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
@@ -401,7 +342,6 @@ func (r *UpdateParticipantsRequest) Validate() error {
 	return nil
 }
 
-// GroupValidationError represents a validation error for group requests
 type GroupValidationError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
@@ -411,25 +351,20 @@ func (e *GroupValidationError) Error() string {
 	return e.Field + ": " + e.Message
 }
 
-// validatePhone checks if a phone number is valid
 func validatePhone(phone string) bool {
 	if phone == "" {
 		return false
 	}
-	// Basic validation - should start with country code
 	return len(phone) >= 10 && len(phone) <= 15
 }
 
-// validateGroupJID checks if a group JID is valid
 func validateGroupJID(groupJID string) bool {
 	if groupJID == "" {
 		return false
 	}
-	// Group JIDs should end with @g.us
 	return len(groupJID) > 5 && groupJID[len(groupJID)-5:] == "@g.us"
 }
 
-// Validate validates a GetGroupRequestsReq
 func (r *GetGroupRequestsReq) Validate() error {
 	if r.GroupJID == "" {
 		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
@@ -440,7 +375,6 @@ func (r *GetGroupRequestsReq) Validate() error {
 	return nil
 }
 
-// Validate validates an UpdateGroupRequestsReq
 func (r *UpdateGroupRequestsReq) Validate() error {
 	if r.GroupJID == "" {
 		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}

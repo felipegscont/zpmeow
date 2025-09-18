@@ -33,7 +33,6 @@ func (r *PostgresRepo) Create(ctx context.Context, sessionEntity *session.Sessio
 		sessionEntity.ID = newID
 	}
 
-	// Events are now handled by separate webhook aggregate
 	eventsJSON := []byte("[]")
 
 	now := time.Now()
@@ -45,7 +44,6 @@ func (r *PostgresRepo) Create(ctx context.Context, sessionEntity *session.Sessio
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 	`
 
-	// Ensure consistency: connected field should only be true if status is "connected" AND device_jid is not empty
 	isConnected := string(sessionEntity.Status) == "connected" && !sessionEntity.WaJID.IsEmpty()
 
 	_, err := r.db.ExecContext(ctx, query,
@@ -134,7 +132,6 @@ func (r *PostgresRepo) GetAll(ctx context.Context) ([]*session.Session, error) {
 }
 
 func (r *PostgresRepo) Update(ctx context.Context, session *session.Session) error {
-	// Events are now handled by separate webhook aggregate
 	eventsJSON := []byte("[]")
 
 	session.UpdatedAt = time.Now()
@@ -146,7 +143,6 @@ func (r *PostgresRepo) Update(ctx context.Context, session *session.Session) err
 		WHERE id = $1
 	`
 
-	// Ensure consistency: connected field should only be true if status is "connected" AND device_jid is not empty
 	isConnected := string(session.Status) == "connected" && !session.WaJID.IsEmpty()
 
 	result, err := r.db.ExecContext(ctx, query,
@@ -318,7 +314,6 @@ func (r *PostgresRepo) GetByApiKey(ctx context.Context, apiKey string) (*session
 	return r.modelToDomain(&model)
 }
 
-// GetByDeviceJID gets a session by device JID
 func (r *PostgresRepo) GetByDeviceJID(ctx context.Context, deviceJID string) (*session.Session, error) {
 	if deviceJID == "" {
 		return nil, fmt.Errorf("device JID cannot be empty")
@@ -341,7 +336,6 @@ func (r *PostgresRepo) GetByDeviceJID(ctx context.Context, deviceJID string) (*s
 	return r.modelToDomain(&model)
 }
 
-// ValidateDeviceUniqueness validates that a device JID is not already in use by another session
 func (r *PostgresRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, deviceJID string) error {
 	if deviceJID == "" {
 		return nil // Empty device JID is allowed (not connected yet)
@@ -366,11 +360,9 @@ func (r *PostgresRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, 
 }
 
 func (r *PostgresRepo) modelToDomain(model *database.SessionModel) (*session.Session, error) {
-	// Events are now handled by separate webhook aggregate
 
 	status := session.Status(model.Status)
 
-	// Create value objects
 	sessionID, err := session.NewSessionID(model.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session ID: %w", err)
@@ -386,7 +378,6 @@ func (r *PostgresRepo) modelToDomain(model *database.SessionModel) (*session.Ses
 		return nil, fmt.Errorf("failed to create proxy URL: %w", err)
 	}
 
-	// Create value objects from database strings
 	waJID, err := session.NewWaJID(model.DeviceJID)
 	if err != nil {
 		return nil, fmt.Errorf("invalid WaJID from database: %w", err)

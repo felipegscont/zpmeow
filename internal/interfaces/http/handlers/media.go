@@ -10,13 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MediaHandler handles media-related HTTP requests
 type MediaHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewMediaHandler creates a new media handler
 func NewMediaHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *MediaHandler {
 	return &MediaHandler{
 		sessionService: sessionService,
@@ -24,8 +22,6 @@ func NewMediaHandler(sessionService *application.SessionApp, wmeowService wmeow.
 	}
 }
 
-// UploadMedia handles uploading media
-//
 //	@Summary		Upload media file
 //	@Description	Upload a media file to the server
 //	@Tags			Media
@@ -50,12 +46,9 @@ func (h *MediaHandler) UploadMedia(c *gin.Context) {
 		return
 	}
 
-	// Implementation would go here
 	c.JSON(http.StatusOK, dto.NewMediaSuccessResponse("", "upload", nil))
 }
 
-// GetMedia handles getting media information
-//
 //	@Summary		Get media information
 //	@Description	Get information about a specific media file
 //	@Tags			Media
@@ -81,12 +74,9 @@ func (h *MediaHandler) GetMedia(c *gin.Context) {
 		return
 	}
 
-	// Implementation would go here
 	c.JSON(http.StatusOK, dto.NewMediaSuccessResponse(req.MediaID, "get", nil))
 }
 
-// DownloadMedia handles downloading media
-//
 //	@Summary		Download media file
 //	@Description	Download a media file from the server
 //	@Tags			Media
@@ -107,8 +97,6 @@ func (h *MediaHandler) DownloadMedia(c *gin.Context) {
 	})
 }
 
-// DeleteMedia handles deleting media
-//
 //	@Summary		Delete media file
 //	@Description	Delete a media file from the server
 //	@Tags			Media
@@ -129,8 +117,6 @@ func (h *MediaHandler) DeleteMedia(c *gin.Context) {
 	})
 }
 
-// ListMedia handles listing media
-//
 //	@Summary		List media files
 //	@Description	Get a list of all media files for a session
 //	@Tags			Media
@@ -151,8 +137,6 @@ func (h *MediaHandler) ListMedia(c *gin.Context) {
 	})
 }
 
-// GetMediaProgress handles getting media upload progress
-//
 //	@Summary		Get media upload progress
 //	@Description	Get the upload progress of a media file
 //	@Tags			Media
@@ -173,8 +157,6 @@ func (h *MediaHandler) GetMediaProgress(c *gin.Context) {
 	})
 }
 
-// ConvertMedia handles converting media formats
-//
 //	@Summary		Convert media format
 //	@Description	Convert a media file to a different format
 //	@Tags			Media
@@ -196,8 +178,6 @@ func (h *MediaHandler) ConvertMedia(c *gin.Context) {
 	})
 }
 
-// CompressMedia handles compressing media
-//
 //	@Summary		Compress media file
 //	@Description	Compress a media file to reduce its size
 //	@Tags			Media
@@ -219,8 +199,6 @@ func (h *MediaHandler) CompressMedia(c *gin.Context) {
 	})
 }
 
-// GetMediaMetadata handles getting media metadata
-//
 //	@Summary		Get media metadata
 //	@Description	Get detailed metadata information about a media file
 //	@Tags			Media

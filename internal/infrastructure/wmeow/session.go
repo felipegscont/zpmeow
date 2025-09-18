@@ -21,13 +21,11 @@ import (
 	waTypes "go.mau.fi/whatsmeow/types"
 )
 
-// Helper contains common session operations
 type Helper struct {
 	sessionRepo session.Repository
 	logger      logging.Logger
 }
 
-// NewHelper creates a new session helper
 func NewHelper(sessionRepo session.Repository, logger logging.Logger) *Helper {
 	return &Helper{
 		sessionRepo: sessionRepo,
@@ -35,7 +33,6 @@ func NewHelper(sessionRepo session.Repository, logger logging.Logger) *Helper {
 	}
 }
 
-// UpdateSessionStatus updates the session status in the database
 func (h *Helper) UpdateSessionStatus(sessionID string, status session.Status) {
 	if h.sessionRepo == nil {
 		h.logger.Warnf("No session repository available for session %s", sessionID)
@@ -61,7 +58,6 @@ func (h *Helper) UpdateSessionStatus(sessionID string, status session.Status) {
 	h.logger.Infof("Successfully updated session %s status to %s in database", sessionID, status)
 }
 
-// UpdateSessionQRCode updates the QR code in the database
 func (h *Helper) UpdateSessionQRCode(sessionID string, qrCode string) {
 	if h.sessionRepo == nil {
 		h.logger.Warnf("No session repository available for session %s", sessionID)
@@ -87,7 +83,6 @@ func (h *Helper) UpdateSessionQRCode(sessionID string, qrCode string) {
 	h.logger.Infof("Successfully updated session %s QR code in database", sessionID)
 }
 
-// ValidateClientAndStore validates meow client and store
 func ValidateClientAndStore(client *whatsmeow.Client, sessionID string, logger logging.Logger) error {
 	if client == nil {
 		return fmt.Errorf("meow client is nil for session %s", sessionID)
@@ -100,28 +95,20 @@ func ValidateClientAndStore(client *whatsmeow.Client, sessionID string, logger l
 	return nil
 }
 
-// GetOrCreateDeviceStore gets or creates a device store for a session
-// This function properly handles existing devices based on session's device_jid
 func GetOrCreateDeviceStore(sessionID string, container *sqlstore.Container) *store.Device {
 	return GetDeviceStoreForSession(sessionID, "", container)
 }
 
-// GetDeviceStoreForSession gets or creates a device store for a session with optional device JID
-// This follows the reference implementation logic from wmiau.go.bak
 func GetDeviceStoreForSession(sessionID, expectedDeviceJID string, container *sqlstore.Container) *store.Device {
 	var deviceStore *store.Device
 	var err error
 
-	// If we have an expected device JID, try to get that specific device (like reference)
 	if expectedDeviceJID != "" {
-		// Parse the JID like in the reference
 		jid, ok := parseJID(expectedDeviceJID)
 		if ok {
-			// Use container.GetDevice like in the reference implementation
 			deviceStore, err = container.GetDevice(context.Background(), jid)
 			if err != nil {
 				fmt.Printf("Failed to get device for JID %s: %v\n", expectedDeviceJID, err)
-				// Fallback to creating new device
 				deviceStore = container.NewDevice()
 			} else {
 				fmt.Printf("Successfully retrieved existing device for JID %s\n", expectedDeviceJID)
@@ -131,12 +118,10 @@ func GetDeviceStoreForSession(sessionID, expectedDeviceJID string, container *sq
 			deviceStore = container.NewDevice()
 		}
 	} else {
-		// No JID provided, create new device
 		fmt.Printf("No device JID provided for session %s, creating new device\n", sessionID)
 		deviceStore = container.NewDevice()
 	}
 
-	// Final fallback
 	if deviceStore == nil {
 		fmt.Printf("Device store is nil, creating fallback device\n")
 		deviceStore = container.NewDevice()
@@ -145,7 +130,6 @@ func GetDeviceStoreForSession(sessionID, expectedDeviceJID string, container *sq
 	return deviceStore
 }
 
-// parseJID parses a JID string into waTypes.JID (from reference implementation)
 func parseJID(arg string) (waTypes.JID, bool) {
 	if arg[0] == '+' {
 		arg = arg[1:]
@@ -165,19 +149,16 @@ func parseJID(arg string) (waTypes.JID, bool) {
 	}
 }
 
-// QRHelper contains QR code related utilities
 type QRHelper struct {
 	logger logging.Logger
 }
 
-// NewQRHelper creates a new QR code helper
 func NewQRHelper(logger logging.Logger) *QRHelper {
 	return &QRHelper{
 		logger: logger,
 	}
 }
 
-// GenerateQRCodeImage generates a base64 encoded QR code image
 func (h *QRHelper) GenerateQRCodeImage(qrText string) string {
 	qrPNG, err := qrcode.Encode(qrText, qrcode.Medium, 256)
 	if err != nil {
@@ -189,7 +170,6 @@ func (h *QRHelper) GenerateQRCodeImage(qrText string) string {
 	return "data:image/png;base64," + base64Str
 }
 
-// DisplayQRCodeInTerminal displays QR code in terminal
 func (h *QRHelper) DisplayQRCodeInTerminal(qrCode, sessionID string) {
 	fmt.Printf("\n=== QR Code for Session %s ===\n", sessionID)
 	qrterminal.GenerateHalfBlock(qrCode, qrterminal.L, os.Stdout)
@@ -197,19 +177,16 @@ func (h *QRHelper) DisplayQRCodeInTerminal(qrCode, sessionID string) {
 	fmt.Printf("=== End QR Code ===\n\n")
 }
 
-// ConnHelper contains connection related utilities
 type ConnHelper struct {
 	logger logging.Logger
 }
 
-// NewConnHelper creates a new connection helper
 func NewConnHelper(logger logging.Logger) *ConnHelper {
 	return &ConnHelper{
 		logger: logger,
 	}
 }
 
-// SafeConnect safely connects a meow client with proper error handling
 func (h *ConnHelper) SafeConnect(client *whatsmeow.Client, sessionID string) error {
 	if err := ValidateClientAndStore(client, sessionID, h.logger); err != nil {
 		return err
@@ -224,7 +201,6 @@ func (h *ConnHelper) SafeConnect(client *whatsmeow.Client, sessionID string) err
 	return client.Connect()
 }
 
-// SafeDisconnect safely disconnects a meow client
 func (h *ConnHelper) SafeDisconnect(client *whatsmeow.Client, sessionID string) {
 	if client != nil && client.IsConnected() {
 		h.logger.Infof("Disconnecting client for session %s", sessionID)
@@ -232,19 +208,16 @@ func (h *ConnHelper) SafeDisconnect(client *whatsmeow.Client, sessionID string) 
 	}
 }
 
-// IsDeviceRegistered checks if device is registered (has ID)
 func IsDeviceRegistered(client *whatsmeow.Client) bool {
 	return client != nil && client.Store != nil && client.Store.ID != nil
 }
 
-// StatusHelper contains status management utilities
 type StatusHelper struct {
 	mu     *sync.RWMutex
 	status types.Status
 	logger logging.Logger
 }
 
-// NewStatusHelper creates a new status helper
 func NewStatusHelper(logger logging.Logger) *StatusHelper {
 	return &StatusHelper{
 		mu:     &sync.RWMutex{},
@@ -253,7 +226,6 @@ func NewStatusHelper(logger logging.Logger) *StatusHelper {
 	}
 }
 
-// SetStatus safely sets the status with logging
 func (h *StatusHelper) SetStatus(status types.Status, sessionID string) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -265,7 +237,6 @@ func (h *StatusHelper) SetStatus(status types.Status, sessionID string) {
 	}
 }
 
-// GetStatus safely gets the current status
 func (h *StatusHelper) GetStatus() types.Status {
 	h.mu.RLock()
 	defer h.mu.RUnlock()

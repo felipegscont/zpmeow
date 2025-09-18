@@ -15,9 +15,6 @@ import (
 	"meow/internal/interfaces/dto"
 )
 
-// ============================================================================
-// SESSION HANDLER - SELF-CONTAINED WITH INTERNAL HELPERS
-// ============================================================================
 
 type SessionHandler struct {
 	sessionService *application.SessionApp
@@ -33,16 +30,8 @@ func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeo
 	}
 }
 
-// ============================================================================
-// REMOVED DUPLICATE DTOs - NOW USING CENTRALIZED DTOs FROM dto PACKAGE
-// ============================================================================
 
-// ============================================================================
-// INTERNAL HELPER FUNCTIONS
-// ============================================================================
 
-// validateSessionID checks if a session ID or name is provided
-// This function accepts both UUID and session name
 func (h *SessionHandler) validateSessionID(c *gin.Context) (string, bool) {
 	sessionIDOrName := c.Param("id")
 	if sessionIDOrName == "" {
@@ -52,7 +41,6 @@ func (h *SessionHandler) validateSessionID(c *gin.Context) (string, bool) {
 	return sessionIDOrName, true
 }
 
-// bindAndValidateRequest binds JSON request and validates it
 func (h *SessionHandler) bindAndValidateRequest(c *gin.Context, req interface{}) bool {
 	if err := c.ShouldBindJSON(req); err != nil {
 		h.logger.Errorf("Failed to bind request: %v", err)
@@ -62,7 +50,6 @@ func (h *SessionHandler) bindAndValidateRequest(c *gin.Context, req interface{})
 	return true
 }
 
-// sendSuccessResponse sends a standardized success response using centralized DTOs
 func (h *SessionHandler) sendSuccessResponse(c *gin.Context, sessionID, action string, data interface{}) {
 	response := &dto.SessionResponse{
 		Success: true,
@@ -75,7 +62,6 @@ func (h *SessionHandler) sendSuccessResponse(c *gin.Context, sessionID, action s
 		},
 	}
 
-	// Set specific data based on type
 	switch v := data.(type) {
 	case *dto.SessionInfo:
 		response.Data.Session = v
@@ -95,7 +81,6 @@ func (h *SessionHandler) sendSuccessResponse(c *gin.Context, sessionID, action s
 	c.Data(http.StatusOK, "application/json", jsonBytes)
 }
 
-// sendErrorResponse sends a standardized error response using centralized DTOs
 func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode, message, details string) {
 	response := &dto.SessionResponse{
 		Success: false,
@@ -121,7 +106,6 @@ func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode
 	c.Data(status, "application/json", jsonBytes)
 }
 
-// convertToSessionInfo converts domain session to SessionInfo DTO
 func (h *SessionHandler) convertToSessionInfo(session *session.Session) *dto.SessionInfo {
 	sessionInfo := &dto.SessionInfo{
 		ID:        session.ID.Value(),
@@ -131,29 +115,23 @@ func (h *SessionHandler) convertToSessionInfo(session *session.Session) *dto.Ses
 		ProxyURL:  session.ProxyURL.Value(),
 		ApiKey:    session.ApiKey.Value(),
 		CreatedAt: session.CreatedAt,
-		// Note: WebhookURL and Events removed - now handled by separate webhook aggregate
 	}
 
 	return sessionInfo
 }
 
-// logOperation logs the start of an operation
 func (h *SessionHandler) logOperation(operation, details string) {
 	h.logger.Infof("%s: %s", operation, details)
 }
 
-// logSuccess logs successful completion of an operation
 func (h *SessionHandler) logSuccess(operation, details string) {
 	h.logger.Infof("%s completed successfully: %s", operation, details)
 }
 
-// logError logs an error during operation
 func (h *SessionHandler) logError(operation string, err error) {
 	h.logger.Errorf("Failed to %s: %v", operation, err)
 }
 
-// GetSessions godoc
-//
 //	@Summary		Get all sessions
 //	@Description	Retrieves a list of all meow sessions
 //	@Tags			Sessions
@@ -173,7 +151,6 @@ func (h *SessionHandler) GetSessions(c *gin.Context) {
 		return
 	}
 
-	// Convert to SessionInfo DTOs
 	sessionInfos := make([]dto.SessionInfo, len(sessions))
 	for i, session := range sessions {
 		sessionInfos[i] = *h.convertToSessionInfo(session)
@@ -183,8 +160,6 @@ func (h *SessionHandler) GetSessions(c *gin.Context) {
 	h.logSuccess("Get all sessions", fmt.Sprintf("retrieved %d sessions", len(sessions)))
 }
 
-// GetSession godoc
-//
 //	@Summary		Get session information
 //	@Description	Retrieves detailed information about a specific session by ID or name
 //	@Tags			Sessions
@@ -217,8 +192,6 @@ func (h *SessionHandler) GetSession(c *gin.Context) {
 	h.logSuccess("Get session", sessionID)
 }
 
-// CreateSession godoc
-//
 //	@Summary		Create a new meow session
 //	@Description	Creates a new meow session and starts the client
 //	@Tags			Sessions
@@ -238,7 +211,6 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 
 	h.logOperation("Creating session", "name: "+req.Name)
 
-	// Create session via application service
 	session, err := h.sessionService.CreateSessionWithRequest(c.Request.Context(), &req)
 	if err != nil {
 		h.logError("create session", err)
@@ -248,7 +220,6 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 
 	sessionInfo := h.convertToSessionInfo(session)
 
-	// Send 201 Created status for session creation
 	response := &dto.CreateSessionResponse{
 		Success: true,
 		Code:    http.StatusCreated,
@@ -265,8 +236,6 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 	h.logSuccess("Create session", session.ID.Value())
 }
 
-// DeleteSession godoc
-//
 //	@Summary		Delete a session
 //	@Description	Deletes a meow session and stops the client
 //	@Tags			Sessions
@@ -287,7 +256,6 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 
 	h.logOperation("Deleting session", sessionID)
 
-	// Get session first to get the actual ID
 	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		h.logError("get session "+sessionID+" for deletion", err)
@@ -295,13 +263,10 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 		return
 	}
 
-	// Stop the meow client first
 	if err := h.wmeowService.StopClient(session.ID.Value()); err != nil {
 		h.logger.Errorf("Failed to stop client for session %s: %v", session.ID.Value(), err)
-		// Continue with deletion even if stop fails
 	}
 
-	// Delete the session
 	if err := h.sessionService.DeleteSession(c.Request.Context(), sessionID); err != nil {
 		h.logError("delete session "+sessionID, err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "DELETE_SESSION_FAILED", "Failed to delete session", err.Error())
@@ -312,10 +277,7 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	h.logSuccess("Delete session", sessionID)
 }
 
-// REMOVED DUPLICATE GetAllSessions - Using GetSessions instead
 
-// ConnectSession godoc
-//
 //	@Summary		Connect a session to meow
 //	@Description	Initiates connection to meow and returns QR code if needed. Accepts session ID or name.
 //	@Tags			Sessions
@@ -336,7 +298,6 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 
 	h.logOperation("Connecting session", sessionID)
 
-	// Check if session exists
 	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		h.logError("get session "+sessionID+" for connection", err)
@@ -344,9 +305,7 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 		return
 	}
 
-	// Validate that no other session is using the same device (if this session has a device)
 	if !session.WaJID.IsEmpty() {
-		// Check if another session is already using this device
 		existingSession, err := h.sessionService.GetSessionByDeviceJID(c.Request.Context(), session.WaJID.Value())
 		if err == nil && existingSession.ID != session.ID {
 			h.sendErrorResponse(c, http.StatusConflict, "DEVICE_ALREADY_IN_USE",
@@ -356,14 +315,12 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 		}
 	}
 
-	// Start the client if not already started
 	if err := h.wmeowService.StartClient(session.ID.Value()); err != nil {
 		h.logError("start client for session "+session.ID.Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "START_CLIENT_FAILED", "Failed to start client", err.Error())
 		return
 	}
 
-	// Get QR code if not connected
 	var qrCode string
 	isConnected := h.wmeowService.IsClientConnected(session.ID.Value())
 	if !isConnected {
@@ -373,14 +330,12 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 		}
 	}
 
-	// Create connection info
 	connectionInfo := &dto.SessionConnectionInfo{
 		QRCode:      qrCode,
 		Connected:   isConnected,
 		IsConnected: isConnected,
 	}
 
-	// Create standardized response
 	response := &dto.ConnectSessionResponse{
 		Success: true,
 		Code:    http.StatusOK,
@@ -399,8 +354,6 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 	h.logSuccess("Connect session", sessionID)
 }
 
-// DisconnectSession godoc
-//
 //	@Summary		Disconnect a session from meow
 //	@Description	Disconnects the session from meow without deleting it
 //	@Tags			Sessions
@@ -421,7 +374,6 @@ func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 
 	h.logOperation("Disconnecting session", sessionID)
 
-	// Check if session exists
 	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		h.logError("get session "+sessionID+" for disconnection", err)
@@ -429,7 +381,6 @@ func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 		return
 	}
 
-	// Stop the meow client
 	if err := h.wmeowService.StopClient(session.ID.Value()); err != nil {
 		h.logError("stop client for session "+session.ID.Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "STOP_CLIENT_FAILED", "Failed to disconnect session", err.Error())
@@ -440,8 +391,6 @@ func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 	h.logSuccess("Disconnect session", sessionID)
 }
 
-// PairPhone godoc
-//
 //	@Summary		Pair phone number with session
 //	@Description	Pairs a phone number with the session for meow connection
 //	@Tags			Sessions
@@ -468,7 +417,6 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 
 	h.logOperation("Pairing phone for session", fmt.Sprintf("session: %s, phone: %s", sessionID, req.PhoneNumber))
 
-	// Check if session exists
 	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		h.logError("get session "+sessionID+" for phone pairing", err)
@@ -476,7 +424,6 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 		return
 	}
 
-	// Pair phone via MeowService
 	pairCode, err := h.wmeowService.PairPhone(session.ID.Value(), req.PhoneNumber)
 	if err != nil {
 		h.logError("pair phone for session "+session.ID.Value(), err)
@@ -484,7 +431,6 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 		return
 	}
 
-	// Create standardized response
 	response := &dto.PairPhoneResponse{
 		Success: true,
 		Code:    http.StatusOK,
@@ -502,8 +448,6 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 	h.logSuccess("Pair phone", fmt.Sprintf("session: %s, phone: %s", sessionID, req.PhoneNumber))
 }
 
-// GetSessionStatus godoc
-//
 //	@Summary		Get session status
 //	@Description	Retrieves the current status and connection information of a session
 //	@Tags			Sessions
@@ -524,7 +468,6 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 
 	h.logOperation("Getting status for session", sessionID)
 
-	// Check if session exists
 	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		h.logError("get session "+sessionID+" for status", err)
@@ -532,11 +475,9 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 		return
 	}
 
-	// Get client status from MeowService
 	clientStatus := h.wmeowService.GetClientStatus(session.ID.Value())
 	isConnected := h.wmeowService.IsClientConnected(session.ID.Value())
 
-	// Create standardized response
 	response := &dto.SessionStatusResponse{
 		Success: true,
 		Code:    http.StatusOK,
@@ -559,8 +500,6 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 	h.logSuccess("Get session status", sessionID)
 }
 
-// UpdateSessionWebhook godoc
-//
 //	@Summary		Update session webhook URL
 //	@Description	Updates the webhook URL and events for a session
 //	@Tags			Sessions
@@ -587,7 +526,6 @@ func (h *SessionHandler) UpdateSessionWebhook(c *gin.Context) {
 
 	h.logOperation("Updating webhook for session", fmt.Sprintf("session: %s, url: %s", sessionID, req.URL))
 
-	// Check if session exists
 	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
 		h.logError("get session "+sessionID+" for webhook update", err)
@@ -595,14 +533,12 @@ func (h *SessionHandler) UpdateSessionWebhook(c *gin.Context) {
 		return
 	}
 
-	// Update webhook in wmeowService
 	if err := h.wmeowService.UpdateSessionWebhook(session.ID.Value(), req.URL); err != nil {
 		h.logError("update webhook for session "+session.ID.Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "WEBHOOK_UPDATE_FAILED", "Failed to update webhook", err.Error())
 		return
 	}
 
-	// Update events subscription
 	if len(req.Events) > 0 {
 		if err := h.wmeowService.UpdateSessionSubscriptions(session.ID.Value(), req.Events); err != nil {
 			h.logError("update events subscription for session "+session.ID.Value(), err)
@@ -615,4 +551,3 @@ func (h *SessionHandler) UpdateSessionWebhook(c *gin.Context) {
 	h.logSuccess("Update session webhook", sessionID)
 }
 
-// REMOVED: ValidateSessionsIntegrity endpoint - not needed

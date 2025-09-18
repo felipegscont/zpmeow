@@ -22,10 +22,7 @@ var (
 	ErrInvalidSession               = errors.New("invalid session")
 	ErrCannotDeleteConnectedSession = errors.New("cannot delete connected session")
 
-	// Note: Technical errors moved to application/infrastructure layers
-	// Domain should only contain business rule violations
 
-	// Device Management Errors
 	ErrDeviceAlreadyInUse                    = errors.New("device is already in use by another session")
 	ErrSessionCannotBeConnectedWithoutDevice = errors.New("session cannot be connected without a device JID")
 	ErrMultipleSessionsWithSameDevice        = errors.New("multiple sessions cannot use the same device")

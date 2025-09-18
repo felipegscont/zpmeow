@@ -227,7 +227,6 @@ func IsValidMessageID(messageID string) bool {
 
 var DefaultValidator = &Validator{}
 
-// Utility functions consolidated from utils/validation.go
 
 func IsValidEmail(email string) bool {
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)

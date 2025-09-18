@@ -42,7 +42,6 @@ func (w *Service) SendWebhook(ctx context.Context, webhookURL, event, sessionID 
 		return fmt.Errorf("webhook URL is empty")
 	}
 
-	// Send the payload directly as received from the event processor
 	w.logger.Infof("Sending webhook to %s for event %s (session: %s)", webhookURL, event, sessionID)
 
 	err := w.httpClient.Post(ctx, webhookURL, data, nil)

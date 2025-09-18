@@ -4,35 +4,24 @@ import (
 	"time"
 )
 
-// ============================================================================
-// CONTACT REQUEST DTOs
-// ============================================================================
 
-// CheckContactRequest represents a request to check if contacts are on meow
 type CheckContactRequest struct {
 	Phones []string `json:"phones" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-// GetContactInfoRequest represents a request to get contact information
 type GetContactInfoRequest struct {
 	Phones []string `json:"phones" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-// GetAvatarRequest represents a request to get contact avatar
 type GetAvatarRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
 }
 
-// SetContactPresenceRequest represents a request to set global contact presence
 type SetContactPresenceRequest struct {
 	State string `json:"state" binding:"required" example:"available"`
 }
 
-// ============================================================================
-// CONTACT DATA STRUCTURES
-// ============================================================================
 
-// ContactCheckResult represents the result of checking if a contact is on meow
 type ContactCheckResult struct {
 	Query        string `json:"query" example:"5511999999999"`
 	IsInmeow     bool   `json:"is_in_meow" example:"true"`
@@ -40,7 +29,6 @@ type ContactCheckResult struct {
 	VerifiedName string `json:"verified_name,omitempty" example:"João Silva"`
 }
 
-// ContactInfo represents detailed contact information
 type ContactInfo struct {
 	JID          string `json:"jid" example:"5511999999999@s.meow.net"`
 	Name         string `json:"name,omitempty" example:"João Silva"`
@@ -57,7 +45,6 @@ type ContactInfo struct {
 	IsMuted      bool   `json:"is_muted" example:"false"`
 }
 
-// AvatarInfo represents contact avatar information
 type AvatarInfo struct {
 	Phone     string    `json:"phone" example:"5511999999999"`
 	JID       string    `json:"jid" example:"5511999999999@s.meow.net"`
@@ -66,11 +53,7 @@ type AvatarInfo struct {
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T12:00:00Z"`
 }
 
-// ============================================================================
-// CONTACT RESPONSE DTOs
-// ============================================================================
 
-// ContactResponse represents the standardized response format for contact operations
 type ContactResponse struct {
 	Success bool                  `json:"success"`
 	Code    int                   `json:"code"`
@@ -78,7 +61,6 @@ type ContactResponse struct {
 	Error   *ContactErrorResponse `json:"error,omitempty"`
 }
 
-// ContactData contains the response data for contact operations
 type ContactData struct {
 	Action       string               `json:"action" example:"check_contacts"`
 	Status       string               `json:"status" example:"success"`
@@ -88,14 +70,12 @@ type ContactData struct {
 	Avatar       *AvatarInfo          `json:"avatar,omitempty"`
 }
 
-// ContactErrorResponse represents error information for contact operations
 type ContactErrorResponse struct {
 	Code    string `json:"code" example:"INVALID_PHONE"`
 	Message string `json:"message" example:"Invalid phone number format"`
 	Details string `json:"details,omitempty" example:"Phone number must include country code"`
 }
 
-// ContactsResponse represents the response for contacts operations
 type ContactsResponse struct {
 	Success bool                  `json:"success"`
 	Code    int                   `json:"code"`
@@ -103,7 +83,6 @@ type ContactsResponse struct {
 	Error   *ContactErrorResponse `json:"error,omitempty"`
 }
 
-// ContactsData contains contacts response data
 type ContactsData struct {
 	Action    string        `json:"action" example:"get_contacts"`
 	Status    string        `json:"status" example:"success"`
@@ -112,11 +91,7 @@ type ContactsData struct {
 	Count     int           `json:"count" example:"10"`
 }
 
-// ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
 
-// NewContactSuccessResponse creates a successful contact operation response
 func NewContactSuccessResponse(action string, checkResults []ContactCheckResult, contactInfos []ContactInfo) *ContactResponse {
 	return &ContactResponse{
 		Success: true,
@@ -131,7 +106,6 @@ func NewContactSuccessResponse(action string, checkResults []ContactCheckResult,
 	}
 }
 
-// NewContactErrorResponse creates an error response for contact operations
 func NewContactErrorResponse(code int, errorCode, message, details string) *ContactResponse {
 	return &ContactResponse{
 		Success: false,
@@ -148,7 +122,6 @@ func NewContactErrorResponse(code int, errorCode, message, details string) *Cont
 	}
 }
 
-// NewContactAvatarResponse creates a response for avatar operations
 func NewContactAvatarResponse(avatar *AvatarInfo) *ContactResponse {
 	return &ContactResponse{
 		Success: true,
@@ -162,7 +135,6 @@ func NewContactAvatarResponse(avatar *AvatarInfo) *ContactResponse {
 	}
 }
 
-// NewContactsResponse creates a response for contacts operations
 func NewContactsResponse(contacts []ContactInfo) *ContactsResponse {
 	return &ContactsResponse{
 		Success: true,
@@ -177,11 +149,7 @@ func NewContactsResponse(contacts []ContactInfo) *ContactsResponse {
 	}
 }
 
-// ============================================================================
-// BACKWARD COMPATIBILITY ALIASES
-// ============================================================================
 
-// Legacy aliases for backward compatibility
 type CheckUserRequest = CheckContactRequest
 type GetUserInfoRequest = GetContactInfoRequest
 type SetUserPresenceRequest = SetContactPresenceRequest
@@ -191,7 +159,6 @@ type UserResponse = ContactResponse
 type UserData = ContactData
 type UserErrorResponse = ContactErrorResponse
 
-// Legacy utility functions for backward compatibility
 func NewUserSuccessResponse(action string, checkResults []ContactCheckResult, contactInfos []ContactInfo) *ContactResponse {
 	return NewContactSuccessResponse(action, checkResults, contactInfos)
 }

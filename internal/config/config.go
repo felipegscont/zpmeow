@@ -10,7 +10,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config holds all application configuration
 type Config struct {
 	Database DatabaseConfig `json:"database"`
 	Server   ServerConfig   `json:"server"`
@@ -22,7 +21,6 @@ type Config struct {
 	Security SecurityConfig `json:"security"`
 }
 
-// DatabaseConfig holds database-related configuration
 type DatabaseConfig struct {
 	Host            string        `json:"host"`
 	Port            string        `json:"port"`
@@ -36,7 +34,6 @@ type DatabaseConfig struct {
 	URL             string        `json:"url"` // Computed field
 }
 
-// ServerConfig holds server-related configuration
 type ServerConfig struct {
 	Port         string        `json:"port"`
 	Mode         string        `json:"mode"` // debug, release, test
@@ -45,14 +42,12 @@ type ServerConfig struct {
 	IdleTimeout  time.Duration `json:"idle_timeout"`
 }
 
-// AuthConfig holds authentication configuration
 type AuthConfig struct {
 	GlobalAPIKey    string        `json:"global_api_key"`
 	SessionTimeout  time.Duration `json:"session_timeout"`
 	TokenExpiration time.Duration `json:"token_expiration"`
 }
 
-// LoggingConfig holds logging configuration
 type LoggingConfig struct {
 	Level          string `json:"level"`
 	Format         string `json:"format"`
@@ -66,7 +61,6 @@ type LoggingConfig struct {
 	FileFormat     string `json:"file_format"`
 }
 
-// CORSConfig holds CORS configuration
 type CORSConfig struct {
 	AllowAllOrigins  bool     `json:"allow_all_origins"`
 	AllowOrigins     []string `json:"allow_origins"`
@@ -77,7 +71,6 @@ type CORSConfig struct {
 	MaxAge           int      `json:"max_age"`
 }
 
-// WebhookConfig holds webhook configuration
 type WebhookConfig struct {
 	Timeout           time.Duration `json:"timeout"`
 	MaxRetries        int           `json:"max_retries"`
@@ -86,7 +79,6 @@ type WebhookConfig struct {
 	BackoffMultiplier float64       `json:"backoff_multiplier"`
 }
 
-// MeowConfig holds meow client configuration
 type MeowConfig struct {
 	MaxRetries        int           `json:"max_retries"`
 	RetryInterval     time.Duration `json:"retry_interval"`
@@ -95,7 +87,6 @@ type MeowConfig struct {
 	ReconnectDelay    time.Duration `json:"reconnect_delay"`
 }
 
-// SecurityConfig holds security-related configuration
 type SecurityConfig struct {
 	RateLimitEnabled bool          `json:"rate_limit_enabled"`
 	RateLimitRPS     int           `json:"rate_limit_rps"`
@@ -103,9 +94,7 @@ type SecurityConfig struct {
 	MaxRequestSize   int64         `json:"max_request_size"`
 }
 
-// LoadConfig loads configuration from environment variables
 func LoadConfig() (*Config, error) {
-	// Load .env file if it exists
 	_ = godotenv.Load()
 
 	cfg := &Config{
@@ -119,7 +108,6 @@ func LoadConfig() (*Config, error) {
 		Security: loadSecurityConfig(),
 	}
 
-	// Validate configuration
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("configuration validation failed: %w", err)
 	}
@@ -127,7 +115,6 @@ func LoadConfig() (*Config, error) {
 	return cfg, nil
 }
 
-// Validate validates the configuration
 func (c *Config) Validate() error {
 	if c.Database.Host == "" {
 		return fmt.Errorf("database host is required")
@@ -144,27 +131,22 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// GetDatabaseURL returns the computed database URL
 func (c *Config) GetDatabaseURL() string {
 	return c.Database.URL
 }
 
-// IsProduction returns true if running in production mode
 func (c *Config) IsProduction() bool {
 	return c.Server.Mode == "release"
 }
 
-// IsDevelopment returns true if running in development mode
 func (c *Config) IsDevelopment() bool {
 	return c.Server.Mode == "debug"
 }
 
-// IsTest returns true if running in test mode
 func (c *Config) IsTest() bool {
 	return c.Server.Mode == "test"
 }
 
-// loadDatabaseConfig loads database configuration from environment
 func loadDatabaseConfig() DatabaseConfig {
 	cfg := DatabaseConfig{
 		Host:            getEnvOrDefault("DB_HOST", "localhost"),
@@ -178,14 +160,12 @@ func loadDatabaseConfig() DatabaseConfig {
 		ConnMaxLifetime: getDurationEnvOrDefault("DB_CONN_MAX_LIFETIME", 5*time.Minute),
 	}
 
-	// Compute database URL
 	cfg.URL = fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode)
 
 	return cfg
 }
 
-// loadServerConfig loads server configuration from environment
 func loadServerConfig() ServerConfig {
 	return ServerConfig{
 		Port:         getEnvOrDefault("SERVER_PORT", "8080"),
@@ -196,7 +176,6 @@ func loadServerConfig() ServerConfig {
 	}
 }
 
-// loadAuthConfig loads authentication configuration from environment
 func loadAuthConfig() AuthConfig {
 	return AuthConfig{
 		GlobalAPIKey:    getEnvOrDefault("GLOBAL_API_KEY", ""),
@@ -205,7 +184,6 @@ func loadAuthConfig() AuthConfig {
 	}
 }
 
-// loadLoggingConfig loads logging configuration from environment
 func loadLoggingConfig() LoggingConfig {
 	return LoggingConfig{
 		Level:          getEnvOrDefault("LOG_LEVEL", "info"),
@@ -221,7 +199,6 @@ func loadLoggingConfig() LoggingConfig {
 	}
 }
 
-// loadCORSConfig loads CORS configuration from environment
 func loadCORSConfig() CORSConfig {
 	return CORSConfig{
 		AllowAllOrigins:  getBoolEnvOrDefault("CORS_ALLOW_ALL_ORIGINS", true),
@@ -234,7 +211,6 @@ func loadCORSConfig() CORSConfig {
 	}
 }
 
-// loadWebhookConfig loads webhook configuration from environment
 func loadWebhookConfig() WebhookConfig {
 	return WebhookConfig{
 		Timeout:           getDurationEnvOrDefault("WEBHOOK_TIMEOUT", 30*time.Second),
@@ -245,7 +221,6 @@ func loadWebhookConfig() WebhookConfig {
 	}
 }
 
-// loadMeowConfig loads meow configuration from environment
 func loadMeowConfig() MeowConfig {
 	return MeowConfig{
 		MaxRetries:        getIntEnvOrDefault("meow_MAX_RETRIES", 3),
@@ -256,7 +231,6 @@ func loadMeowConfig() MeowConfig {
 	}
 }
 
-// loadSecurityConfig loads security configuration from environment
 func loadSecurityConfig() SecurityConfig {
 	return SecurityConfig{
 		RateLimitEnabled: getBoolEnvOrDefault("SECURITY_RATE_LIMIT_ENABLED", false),
@@ -266,9 +240,7 @@ func loadSecurityConfig() SecurityConfig {
 	}
 }
 
-// Helper functions for environment variable parsing
 
-// getEnvOrDefault returns environment variable value or default
 func getEnvOrDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
@@ -276,7 +248,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
-// getBoolEnvOrDefault returns environment variable as bool or default
 func getBoolEnvOrDefault(key string, defaultValue bool) bool {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := strconv.ParseBool(value); err == nil {
@@ -286,7 +257,6 @@ func getBoolEnvOrDefault(key string, defaultValue bool) bool {
 	return defaultValue
 }
 
-// getIntEnvOrDefault returns environment variable as int or default
 func getIntEnvOrDefault(key string, defaultValue int) int {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := strconv.Atoi(value); err == nil {
@@ -296,7 +266,6 @@ func getIntEnvOrDefault(key string, defaultValue int) int {
 	return defaultValue
 }
 
-// getInt64EnvOrDefault returns environment variable as int64 or default
 func getInt64EnvOrDefault(key string, defaultValue int64) int64 {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := strconv.ParseInt(value, 10, 64); err == nil {
@@ -306,7 +275,6 @@ func getInt64EnvOrDefault(key string, defaultValue int64) int64 {
 	return defaultValue
 }
 
-// getFloat64EnvOrDefault returns environment variable as float64 or default
 func getFloat64EnvOrDefault(key string, defaultValue float64) float64 {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := strconv.ParseFloat(value, 64); err == nil {
@@ -316,7 +284,6 @@ func getFloat64EnvOrDefault(key string, defaultValue float64) float64 {
 	return defaultValue
 }
 
-// getDurationEnvOrDefault returns environment variable as duration or default
 func getDurationEnvOrDefault(key string, defaultValue time.Duration) time.Duration {
 	if value := os.Getenv(key); value != "" {
 		if parsed, err := time.ParseDuration(value); err == nil {
@@ -326,7 +293,6 @@ func getDurationEnvOrDefault(key string, defaultValue time.Duration) time.Durati
 	return defaultValue
 }
 
-// getStringSliceEnvOrDefault returns environment variable as string slice or default
 func getStringSliceEnvOrDefault(key string, defaultValue []string) []string {
 	if value := os.Getenv(key); value != "" {
 		return strings.Split(value, ",")

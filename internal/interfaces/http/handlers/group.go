@@ -13,13 +13,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GroupHandler handles group-related HTTP requests
 type GroupHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
 }
 
-// NewGroupHandler creates a new group handler
 func NewGroupHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *GroupHandler {
 	return &GroupHandler{
 		sessionService: sessionService,
@@ -27,10 +25,8 @@ func NewGroupHandler(sessionService *application.SessionApp, wmeowService wmeow.
 	}
 }
 
-// resolveSessionID resolves session ID or name to actual session ID
 func (h *GroupHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) (string, error) {
 	if h.sessionService == nil {
-		// Fallback: assume it's already an ID
 		return sessionIDOrName, nil
 	}
 
@@ -43,8 +39,6 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) 
 	return session.ID.Value(), nil
 }
 
-// CreateGroup handles creating a group
-//
 //	@Summary		Create a new group
 //	@Description	Create a new meow group with specified name and participants
 //	@Tags			Groups
@@ -70,7 +64,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -93,7 +86,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -104,7 +96,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Create group using meow service
 	ctx := c.Request.Context()
 	groupInfo, err := h.wmeowService.CreateGroup(ctx, sessionID, req.Name, req.Participants)
 	if err != nil {
@@ -117,7 +108,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 		return
 	}
 
-	// Convert meow.GroupInfo to dto.GroupInfo
 	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "create", dtoGroupInfo)
@@ -125,8 +115,6 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	c.JSON(http.StatusCreated, response)
 }
 
-// GetGroupInfo handles getting group information
-//
 //	@Summary		Get group information
 //	@Description	Get detailed information about a specific group
 //	@Tags			Groups
@@ -152,7 +140,6 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -175,7 +162,6 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		return
 	}
 
-	// Get group info using meow service
 	ctx := c.Request.Context()
 	groupInfo, err := h.wmeowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 	if err != nil {
@@ -188,15 +174,12 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert meow.GroupInfo to dto.GroupInfo
 	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "info", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
 }
 
-// ListGroups handles listing groups
-//
 //	@Summary		List all groups
 //	@Description	Get a list of all groups the user is a member of
 //	@Tags			Groups
@@ -221,7 +204,6 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -233,7 +215,6 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	// List groups using meow service
 	ctx := c.Request.Context()
 	groups, err := h.wmeowService.ListGroups(ctx, sessionID)
 	if err != nil {
@@ -246,15 +227,12 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 		return
 	}
 
-	// Convert meow.GroupInfo slice to dto.GroupInfo slice
 	dtoGroups := convertWmeowGroupInfoSliceToDTO(groups)
 
 	response := dto.NewGroupListResponse(sessionID, dtoGroups)
 	c.JSON(http.StatusOK, response)
 }
 
-// JoinGroup handles joining a group via invite link
-//
 //	@Summary		Join group via invite link
 //	@Description	Join a meow group using an invite link
 //	@Tags			Groups
@@ -280,7 +258,6 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -303,7 +280,6 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Join group using meow service
 	ctx := c.Request.Context()
 	groupInfo, err := h.wmeowService.JoinGroup(ctx, sessionID, req.InviteLink)
 	if err != nil {
@@ -316,15 +292,12 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Convert meow.GroupInfo to dto.GroupInfo
 	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "join", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
 }
 
-// JoinGroupWithInvite handles joining a group with specific invite
-//
 //	@Summary		Join group with specific invite
 //	@Description	Join a meow group using specific invite details
 //	@Tags			Groups
@@ -350,7 +323,6 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -373,7 +345,6 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 		return
 	}
 
-	// Join group using meow service
 	ctx := c.Request.Context()
 	groupInfo, err := h.wmeowService.JoinGroupWithInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
@@ -386,15 +357,12 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 		return
 	}
 
-	// Convert meow.GroupInfo to dto.GroupInfo
 	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "join_with_invite", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
 }
 
-// LeaveGroup handles leaving a group
-//
 //	@Summary		Leave group
 //	@Description	Leave a meow group
 //	@Tags			Groups
@@ -420,7 +388,6 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -443,7 +410,6 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 		return
 	}
 
-	// Leave group using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.LeaveGroup(ctx, sessionID, req.GroupJID)
 	if err != nil {
@@ -460,8 +426,6 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetInviteLink handles getting group invite link
-//
 //	@Summary		Get group invite link
 //	@Description	Get or reset the invite link for a group
 //	@Tags			Groups
@@ -487,7 +451,6 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -510,7 +473,6 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 		return
 	}
 
-	// Get invite link using meow service
 	ctx := c.Request.Context()
 	inviteLink, err := h.wmeowService.GetInviteLink(ctx, sessionID, req.GroupJID, req.Reset)
 	if err != nil {
@@ -527,14 +489,8 @@ func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// Note: AddParticipant, RemoveParticipant, PromoteParticipant, and DemoteParticipant
-// are now handled by the UpdateParticipants method with different action parameters
 
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
 
-// convertWmeowGroupInfoToDTO converts wmeow.GroupInfo to dto.GroupInfo
 func convertWmeowGroupInfoToDTO(groupInfo *wmeow.GroupInfo) *dto.GroupInfo {
 	if groupInfo == nil {
 		return nil
@@ -555,7 +511,6 @@ func convertWmeowGroupInfoToDTO(groupInfo *wmeow.GroupInfo) *dto.GroupInfo {
 	}
 }
 
-// convertWmeowGroupInfoSliceToDTO converts slice of wmeow.GroupInfo to slice of dto.GroupInfo
 func convertWmeowGroupInfoSliceToDTO(groups []wmeow.GroupInfo) []dto.GroupInfo {
 	var dtoGroups []dto.GroupInfo
 	for _, group := range groups {
@@ -576,8 +531,6 @@ func convertWmeowGroupInfoSliceToDTO(groups []wmeow.GroupInfo) []dto.GroupInfo {
 	return dtoGroups
 }
 
-// GetInviteInfo handles getting group info from invite link
-//
 //	@Summary		Get group info from invite link
 //	@Description	Get group information from an invite link without joining
 //	@Tags			Groups
@@ -603,7 +556,6 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -626,7 +578,6 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 		return
 	}
 
-	// Get invite info using meow service
 	ctx := c.Request.Context()
 	groupInfo, err := h.wmeowService.GetInviteInfo(ctx, sessionID, req.InviteLink)
 	if err != nil {
@@ -639,15 +590,12 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert meow.GroupInfo to dto.GroupInfo
 	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "invite_info", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
 }
 
-// GetGroupInfoFromInvite handles getting group info from specific invite
-//
 //	@Summary		Get group info from specific invite
 //	@Description	Get group information from specific invite details
 //	@Tags			Groups
@@ -673,7 +621,6 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -696,7 +643,6 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 		return
 	}
 
-	// Get group info from invite using meow service
 	ctx := c.Request.Context()
 	groupInfo, err := h.wmeowService.GetGroupInfoFromInvite(ctx, sessionID, req.GroupJID, req.Inviter, req.Code, req.Expiration)
 	if err != nil {
@@ -709,15 +655,12 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 		return
 	}
 
-	// Convert meow.GroupInfo to dto.GroupInfo
 	dtoGroupInfo := convertWmeowGroupInfoToDTO(groupInfo)
 
 	response := dto.NewGroupSuccessResponse(sessionID, "invite_info_specific", dtoGroupInfo)
 	c.JSON(http.StatusOK, response)
 }
 
-// UpdateParticipants handles updating group participants
-//
 //	@Summary		Update group participants
 //	@Description	Add or remove participants from a group
 //	@Tags			Groups
@@ -743,7 +686,6 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -766,7 +708,6 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -777,7 +718,6 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 		return
 	}
 
-	// Update participants using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.UpdateParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 	if err != nil {
@@ -795,8 +735,6 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetName handles setting group name
-//
 //	@Summary		Set group name
 //	@Description	Update the name of a group
 //	@Tags			Groups
@@ -822,7 +760,6 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -845,7 +782,6 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 		return
 	}
 
-	// Set group name using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupName(ctx, sessionID, req.GroupJID, req.Name)
 	if err != nil {
@@ -862,8 +798,6 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetTopic handles setting group topic
-//
 //	@Summary		Set group topic
 //	@Description	Update the topic/description of a group
 //	@Tags			Groups
@@ -889,7 +823,6 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -912,7 +845,6 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 		return
 	}
 
-	// Set group topic using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupTopic(ctx, sessionID, req.GroupJID, req.Topic)
 	if err != nil {
@@ -929,8 +861,6 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetPhoto handles setting group photo
-//
 //	@Summary		Set group photo
 //	@Description	Update the photo/avatar of a group
 //	@Tags			Groups
@@ -956,7 +886,6 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -979,7 +908,6 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 		return
 	}
 
-	// Process photo data (supports URLs, base64, data URLs)
 	photoData, _, err := media.ProcessUnifiedMedia(c.Request.Context(), req.Photo, nil, "image")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
@@ -991,7 +919,6 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 		return
 	}
 
-	// Set group photo using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupPhoto(ctx, sessionID, req.GroupJID, photoData)
 	if err != nil {
@@ -1008,8 +935,6 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// RemovePhoto handles removing group photo
-//
 //	@Summary		Remove group photo
 //	@Description	Remove the photo/avatar of a group
 //	@Tags			Groups
@@ -1035,7 +960,6 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1058,7 +982,6 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 		return
 	}
 
-	// Remove group photo using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.RemoveGroupPhoto(ctx, sessionID, req.GroupJID)
 	if err != nil {
@@ -1075,8 +998,6 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetAnnounce handles setting group announce mode
-//
 //	@Summary		Set group announce mode
 //	@Description	Set whether only admins can send messages to the group
 //	@Tags			Groups
@@ -1102,7 +1023,6 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1125,7 +1045,6 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 		return
 	}
 
-	// Set group announce using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupAnnounce(ctx, sessionID, req.GroupJID, req.AnnounceOnly)
 	if err != nil {
@@ -1142,8 +1061,6 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetLocked handles setting group locked mode
-//
 //	@Summary		Set group locked mode
 //	@Description	Set whether only admins can edit group info
 //	@Tags			Groups
@@ -1169,7 +1086,6 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1192,7 +1108,6 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 		return
 	}
 
-	// Set group locked using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupLocked(ctx, sessionID, req.GroupJID, req.Locked)
 	if err != nil {
@@ -1209,8 +1124,6 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetEphemeral handles setting group ephemeral mode
-//
 //	@Summary		Set group ephemeral mode
 //	@Description	Set disappearing messages for the group
 //	@Tags			Groups
@@ -1236,7 +1149,6 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1259,7 +1171,6 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 		return
 	}
 
-	// Set group ephemeral using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupEphemeral(ctx, sessionID, req.GroupJID, req.Ephemeral, req.Duration)
 	if err != nil {
@@ -1276,8 +1187,6 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetJoinApproval handles setting group join approval mode
-//
 //	@Summary		Set group join approval mode
 //	@Description	Set whether admin approval is required to join the group
 //	@Tags			Groups
@@ -1303,7 +1212,6 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1326,7 +1234,6 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 		return
 	}
 
-	// Set group join approval mode using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupJoinApprovalMode(ctx, sessionID, req.GroupJID, req.RequireApproval)
 	if err != nil {
@@ -1343,8 +1250,6 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// SetMemberAddMode handles setting group member add mode
-//
 //	@Summary		Set group member add mode
 //	@Description	Set who can add members to the group (all or admin only)
 //	@Tags			Groups
@@ -1370,7 +1275,6 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1393,7 +1297,6 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 		return
 	}
 
-	// Set group member add mode using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.SetGroupMemberAddMode(ctx, sessionID, req.GroupJID, req.Mode)
 	if err != nil {
@@ -1410,8 +1313,6 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-// GetGroupRequestParticipants handles getting group request participants
-//
 //	@Summary		Get group request participants
 //	@Description	Get list of users requesting to join the group
 //	@Tags			Groups
@@ -1437,7 +1338,6 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1460,7 +1360,6 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -1471,7 +1370,6 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Get group request participants using meow service
 	ctx := c.Request.Context()
 	participants, err := h.wmeowService.GetGroupRequestParticipants(ctx, sessionID, req.GroupJID)
 	if err != nil {
@@ -1484,7 +1382,6 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Create response with participants list
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"code":    200,
@@ -1500,8 +1397,6 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	})
 }
 
-// UpdateGroupRequestParticipants handles updating group request participants
-//
 //	@Summary		Update group request participants
 //	@Description	Approve or reject users requesting to join the group
 //	@Tags			Groups
@@ -1527,7 +1422,6 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Resolve session ID or name to actual session ID
 	sessionID, err := h.resolveSessionID(c, sessionIDOrName)
 	if err != nil {
 		c.JSON(http.StatusNotFound, dto.NewGroupErrorResponse(
@@ -1550,7 +1444,6 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Validate request
 	if err := req.Validate(); err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
 			http.StatusBadRequest,
@@ -1561,7 +1454,6 @@ func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 		return
 	}
 
-	// Update group request participants using meow service
 	ctx := c.Request.Context()
 	err = h.wmeowService.UpdateGroupRequestParticipants(ctx, sessionID, req.GroupJID, req.Action, req.Participants)
 	if err != nil {
