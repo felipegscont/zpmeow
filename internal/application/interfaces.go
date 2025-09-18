@@ -14,7 +14,7 @@ type EventDispatcherInterface interface {
 
 // Infrastructure Interfaces (Dependency Inversion)
 type WebhookSender interface {
-	SendWebhook(ctx context.Context, sessionID, eventType string, payload interface{}) error
+	SendWebhook(ctx context.Context, sessionID, url, eventType string, payload interface{}) error
 }
 
 type Logger interface {
@@ -40,6 +40,9 @@ type MessageSender interface {
 type WhatsAppService interface {
 	StartClient(sessionID string) error
 	StopClient(sessionID string) error
+	LogoutClient(sessionID string) error
 	GetQRCode(sessionID string) (string, error)
+	PairPhone(sessionID, phoneNumber string) (string, error)
 	IsClientConnected(sessionID string) bool
+	ConnectOnStartup(ctx context.Context) error
 }

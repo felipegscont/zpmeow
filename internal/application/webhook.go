@@ -31,14 +31,14 @@ type WebhookService interface {
 }
 
 type WebhookApp struct {
-	sessionRepo    session.Repository
-	webhookService *webhooks.Service
+	sessionRepo   session.Repository
+	webhookSender WebhookSender
 }
 
-func NewWebhookApp(sessionRepo session.Repository, webhookService *webhooks.Service) WebhookService {
+func NewWebhookApp(sessionRepo session.Repository, webhookSender WebhookSender) WebhookService {
 	return &WebhookApp{
-		sessionRepo:    sessionRepo,
-		webhookService: webhookService,
+		sessionRepo:   sessionRepo,
+		webhookSender: webhookSender,
 	}
 }
 
