@@ -2,7 +2,6 @@ package application
 
 import "context"
 
-// Response Types (eliminar interface{})
 type MessageResult struct {
 	ID        string `json:"id"`
 	Timestamp int64  `json:"timestamp"`
@@ -42,7 +41,6 @@ type EventData struct {
 	Payload   map[string]interface{} `json:"payload"`
 }
 
-// Group Types
 type GroupInfo struct {
 	JID              string   `json:"jid"`
 	Name             string   `json:"name"`
@@ -71,7 +69,6 @@ type InviteInfo struct {
 	IsValid    bool   `json:"isValid"`
 }
 
-// Newsletter Types
 type NewsletterInfo struct {
 	JID             string `json:"jid"`
 	Name            string `json:"name"`
@@ -99,7 +96,6 @@ type NewsletterMessages struct {
 	Total    int                 `json:"total"`
 }
 
-// Media Upload Result
 type MediaUploadResult struct {
 	URL      string `json:"url"`
 	MediaID  string `json:"mediaId"`
@@ -107,7 +103,6 @@ type MediaUploadResult struct {
 	Size     int64  `json:"size"`
 }
 
-// Event Processing Interfaces
 type EventProcessor interface {
 	HandleEvent(evt interface{})
 }
@@ -117,7 +112,6 @@ type EventDispatcherInterface interface {
 	ValidateEventType(eventType string) bool
 }
 
-// Infrastructure Interfaces (Dependency Inversion)
 type WebhookSender interface {
 	SendWebhook(ctx context.Context, sessionID, url, eventType string, payload interface{}) error
 }
@@ -131,13 +125,11 @@ type Logger interface {
 	Warnf(format string, args ...interface{})
 }
 
-// ID Generator Interface (para abstrair geração de IDs)
 type IDGenerator interface {
 	GenerateSessionID() string
 	GenerateAPIKey() string
 }
 
-// Messaging Interfaces
 type MessageSender interface {
 	SendTextMessage(ctx context.Context, sessionID, chatJID, content string) (*MessageResult, error)
 	SendImageMessage(ctx context.Context, sessionID, chatJID string, imageData []byte, caption string) (*MessageResult, error)
@@ -147,7 +139,6 @@ type MessageSender interface {
 	SendStickerMessage(ctx context.Context, sessionID, chatJID string, stickerData []byte) (*MessageResult, error)
 }
 
-// Extended Message Sender interface for additional operations
 type ExtendedMessageSender interface {
 	MessageSender
 	SendContactMessage(ctx context.Context, sessionID, chatJID, contactVCard string) (*MessageResult, error)
@@ -158,7 +149,6 @@ type ExtendedMessageSender interface {
 	DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string) error
 }
 
-// WhatsApp Service Interface
 type WhatsAppService interface {
 	StartClient(sessionID string) error
 	StopClient(sessionID string) error
@@ -169,7 +159,6 @@ type WhatsAppService interface {
 	ConnectOnStartup(ctx context.Context) error
 }
 
-// Webhook Service Interface (movida de webhook.go)
 type WebhookService interface {
 	SetWebhook(ctx context.Context, sessionID, webhookURL string, events []string) error
 	GetWebhook(ctx context.Context, sessionID string) (*WebhookInfo, error)
@@ -180,16 +169,13 @@ type WebhookService interface {
 	ValidateEvents(events []string) error
 }
 
-// Webhook Info Type (movida de webhook.go)
 type WebhookInfo struct {
 	URL    string   `json:"url"`
 	Events []string `json:"events"`
 	Active bool     `json:"active"`
 }
 
-// Complete Service Interfaces - covering all existing functionality
 type GroupService interface {
-	// Group management
 	CreateGroup(ctx context.Context, sessionID, name string, participants []string) (*GroupInfo, error)
 	GetGroupInfo(ctx context.Context, sessionID, groupJID string) (*GroupInfo, error)
 	ListGroups(ctx context.Context, sessionID string) (*GroupList, error)
@@ -197,17 +183,14 @@ type GroupService interface {
 	JoinGroupWithInvite(ctx context.Context, sessionID, groupJID, inviter, code string, expiration int64) (*GroupInfo, error)
 	LeaveGroup(ctx context.Context, sessionID, groupJID string) error
 
-	// Group invites
 	GetInviteLink(ctx context.Context, sessionID, groupJID string, reset bool) (string, error)
 	GetInviteInfo(ctx context.Context, sessionID, inviteLink string) (*InviteInfo, error)
 	GetGroupInfoFromInvite(ctx context.Context, sessionID, groupJID, inviter, code string, expiration int64) (*GroupInfo, error)
 
-	// Group participants
 	UpdateParticipants(ctx context.Context, sessionID, groupJID, action string, participants []string) error
 	GetGroupRequestParticipants(ctx context.Context, sessionID, groupJID string) ([]string, error)
 	UpdateGroupRequestParticipants(ctx context.Context, sessionID, groupJID, action string, participants []string) error
 
-	// Group settings
 	SetGroupName(ctx context.Context, sessionID, groupJID, name string) error
 	SetGroupTopic(ctx context.Context, sessionID, groupJID, topic string) error
 	SetGroupPhoto(ctx context.Context, sessionID, groupJID string, photoData []byte) error
@@ -218,7 +201,6 @@ type GroupService interface {
 	SetGroupJoinApprovalMode(ctx context.Context, sessionID, groupJID string, requireApproval bool) error
 	SetGroupMemberAddMode(ctx context.Context, sessionID, groupJID, mode string) error
 
-	// Group linking
 	LinkGroup(ctx context.Context, sessionID, groupJID, parentGroupJID string) error
 	UnlinkGroup(ctx context.Context, sessionID, groupJID string) error
 	GetSubGroups(ctx context.Context, sessionID, parentGroupJID string) (*GroupList, error)
@@ -226,27 +208,22 @@ type GroupService interface {
 }
 
 type NewsletterService interface {
-	// Newsletter management
 	CreateNewsletter(ctx context.Context, sessionID, name, description string) (*NewsletterInfo, error)
 	GetNewsletter(ctx context.Context, sessionID, newsletterJID string) (*NewsletterInfo, error)
 	ListNewsletters(ctx context.Context, sessionID string) (*NewsletterList, error)
 
-	// Newsletter subscription
 	SubscribeToNewsletter(ctx context.Context, sessionID, newsletterJID string) error
 	UnsubscribeFromNewsletter(ctx context.Context, sessionID, newsletterJID string) error
 
-	// Newsletter messaging
 	SendNewsletterMessage(ctx context.Context, sessionID, newsletterJID, content string) (*MessageResult, error)
 	GetNewsletterMessages(ctx context.Context, sessionID, newsletterJID string, limit int) (*NewsletterMessages, error)
 	GetNewsletterMessageUpdates(ctx context.Context, sessionID, newsletterJID string) (*NewsletterMessages, error)
 	MarkNewsletterViewed(ctx context.Context, sessionID, newsletterJID, messageID string) error
 	SendNewsletterReaction(ctx context.Context, sessionID, newsletterJID, messageID, reaction string) error
 
-	// Newsletter settings
 	ToggleNewsletterMute(ctx context.Context, sessionID, newsletterJID string, mute bool) error
 	SubscribeLiveUpdates(ctx context.Context, sessionID, newsletterJID string) error
 
-	// Newsletter media
 	UploadNewsletterMedia(ctx context.Context, sessionID string, mediaData []byte, mediaType string) (*MediaUploadResult, error)
 	GetNewsletterByInvite(ctx context.Context, sessionID, inviteKey string) (*NewsletterInfo, error)
 }

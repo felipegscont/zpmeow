@@ -8,8 +8,6 @@ import (
 	"meow/internal/domain/session"
 )
 
-// Interfaces movidas para interfaces.go para evitar duplicação
-
 type EventDispatcher struct {
 	sessionRepo   session.Repository
 	webhookSender WebhookSender
@@ -35,10 +33,8 @@ func (ed *EventDispatcher) DispatchEvent(ctx context.Context, sessionID string, 
 
 	payload := ed.createEventPayload(sessionID, cleanEventType, eventData)
 
-	// Enviar webhook se configurado
 	if err := ed.webhookSender.SendWebhook(ctx, sessionID, "", cleanEventType, payload); err != nil {
 		ed.logger.Errorf("Failed to send webhook for session %s: %v", sessionID, err)
-		// Não retornar erro para não bloquear o fluxo principal
 	}
 
 	ed.logger.Infof("Event processed: %s for session %s", cleanEventType, sessionID)

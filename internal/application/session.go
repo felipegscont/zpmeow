@@ -18,7 +18,6 @@ type SessionApp struct {
 	idGenerator       IDGenerator
 }
 
-// DefaultIDGenerator implementa IDGenerator usando UUID
 type DefaultIDGenerator struct{}
 
 func (d DefaultIDGenerator) GenerateSessionID() string {
@@ -30,7 +29,6 @@ func (d DefaultIDGenerator) GenerateAPIKey() string {
 }
 
 func generateRandomID() string {
-	// Implementação simples sem dependência externa
 	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 

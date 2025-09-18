@@ -6,12 +6,10 @@ import (
 	"strings"
 )
 
-// SessionID represents a session identifier for webhook
 type SessionID struct {
 	value string
 }
 
-// NewSessionID creates a new SessionID
 func NewSessionID(value string) (SessionID, error) {
 	if value == "" {
 		return SessionID{}, fmt.Errorf("session ID cannot be empty")
@@ -24,17 +22,14 @@ func NewSessionID(value string) (SessionID, error) {
 	return SessionID{value: value}, nil
 }
 
-// Value returns the session ID value
 func (s SessionID) Value() string {
 	return s.value
 }
 
-// String returns the string representation
 func (s SessionID) String() string {
 	return s.value
 }
 
-// IsEmpty checks if the session ID is empty
 func (s SessionID) IsEmpty() bool {
 	return s.value == ""
 }
@@ -109,7 +104,6 @@ func (w WebhookURL) Path() string {
 	return parsedURL.Path
 }
 
-// EventType represents the type of event that can trigger a webhook
 type EventType string
 
 const (
@@ -119,12 +113,10 @@ const (
 	EventTypeAll          EventType = "all"
 )
 
-// String returns the string representation of the event type
 func (e EventType) String() string {
 	return string(e)
 }
 
-// IsValid checks if the event type is valid
 func (e EventType) IsValid() bool {
 	switch e {
 	case EventTypeMessage, EventTypeConnected, EventTypeDisconnected, EventTypeAll:

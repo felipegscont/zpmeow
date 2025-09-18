@@ -230,22 +230,12 @@ func (ep *EventProcessor) sendWebhook(_ interface{}, eventType string) {
 	ep.logger.Debugf("Event processed: %s for session %s (webhook disabled during refactoring)", eventType, ep.sessionID)
 }
 
-
-
 type WebhookPayload struct {
 	Event     string      `json:"event"`
 	SessionID string      `json:"sessionId"`
 	Timestamp int64       `json:"timestamp"`
 	Data      interface{} `json:"data"`
 }
-
-
-
-
-
-
-
-
 
 func (ep *EventProcessor) processConnectionEvents(_, status string) {
 	ep.logger.Infof("Session %s %s", ep.sessionID, status)
@@ -398,8 +388,6 @@ func (ep *EventProcessor) handleBlocklist(evt interface{}) {
 	}
 
 }
-
-
 
 func getMessageType(msg *events.Message) string {
 	if msg.Message == nil {

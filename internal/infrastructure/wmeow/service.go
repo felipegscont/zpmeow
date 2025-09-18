@@ -2110,8 +2110,6 @@ func (m *serviceImpl) SetPrivacySetting(ctx context.Context, sessionID string, s
 	return result, nil
 }
 
-
-
 func (m *serviceImpl) GetBlocklist(ctx context.Context, sessionID string) ([]string, error) {
 	client := m.getClient(sessionID)
 	if client == nil {
@@ -2989,5 +2987,3 @@ func (m *serviceImpl) SendNewsletterMessage(ctx context.Context, sessionID, news
 	m.logger.Debugf("✅ Successfully sent message to newsletter %s in session %s", newsletterJID, sessionID)
 	return &resp, nil
 }
-
-

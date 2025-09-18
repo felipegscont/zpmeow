@@ -10,8 +10,6 @@ import (
 	"meow/internal/shared/validation"
 )
 
-// Interface movida para interfaces.go para centralização
-
 type MessageApp struct {
 	messageSender ExtendedMessageSender
 	sessionRepo   session.Repository

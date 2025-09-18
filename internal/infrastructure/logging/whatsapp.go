@@ -31,7 +31,6 @@ func (w *WALoggerAdapter) Infof(msg string, args ...interface{}) {
 }
 
 func (w *WALoggerAdapter) Debugf(msg string, args ...interface{}) {
-	// Debug logging disabled for WhatsApp
 }
 
 func (w *WALoggerAdapter) Sub(module string) waLog.Logger {

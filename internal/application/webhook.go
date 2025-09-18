@@ -8,8 +8,6 @@ import (
 	"meow/internal/domain/session"
 )
 
-// Interfaces movidas para interfaces.go para centralização
-
 type WebhookApp struct {
 	sessionRepo   session.Repository
 	webhookSender WebhookSender
