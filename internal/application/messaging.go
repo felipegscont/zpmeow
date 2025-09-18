@@ -10,47 +10,32 @@ import (
 	"meow/internal/shared/validation"
 )
 
+// Extended Message Sender interface for additional operations
+type ExtendedMessageSender interface {
+	MessageSender
+	SendContactMessage(ctx context.Context, sessionID, chatJID, contactVCard string) (interface{}, error)
+	SendLocationMessage(ctx context.Context, sessionID, chatJID string, latitude, longitude float64, name, address string) (interface{}, error)
+	MarkAsRead(ctx context.Context, sessionID, chatJID, messageID string) error
+	ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, reaction string) error
+	EditMessage(ctx context.Context, sessionID, chatJID, messageID, newContent string) error
+	DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string) error
+}
+
 type MessageApp struct {
-	meowService interface {
-		SendTextMessage(ctx context.Context, sessionID, chatJID, content string) (interface{}, error)
-		SendImageMessage(ctx context.Context, sessionID, chatJID string, imageData []byte, caption string) (interface{}, error)
-		SendVideoMessage(ctx context.Context, sessionID, chatJID string, videoData []byte, caption string) (interface{}, error)
-		SendAudioMessage(ctx context.Context, sessionID, chatJID string, audioData []byte) (interface{}, error)
-		SendDocumentMessage(ctx context.Context, sessionID, chatJID string, documentData []byte, filename, mimetype string) (interface{}, error)
-		SendStickerMessage(ctx context.Context, sessionID, chatJID string, stickerData []byte) (interface{}, error)
-		SendContactMessage(ctx context.Context, sessionID, chatJID, contactVCard string) (interface{}, error)
-		SendLocationMessage(ctx context.Context, sessionID, chatJID string, latitude, longitude float64, name, address string) (interface{}, error)
-		MarkAsRead(ctx context.Context, sessionID, chatJID, messageID string) error
-		ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, reaction string) error
-		EditMessage(ctx context.Context, sessionID, chatJID, messageID, newContent string) error
-		DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string) error
-	}
-	sessionRepo session.Repository
-	validator   *validation.Validator
+	messageSender ExtendedMessageSender
+	sessionRepo   session.Repository
+	validator     *validation.Validator
 }
 
 func NewMessageApp(
-	meowService interface{},
+	messageSender ExtendedMessageSender,
 	sessionRepo session.Repository,
 	validator *validation.Validator,
 ) *MessageApp {
 	return &MessageApp{
-		meowService: meowService.(interface {
-			SendTextMessage(ctx context.Context, sessionID, chatJID, content string) (interface{}, error)
-			SendImageMessage(ctx context.Context, sessionID, chatJID string, imageData []byte, caption string) (interface{}, error)
-			SendVideoMessage(ctx context.Context, sessionID, chatJID string, videoData []byte, caption string) (interface{}, error)
-			SendAudioMessage(ctx context.Context, sessionID, chatJID string, audioData []byte) (interface{}, error)
-			SendDocumentMessage(ctx context.Context, sessionID, chatJID string, documentData []byte, filename, mimetype string) (interface{}, error)
-			SendStickerMessage(ctx context.Context, sessionID, chatJID string, stickerData []byte) (interface{}, error)
-			SendContactMessage(ctx context.Context, sessionID, chatJID, contactVCard string) (interface{}, error)
-			SendLocationMessage(ctx context.Context, sessionID, chatJID string, latitude, longitude float64, name, address string) (interface{}, error)
-			MarkAsRead(ctx context.Context, sessionID, chatJID, messageID string) error
-			ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, reaction string) error
-			EditMessage(ctx context.Context, sessionID, chatJID, messageID, newContent string) error
-			DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string) error
-		}),
-		sessionRepo: sessionRepo,
-		validator:   validator,
+		messageSender: messageSender,
+		sessionRepo:   sessionRepo,
+		validator:     validator,
 	}
 }
 
@@ -64,7 +49,7 @@ func (s *MessageApp) SendText(ctx context.Context, sessionID string, req *dto.Se
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendTextMessage(ctx, sessionID, chatJID, req.Body)
+	result, err := s.messageSender.SendTextMessage(ctx, sessionID, chatJID, req.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send text message: %w", err)
 	}
@@ -83,7 +68,7 @@ func (s *MessageApp) SendImage(ctx context.Context, sessionID string, req *dto.S
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendImageMessage(ctx, sessionID, chatJID, imageData, req.Caption)
+	result, err := s.messageSender.SendImageMessage(ctx, sessionID, chatJID, imageData, req.Caption)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send image message: %w", err)
 	}
@@ -102,7 +87,7 @@ func (s *MessageApp) SendVideo(ctx context.Context, sessionID string, req *dto.S
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendVideoMessage(ctx, sessionID, chatJID, videoData, req.Caption)
+	result, err := s.messageSender.SendVideoMessage(ctx, sessionID, chatJID, videoData, req.Caption)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send video message: %w", err)
 	}
@@ -121,7 +106,7 @@ func (s *MessageApp) SendAudio(ctx context.Context, sessionID string, req *dto.S
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendAudioMessage(ctx, sessionID, chatJID, audioData)
+	result, err := s.messageSender.SendAudioMessage(ctx, sessionID, chatJID, audioData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send audio message: %w", err)
 	}
@@ -140,7 +125,7 @@ func (s *MessageApp) SendDocument(ctx context.Context, sessionID string, req *dt
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendDocumentMessage(ctx, sessionID, chatJID, documentData, req.FileName, req.MimeType)
+	result, err := s.messageSender.SendDocumentMessage(ctx, sessionID, chatJID, documentData, req.FileName, req.MimeType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send document message: %w", err)
 	}
@@ -159,7 +144,7 @@ func (s *MessageApp) SendSticker(ctx context.Context, sessionID string, req *dto
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendStickerMessage(ctx, sessionID, chatJID, stickerData)
+	result, err := s.messageSender.SendStickerMessage(ctx, sessionID, chatJID, stickerData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send sticker message: %w", err)
 	}
@@ -180,7 +165,7 @@ func (s *MessageApp) SendContact(ctx context.Context, sessionID string, req *dto
 	vCard := fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nFN:%s\nTEL:%s\nEND:VCARD", req.ContactName, req.ContactPhone)
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendContactMessage(ctx, sessionID, chatJID, vCard)
+	result, err := s.messageSender.SendContactMessage(ctx, sessionID, chatJID, vCard)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send contact message: %w", err)
 	}
@@ -199,7 +184,7 @@ func (s *MessageApp) SendLocation(ctx context.Context, sessionID string, req *dt
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	result, err := s.meowService.SendLocationMessage(ctx, sessionID, chatJID, req.Latitude, req.Longitude, req.Name, req.Address)
+	result, err := s.messageSender.SendLocationMessage(ctx, sessionID, chatJID, req.Latitude, req.Longitude, req.Name, req.Address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send location message: %w", err)
 	}
@@ -215,7 +200,7 @@ func (s *MessageApp) MarkAsRead(ctx context.Context, sessionID string, req *dto.
 
 	chatJID := s.resolveChatJID(req.Phone)
 	if len(req.MessageIDs) > 0 {
-		return s.meowService.MarkAsRead(ctx, sessionID, chatJID, req.MessageIDs[0])
+		return s.messageSender.MarkAsRead(ctx, sessionID, chatJID, req.MessageIDs[0])
 	}
 	return fmt.Errorf("no message IDs provided")
 }
@@ -226,7 +211,7 @@ func (s *MessageApp) ReactToMessage(ctx context.Context, sessionID string, req *
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	return s.meowService.ReactToMessage(ctx, sessionID, chatJID, req.MessageID, req.Emoji)
+	return s.messageSender.ReactToMessage(ctx, sessionID, chatJID, req.MessageID, req.Emoji)
 }
 
 func (s *MessageApp) EditMessage(ctx context.Context, sessionID string, req *dto.EditMessageRequest) error {
@@ -235,7 +220,7 @@ func (s *MessageApp) EditMessage(ctx context.Context, sessionID string, req *dto
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	return s.meowService.EditMessage(ctx, sessionID, chatJID, req.MessageID, req.NewText)
+	return s.messageSender.EditMessage(ctx, sessionID, chatJID, req.MessageID, req.NewText)
 }
 
 func (s *MessageApp) DeleteMessage(ctx context.Context, sessionID string, req *dto.DeleteMessageRequest) error {
@@ -244,7 +229,7 @@ func (s *MessageApp) DeleteMessage(ctx context.Context, sessionID string, req *d
 	}
 
 	chatJID := s.resolveChatJID(req.Phone)
-	return s.meowService.DeleteMessage(ctx, sessionID, chatJID, req.MessageID)
+	return s.messageSender.DeleteMessage(ctx, sessionID, chatJID, req.MessageID)
 }
 
 

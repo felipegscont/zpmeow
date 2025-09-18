@@ -6,21 +6,21 @@ import (
 	"time"
 
 	"meow/internal/domain/session"
-	"meow/internal/infrastructure/logging"
-	"meow/internal/infrastructure/webhooks"
 )
+
+// Interfaces movidas para interfaces.go para evitar duplicação
 
 type EventDispatcher struct {
 	sessionRepo    session.Repository
-	webhookService *webhooks.Service
-	logger         logging.Logger
+	webhookSender  WebhookSender
+	logger         Logger
 }
 
-func NewEventDispatcher(sessionRepo session.Repository, webhookService *webhooks.Service) *EventDispatcher {
+func NewEventDispatcher(sessionRepo session.Repository, webhookSender WebhookSender, logger Logger) *EventDispatcher {
 	return &EventDispatcher{
-		sessionRepo:    sessionRepo,
-		webhookService: webhookService,
-		logger:         logging.GetLogger().Sub("event-dispatcher"),
+		sessionRepo:   sessionRepo,
+		webhookSender: webhookSender,
+		logger:        logger,
 	}
 }
 
@@ -42,7 +42,7 @@ func (ed *EventDispatcher) DispatchEvent(ctx context.Context, sessionID string, 
 
 	payload := ed.createEventPayload(sessionID, cleanEventType, eventData)
 
-	ed.logger.Debugf("Event processed: %s for session %s", cleanEventType, sessionID)
+	ed.logger.Infof("Event processed: %s for session %s", cleanEventType, sessionID)
 
 	_ = payload // Prevent unused variable warning
 

@@ -1,219 +1,305 @@
 # 🎯 Application Layer - Clean Architecture
 
-Esta camada contém os **casos de uso da aplicação** seguindo rigorosamente os princípios de Clean Architecture e Domain-Driven Design (DDD) conforme definido no ARCHITECTURE.md.
+Esta camada contém os **casos de uso da aplicação** (Use Cases) seguindo rigorosamente os princípios de Clean Architecture e idiomaticidade do Go.
 
-## 📋 Estrutura Oficial
-
-Seguindo exatamente o padrão definido no ARCHITECTURE.md:
+## 📋 Estrutura Atual
 
 ```
 internal/application/
 ├── README.md          # Esta documentação
-├── session.go         # Criar, listar, conectar, validar, deletar sessões
-├── message.go         # Enviar, construir, validar mensagens
-├── media.go           # Upload/download de mídia
-└── webhook.go         # Registrar, notificar, validar webhooks
+├── interfaces.go      # Interfaces para infraestrutura
+├── session.go         # Casos de uso de sessões
+├── chat.go           # Casos de uso de chat
+├── messaging.go      # Casos de uso de mensagens
+├── webhook.go        # Casos de uso de webhooks
+├── dispatcher.go     # Despachador de eventos
+├── conversion.go     # Conversores de dados
+├── group.go          # Casos de uso de grupos
+├── newsletter.go     # Casos de uso de newsletter
+└── whatsapp.go       # Casos de uso específicos do WhatsApp
 ```
 
-## 🎯 Responsabilidades da Camada Application
+## 🎯 Responsabilidades da Application Layer
 
-### ✅ O que esta camada FAZ:
-- **Orquestração**: Coordena chamadas entre domain e infrastructure
-- **Conversão de DTOs**: Transforma dados de entrada/saída
-- **Coordenação de Transações**: Gerencia operações que envolvem múltiplas camadas
-- **Validação de Entrada**: Valida DTOs de request
-- **Fluxo de Casos de Uso**: Implementa a sequência de operações para cada caso de uso
+### ✅ O que esta camada PODE e DEVE fazer:
 
-### ❌ O que esta camada NÃO FAZ:
-- **Regras de Negócio**: Lógica de domínio complexa (delegado para domain)
-- **Implementações Concretas**: Detalhes de infraestrutura (abstraído via interfaces)
-- **Validações de Domínio**: Regras de negócio (delegado para domain services)
-- **Persistência Direta**: Acesso direto a banco/storage (via repositories)
+#### **1. Orquestração de Use Cases**
+- Coordenar chamadas entre Domain e Infrastructure
+- Implementar fluxos de casos de uso complexos
+- Gerenciar transações que envolvem múltiplos agregados
 
-## 🏗️ Detalhamento por Agregado
+#### **2. Dependências Permitidas**
+- ✅ **Domain Layer**: `internal/domain/*` - Usar entidades e services
+- ✅ **DTOs**: `internal/interfaces/dto` - Para comunicação com interfaces
+- ✅ **Shared Utilities**: `internal/shared/*` - Validação, tipos, etc.
+- ✅ **Bibliotecas Externas**: `github.com/google/uuid`, etc.
+- ✅ **Standard Library**: `context`, `fmt`, `time`, etc.
 
-### 📁 session.go - Agregado Session
-**Casos de Uso Implementados:**
-- `CreateSession`: Criar nova sessão
-- `GetSession`: Buscar sessão por ID
-- `ListSessions`: Listar todas as sessões
-- `ConnectSession`: Iniciar conexão de sessão
-- `DeleteSession`: Excluir sessão
+#### **3. Definição de Interfaces**
+- Definir interfaces para Infrastructure (Dependency Inversion)
+- Abstrair dependências externas via interfaces
+- Permitir injeção de dependências
 
-**Dependências:**
-- `session.Repository`: Interface para persistência (infrastructure)
-- `session.DomainService`: Regras de negócio (domain)
-- `validation.Validator`: Validação de entrada (shared)
+#### **4. Conversão de Dados**
+- Converter entre DTOs e entidades de Domain
+- Transformar dados de entrada/saída
+- Mapear estruturas entre camadas
 
-### 📁 message.go - Agregado Message
-**Casos de Uso Implementados:**
-- `SendMessage`: Enviar mensagem de texto
-- `SendMedia`: Enviar mensagem de mídia
-- `SendLocation`: Enviar mensagem de localização
-- `SendContact`: Enviar mensagem de contato
+#### **5. Validação de Entrada**
+- Validar DTOs de request
+- Verificar parâmetros de entrada
+- Sanitizar dados antes de passar para Domain
 
-**Dependências:**
-- `message.Service`: Regras de negócio de mensagens (domain)
-- `session.Repository`: Verificação de sessão (domain)
-- `validation.Validator`: Validação de entrada (shared)
+### ❌ O que esta camada NÃO PODE fazer:
 
-### 📁 media.go - Agregado Media
-**Casos de Uso Implementados:**
-- `UploadMedia`: Upload de arquivo de mídia
-- `GetMedia`: Buscar informações de mídia
-- `DownloadMedia`: Gerar URL de download
-- `ListMedia`: Listar arquivos de mídia
-- `DeleteMedia`: Excluir arquivo de mídia
-- `GetUploadProgress`: Acompanhar progresso de upload
+#### **1. Dependências Proibidas**
+- ❌ **Infrastructure**: `internal/infrastructure/*` - Violação de dependência
+- ❌ **Interface Handlers**: `internal/interfaces/http/*` - Inversão incorreta
+- ❌ **Detalhes de Implementação**: Banco, HTTP, filesystem diretamente
 
-**Dependências:**
-- `media.Service`: Regras de negócio de mídia (domain)
-- `mediaInfra.StorageService`: Armazenamento (infrastructure)
-- `session.Repository`: Verificação de sessão (domain)
-- `validation.Validator`: Validação de entrada (shared)
+#### **2. Responsabilidades Proibidas**
+- ❌ **Regras de Negócio**: Lógica complexa de domínio (vai para Domain)
+- ❌ **Implementações Concretas**: Detalhes de infraestrutura
+- ❌ **Validações de Domínio**: Regras de negócio (delegado para Domain)
+- ❌ **Persistência Direta**: Acesso direto a banco/storage
 
-### 📁 webhook.go - Agregado Webhook
-**Casos de Uso Implementados:**
-- `RegisterWebhook`: Registrar novo webhook
-- `GetWebhook`: Buscar webhook por ID
-- `UpdateWebhook`: Atualizar configuração de webhook
-- `ListWebhooks`: Listar webhooks
-- `DeleteWebhook`: Excluir webhook
-- `TestWebhook`: Testar webhook
-- `NotifyWebhook`: Enviar notificações
-- `CreateMessageWebhookPayload`: Criar payload para eventos de mensagem
-- `CreateStatusWebhookPayload`: Criar payload para eventos de status
-- `CreateConnectionWebhookPayload`: Criar payload para eventos de conexão
+## 🏗️ Padrões de Implementação
 
-**Dependências:**
-- `session.Repository`: Verificação de sessão (domain)
-- `validation.Validator`: Validação de entrada (shared)
+### **1. Dependency Inversion Pattern**
 
-## 🔄 Fluxo de Orquestração
-
-### Padrão de Implementação
-Cada caso de uso segue o mesmo padrão de orquestração:
+A Application Layer define interfaces para Infrastructure:
 
 ```go
-func (s *Service) UseCase(ctx context.Context, req *dto.Request) (*dto.Response, error) {
-    // 1. Validação de entrada (application layer)
+// ✅ CORRETO: Application define interface
+type WebhookSender interface {
+    SendWebhook(ctx context.Context, url string, payload interface{}) error
+}
+
+type SessionApp struct {
+    sessionRepo    session.Repository    // Domain interface
+    webhookSender  WebhookSender        // Application interface
+    validator      *validation.Validator // Shared utility
+}
+
+// ❌ INCORRETO: Importar infrastructure diretamente
+import "meow/internal/infrastructure/webhooks" // VIOLAÇÃO!
+```
+
+### **2. Use Case Pattern**
+
+Cada caso de uso segue o padrão de orquestração:
+
+```go
+func (s *SessionApp) CreateSession(ctx context.Context, req *dto.CreateSessionRequest) (*dto.SessionResponse, error) {
+    // 1. Validação de entrada (Application responsibility)
     if err := s.validator.Validate(req); err != nil {
         return nil, fmt.Errorf("validation failed: %w", err)
     }
 
-    // 2. Verificar dependências (sessão, etc.)
-    entity, err := s.repository.GetByID(ctx, id)
+    // 2. Criar entidade de domínio (Domain responsibility)
+    sessionID, err := session.NewSessionID(req.ID)
     if err != nil {
-        return nil, fmt.Errorf("dependency check failed: %w", err)
+        return nil, fmt.Errorf("invalid session ID: %w", err)
     }
 
-    // 3. Aplicar regras de negócio (delegado para domain)
-    if err := s.domainService.ValidateBusinessRules(entity); err != nil {
-        return nil, fmt.Errorf("business rules validation failed: %w", err)
-    }
-
-    // 4. Coordenar operações (infrastructure)
-    result, err := s.infrastructureService.Execute(entity)
+    sessionName, err := session.NewSessionName(req.Name)
     if err != nil {
-        return nil, fmt.Errorf("operation failed: %w", err)
+        return nil, fmt.Errorf("invalid session name: %w", err)
     }
 
-    // 5. Converter para DTO de resposta
-    response := &dto.Response{
-        Status:  200,
-        Message: "Operation completed successfully",
-        Data:    convertToDTO(result),
+    // 3. Aplicar regras de negócio (Domain responsibility)
+    sessionEntity, err := session.NewSession(sessionID, sessionName, proxyURL)
+    if err != nil {
+        return nil, fmt.Errorf("failed to create session: %w", err)
     }
 
-    return response, nil
+    // 4. Persistir (Infrastructure via interface)
+    if err := s.sessionRepo.Create(ctx, sessionEntity); err != nil {
+        return nil, fmt.Errorf("failed to save session: %w", err)
+    }
+
+    // 5. Converter para DTO de resposta (Application responsibility)
+    return &dto.SessionResponse{
+        ID:     sessionEntity.ID.Value(),
+        Name:   sessionEntity.Name.Value(),
+        Status: string(sessionEntity.Status),
+    }, nil
 }
 ```
 
-## 🎯 Benefícios da Estrutura Atual
+### **3. Interface Segregation**
 
-### ✅ **Vantagens**
-1. **Conformidade com ARCHITECTURE.md**: Segue exatamente o padrão definido
-2. **Organização por Agregado**: Cada arquivo representa um agregado DDD
-3. **Responsabilidades Claras**: Apenas orquestração, sem lógica de negócio
-4. **Separação de Camadas**: Domain, Application, Infrastructure bem definidas
-5. **Facilidade de Manutenção**: Estrutura simples e previsível
-
-### 📋 **Convenções Seguidas**
-- **Nomenclatura**: snake_case para arquivos (session.go, message.go, etc.)
-- **Package**: Todos os arquivos usam `package application`
-- **Agregados**: Um arquivo por agregado DDD
-- **Responsabilidades**: Apenas casos de uso e orquestração
-
-## 📖 Exemplo de Uso
+Interfaces pequenas e específicas:
 
 ```go
-package main
+// ✅ CORRETO: Interfaces específicas
+type MessageSender interface {
+    SendTextMessage(ctx context.Context, sessionID, chatJID, content string) error
+}
 
-import (
-    "meow/internal/application"
-    "meow/internal/domain/session"
-    "meow/internal/domain/message"
-    "meow/internal/shared/validation"
-)
+type MediaUploader interface {
+    UploadImage(ctx context.Context, data []byte) (string, error)
+}
 
-func main() {
-    // Inicializar dependências
-    validator := validation.NewValidator()
-    sessionRepo := // implementação do repository
-    sessionDomainService := session.NewSessionDomainService()
-    messageDomainService := message.NewDomainService()
-
-    // Criar services de aplicação
-    sessionService := application.NewSessionService(
-        sessionRepo,
-        sessionDomainService,
-        validator,
-    )
-
-    messageService := application.NewMessageService(
-        messageDomainService,
-        sessionRepo,
-        validator,
-    )
-
-    // Usar casos de uso
-    response, err := sessionService.CreateSession(ctx, createRequest)
-    response, err := messageService.SendMessage(ctx, sessionID, messageRequest)
+// ❌ INCORRECTTO: Interface muito grande
+type MegaService interface {
+    SendMessage(...)
+    UploadMedia(...)
+    CreateSession(...)
+    // ... 50 métodos
 }
 ```
 
-## 🔄 Migração Realizada
+## 📋 Regras de Dependência
 
-### **Antes** (estrutura inconsistente):
-- Mistura de responsabilidades
-- Lógica de negócio na application layer
-- Validações técnicas misturadas com regras de domínio
+### **✅ DEPENDÊNCIAS PERMITIDAS**
 
-### **Depois** (seguindo ARCHITECTURE.md):
-- Responsabilidades claras por camada
-- Apenas orquestração na application layer
-- Delegação correta para domain e infrastructure
-- Estrutura por agregados DDD
+| Tipo | Exemplo | Justificativa |
+|------|---------|---------------|
+| **Standard Library** | `context`, `fmt`, `time` | Sempre permitido |
+| **Domain Layer** | `internal/domain/session` | Application usa Domain |
+| **DTOs** | `internal/interfaces/dto` | Comunicação com interfaces |
+| **Shared Utilities** | `internal/shared/validation` | Utilitários compartilhados |
+| **External Libraries** | `github.com/google/uuid` | Bibliotecas específicas |
 
-## 🚀 Próximos Passos
+### **❌ DEPENDÊNCIAS PROIBIDAS**
 
-1. **✅ Refatoração Completa**: Todos os arquivos refatorados seguindo o padrão
-2. **🔄 Testes**: Verificar compilação e funcionalidade
-3. **📚 Documentação**: README.md atualizado
-4. **🔗 Integração**: Verificar compatibilidade com outras camadas
+| Tipo | Exemplo | Por que é proibido |
+|------|---------|-------------------|
+| **Infrastructure** | `internal/infrastructure/database` | Violação de dependência |
+| **Interface Handlers** | `internal/interfaces/http` | Inversão incorreta |
+| **Frameworks** | `gin`, `echo` | Detalhes de implementação |
 
-## 📋 Checklist de Conformidade
+### **🔄 COMO CORRIGIR VIOLAÇÕES**
 
-### ✅ Seguindo ARCHITECTURE.md:
-- [x] Estrutura por agregados (session.go, message.go, media.go, webhook.go)
-- [x] Apenas orquestração entre domain e infrastructure
-- [x] Sem lógica de negócio na application layer
-- [x] Validação de entrada via shared/validation
-- [x] Conversão de DTOs para entidades de domain
-- [x] Delegação de regras de negócio para domain services
-- [x] Coordenação de persistência via repositories
-- [x] Nomenclatura snake_case para arquivos
-- [x] Package application consistente
-- [x] Documentação atualizada
+#### **Problema**: Application importando Infrastructure
+```go
+// ❌ INCORRETO
+import "meow/internal/infrastructure/webhooks"
 
-Esta estrutura está agora **100% conforme** com o padrão definido no ARCHITECTURE.md.
+type WebhookApp struct {
+    webhookService *webhooks.Service // Dependência direta!
+}
+```
+
+#### **Solução**: Definir interface na Application
+```go
+// ✅ CORRETO
+type WebhookSender interface {
+    SendWebhook(ctx context.Context, url string, payload interface{}) error
+}
+
+type WebhookApp struct {
+    webhookSender WebhookSender // Interface definida na Application
+}
+
+// Infrastructure implementa a interface
+func NewWebhookApp(sender WebhookSender) *WebhookApp {
+    return &WebhookApp{webhookSender: sender}
+}
+```
+
+## 🎯 Benefícios da Arquitetura Correta
+
+### ✅ **Vantagens da Application Layer**
+1. **Testabilidade**: Fácil de testar com mocks das interfaces
+2. **Flexibilidade**: Pode trocar implementações de Infrastructure
+3. **Reutilização**: Use cases podem ser reutilizados em diferentes interfaces
+4. **Manutenibilidade**: Responsabilidades bem definidas
+5. **Evolução**: Fácil adicionar novos casos de uso
+
+### 📋 **Convenções Go Idiomáticas**
+- **Interfaces pequenas**: Preferir interfaces específicas
+- **Dependency Injection**: Via construtores, não globals
+- **Error Handling**: Sempre retornar erros explícitos
+- **Context**: Sempre primeiro parâmetro
+- **Naming**: Interfaces terminam com -er quando possível
+
+## 📖 Exemplo Completo
+
+```go
+// interfaces.go - Definir contratos
+type MessageSender interface {
+    SendTextMessage(ctx context.Context, sessionID, chatJID, content string) error
+}
+
+// messaging.go - Implementar use case
+type MessageApp struct {
+    sessionRepo   session.Repository
+    messageSender MessageSender
+    validator     *validation.Validator
+}
+
+func NewMessageApp(repo session.Repository, sender MessageSender, validator *validation.Validator) *MessageApp {
+    return &MessageApp{
+        sessionRepo:   repo,
+        messageSender: sender,
+        validator:     validator,
+    }
+}
+
+func (m *MessageApp) SendMessage(ctx context.Context, req *dto.SendMessageRequest) error {
+    // 1. Validar entrada
+    if err := m.validator.Validate(req); err != nil {
+        return fmt.Errorf("validation failed: %w", err)
+    }
+
+    // 2. Verificar sessão existe
+    session, err := m.sessionRepo.GetByID(ctx, req.SessionID)
+    if err != nil {
+        return fmt.Errorf("session not found: %w", err)
+    }
+
+    // 3. Verificar regras de negócio (Domain)
+    if !session.IsConnected() {
+        return fmt.Errorf("session not connected")
+    }
+
+    // 4. Executar operação (Infrastructure via interface)
+    if err := m.messageSender.SendTextMessage(ctx, req.SessionID, req.ChatJID, req.Content); err != nil {
+        return fmt.Errorf("failed to send message: %w", err)
+    }
+
+    return nil
+}
+```
+
+## 🔍 Checklist de Conformidade
+
+### ✅ **Dependências Corretas**
+- [ ] Apenas stdlib Go
+- [ ] Domain layer (`internal/domain/*`)
+- [ ] DTOs (`internal/interfaces/dto`)
+- [ ] Shared utilities (`internal/shared/*`)
+- [ ] Bibliotecas externas específicas
+
+### ❌ **Dependências Proibidas**
+- [ ] Infrastructure (`internal/infrastructure/*`)
+- [ ] Interface handlers (`internal/interfaces/http/*`)
+- [ ] Frameworks web diretamente
+
+### 🏗️ **Padrões Implementados**
+- [ ] Dependency Inversion (interfaces definidas na Application)
+- [ ] Use Case pattern (um método por caso de uso)
+- [ ] Error handling idiomático
+- [ ] Context como primeiro parâmetro
+- [ ] Validação de entrada
+- [ ] Conversão DTO ↔ Domain
+
+### 📋 **Estrutura de Arquivos**
+- [ ] Um arquivo por domínio/contexto
+- [ ] Interfaces em arquivo separado
+- [ ] Conversores em arquivo separado
+- [ ] Nomenclatura clara e consistente
+
+## 🚀 Status Atual
+
+A Application Layer está **em conformidade** com Clean Architecture e idiomaticidade Go, seguindo corretamente:
+
+- ✅ **Dependency Rule**: Depende apenas de camadas internas
+- ✅ **Interface Segregation**: Interfaces pequenas e específicas
+- ✅ **Dependency Inversion**: Application define interfaces para Infrastructure
+- ✅ **Single Responsibility**: Cada arquivo tem responsabilidade clara
+- ✅ **Go Idioms**: Seguindo convenções da linguagem
+
+**Status**: 🎯 **ARQUITETURA CORRETA E IDIOMÁTICA**

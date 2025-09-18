@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"meow/internal/domain/session"
-	"meow/internal/infrastructure/webhooks"
 )
 
 type WebhookInfo struct {
