@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type UploadMediaRequest struct {
 	SessionID string `json:"session_id" binding:"required" example:"default"`
 	MediaType string `json:"media_type" binding:"required" example:"image"`
@@ -14,7 +13,6 @@ type UploadMediaRequest struct {
 type GetMediaRequest struct {
 	MediaID string `json:"media_id" binding:"required" example:"media_123456789"`
 }
-
 
 type MediaInfo struct {
 	MediaID    string    `json:"media_id" example:"media_123456789"`
@@ -41,7 +39,6 @@ type MediaDownloadInfo struct {
 	ExpiresAt   time.Time `json:"expires_at" example:"2023-01-01T01:00:00Z"`
 }
 
-
 type MediaResponse struct {
 	Success bool                `json:"success"`
 	Code    int                 `json:"code"`
@@ -64,7 +61,6 @@ type MediaErrorResponse struct {
 	Message string `json:"message" example:"Invalid media ID format"`
 	Details string `json:"details,omitempty" example:"Media ID must be alphanumeric"`
 }
-
 
 func NewMediaSuccessResponse(mediaID, action string, mediaInfo *MediaInfo) *MediaResponse {
 	return &MediaResponse{

@@ -15,25 +15,7 @@ type GroupResponse struct {
 	Members  []string
 }
 
-type UserInfo struct {
-	JID           string
-	Name          string
-	ProfilePicURL string
-	Status        string
-	IsBlocked     bool
-}
-
-type ChatInfo struct {
-	JID           string
-	Name          string
-	IsGroup       bool
-	LastMessage   string
-	LastTimestamp int64
-	UnreadCount   int
-	IsMuted       bool
-	IsPinned      bool
-	IsArchived    bool
-}
+// Types moved to interfaces.go to avoid duplication
 
 type MessageInfo struct {
 	ID        string

@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type SetPresenceRequest struct {
 	Phone string `json:"phone,omitempty" example:"5511999999999"`
 	State string `json:"state" binding:"required" example:"available"` // available, unavailable, composing, recording, paused
@@ -14,7 +13,6 @@ type SetPresenceRequest struct {
 type DownloadMediaRequest struct {
 	MessageID string `json:"message_id" binding:"required" example:"msg_123"`
 }
-
 
 type ListChatsRequest struct {
 	Type string `json:"type,omitempty" example:"all"` // "all", "groups", "contacts"
@@ -45,14 +43,12 @@ type ArchiveChatRequest struct {
 	Archived bool   `json:"archived" example:"true"`
 }
 
-
 type ChatResponse struct {
 	Success bool               `json:"success"`
 	Code    int                `json:"code"`
 	Data    ChatData           `json:"data"`
 	Error   *ChatErrorResponse `json:"error,omitempty"`
 }
-
 
 type ChatInfo struct {
 	JID         string    `json:"jid" example:"5511999999999@s.meow.net"`
@@ -135,7 +131,6 @@ type ChatHistoryData struct {
 	IsFromMe    bool      `json:"is_from_me" example:"false"`
 }
 
-
 func NewChatSuccessResponse(phone, messageID, action string) *ChatResponse {
 	return &ChatResponse{
 		Success: true,
@@ -165,7 +160,6 @@ func NewChatErrorResponse(code int, errorCode, message, details string) *ChatRes
 		},
 	}
 }
-
 
 func NewListChatsSuccessResponse(chats []ChatInfo, chatType string) *ListChatsResponse {
 	return &ListChatsResponse{

@@ -22,18 +22,18 @@ func NewContactHandler(sessionService *application.SessionApp, wmeowService wmeo
 	}
 }
 
-//	@Summary		Check contacts on meow
-//	@Description	Check if phone numbers are registered on meow
-//	@Tags			Contacts
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string					true	"Session ID"
-//	@Param			request		body		dto.CheckContactRequest	true	"Check contact request"
-//	@Success		200			{object}	dto.ContactResponse
-//	@Failure		400			{object}	dto.ContactResponse
-//	@Failure		500			{object}	dto.ContactResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/contacts/check [post]
+// @Summary		Check contacts on meow
+// @Description	Check if phone numbers are registered on meow
+// @Tags			Contacts
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string					true	"Session ID"
+// @Param			request		body		dto.CheckContactRequest	true	"Check contact request"
+// @Success		200			{object}	dto.ContactResponse
+// @Failure		400			{object}	dto.ContactResponse
+// @Failure		500			{object}	dto.ContactResponse
+// @Security		ApiKeyAuth
+// @Router			/session/{sessionId}/contacts/check [post]
 func (h *ContactHandler) CheckContact(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -84,18 +84,18 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-//	@Summary		Get contact information
-//	@Description	Get detailed information about contacts
-//	@Tags			Contacts
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string						true	"Session ID"
-//	@Param			request		body		dto.GetContactInfoRequest	true	"Get contact info request"
-//	@Success		200			{object}	dto.ContactResponse
-//	@Failure		400			{object}	dto.ContactResponse
-//	@Failure		500			{object}	dto.ContactResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/contacts/info [post]
+// @Summary		Get contact information
+// @Description	Get detailed information about contacts
+// @Tags			Contacts
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string						true	"Session ID"
+// @Param			request		body		dto.GetContactInfoRequest	true	"Get contact info request"
+// @Success		200			{object}	dto.ContactResponse
+// @Failure		400			{object}	dto.ContactResponse
+// @Failure		500			{object}	dto.ContactResponse
+// @Security		ApiKeyAuth
+// @Router			/session/{sessionId}/contacts/info [post]
 func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -149,18 +149,18 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-//	@Summary		Get contact avatar
-//	@Description	Get contact's profile picture/avatar
-//	@Tags			Contacts
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string					true	"Session ID"
-//	@Param			request		body		dto.GetAvatarRequest	true	"Get avatar request"
-//	@Success		200			{object}	dto.ContactResponse
-//	@Failure		400			{object}	dto.ContactResponse
-//	@Failure		500			{object}	dto.ContactResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/contacts/avatar [post]
+// @Summary		Get contact avatar
+// @Description	Get contact's profile picture/avatar
+// @Tags			Contacts
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string					true	"Session ID"
+// @Param			request		body		dto.GetAvatarRequest	true	"Get avatar request"
+// @Success		200			{object}	dto.ContactResponse
+// @Failure		400			{object}	dto.ContactResponse
+// @Failure		500			{object}	dto.ContactResponse
+// @Security		ApiKeyAuth
+// @Router			/session/{sessionId}/contacts/avatar [post]
 func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -208,18 +208,18 @@ func (h *ContactHandler) GetAvatar(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-//	@Summary		Set contact presence
-//	@Description	Set global contact presence (available/unavailable)
-//	@Tags			Contacts
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string						true	"Session ID"
-//	@Param			request		body		dto.SetContactPresenceRequest	true	"Set presence request"
-//	@Success		200			{object}	dto.ContactResponse
-//	@Failure		400			{object}	dto.ContactResponse
-//	@Failure		500			{object}	dto.ContactResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/contacts/presence [post]
+// @Summary		Set contact presence
+// @Description	Set global contact presence (available/unavailable)
+// @Tags			Contacts
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string						true	"Session ID"
+// @Param			request		body		dto.SetContactPresenceRequest	true	"Set presence request"
+// @Success		200			{object}	dto.ContactResponse
+// @Failure		400			{object}	dto.ContactResponse
+// @Failure		500			{object}	dto.ContactResponse
+// @Security		ApiKeyAuth
+// @Router			/session/{sessionId}/contacts/presence [post]
 func (h *ContactHandler) SetPresence(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -260,16 +260,16 @@ func (h *ContactHandler) SetPresence(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
-//	@Summary		Get contacts
-//	@Description	Get all contacts from contact's meow
-//	@Tags			Contacts
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string	true	"Session ID"
-//	@Success		200			{object}	dto.ContactsResponse
-//	@Failure		500			{object}	dto.ContactResponse
-//	@Security		ApiKeyAuth
-//	@Router			/session/{sessionId}/contacts/list [get]
+// @Summary		Get contacts
+// @Description	Get all contacts from contact's meow
+// @Tags			Contacts
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string	true	"Session ID"
+// @Success		200			{object}	dto.ContactsResponse
+// @Failure		500			{object}	dto.ContactResponse
+// @Security		ApiKeyAuth
+// @Router			/session/{sessionId}/contacts/list [get]
 func (h *ContactHandler) GetContacts(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 

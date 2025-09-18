@@ -2017,7 +2017,6 @@ func (m *serviceImpl) UpdateSessionSubscriptions(sessionID string, events []stri
 	return nil
 }
 
-
 func (m *serviceImpl) GetPrivacySettings(ctx context.Context, sessionID string) (*PrivacySettingsResult, error) {
 	client := m.getClient(sessionID)
 	if client == nil {
@@ -2111,9 +2110,7 @@ func (m *serviceImpl) SetPrivacySetting(ctx context.Context, sessionID string, s
 	return result, nil
 }
 
-func (m *serviceImpl) parsePhoneToJID(phone string) (waTypes.JID, error) {
-	return parsePhoneToJID(phone) // Use the helper function from messages.go
-}
+
 
 func (m *serviceImpl) GetBlocklist(ctx context.Context, sessionID string) ([]string, error) {
 	client := m.getClient(sessionID)
@@ -2184,7 +2181,6 @@ func (m *serviceImpl) UpdateBlocklist(ctx context.Context, sessionID, jidStr, ac
 	m.logger.Debugf("✅ Successfully %sed user %s for session %s. New blocklist has %d entries", action, jidStr, sessionID, len(jidList))
 	return jidList, nil
 }
-
 
 func (m *serviceImpl) SetDisappearingTimer(ctx context.Context, sessionID, chatJID string, timer time.Duration) error {
 	m.logger.Debugf("🕐 Setting disappearing timer for chat %s in session %s to %v", chatJID, sessionID, timer)
@@ -2427,7 +2423,6 @@ func (m *serviceImpl) ArchiveChat(ctx context.Context, sessionID, chatJID string
 	m.logger.Debugf("✅ Successfully %s chat %s in session %s", map[bool]string{true: "archived", false: "unarchived"}[archived], chatJID, sessionID)
 	return nil
 }
-
 
 func (m *serviceImpl) CreateNewsletter(ctx context.Context, sessionID string, params *whatsmeow.CreateNewsletterParams) (*waTypes.NewsletterMetadata, error) {
 	m.logger.Debugf("📰 Creating newsletter '%s' in session %s", params.Name, sessionID)
@@ -2732,7 +2727,6 @@ func (m *serviceImpl) GetNewsletterMessageUpdates(ctx context.Context, sessionID
 	return result, nil
 }
 
-
 func extractMessageContent(msg *waTypes.NewsletterMessage) string {
 	if msg.Message == nil {
 		return ""
@@ -2812,8 +2806,6 @@ func extractMediaURL(msg *waTypes.NewsletterMessage) string {
 
 	return ""
 }
-
-
 
 func (m *serviceImpl) NewsletterMarkViewed(ctx context.Context, sessionID, newsletterJID string, serverIDs []waTypes.MessageServerID) error {
 	m.logger.Debugf("📰 Marking %d newsletter messages as viewed for %s in session %s", len(serverIDs), newsletterJID, sessionID)
@@ -2927,7 +2919,6 @@ func (m *serviceImpl) NewsletterSubscribeLiveUpdates(ctx context.Context, sessio
 	return nil
 }
 
-
 func (m *serviceImpl) UploadNewsletter(ctx context.Context, sessionID string, data []byte, mediaType whatsmeow.MediaType) (*whatsmeow.UploadResponse, error) {
 	m.logger.Debugf("📰 Uploading newsletter media (%d bytes, type: %s) in session %s", len(data), mediaType, sessionID)
 
@@ -2999,12 +2990,4 @@ func (m *serviceImpl) SendNewsletterMessage(ctx context.Context, sessionID, news
 	return &resp, nil
 }
 
-func (m *serviceImpl) truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	if maxLen <= 3 {
-		return s[:maxLen]
-	}
-	return s[:maxLen-3] + "..."
-}
+

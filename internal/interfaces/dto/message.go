@@ -7,7 +7,6 @@ import (
 	"time"
 )
 
-
 type SendTextRequest struct {
 	Phone string `json:"phone" binding:"required" example:"5511999999999"`
 	Body  string `json:"body" binding:"required" example:"Hello, World!"`
@@ -80,7 +79,6 @@ type BulkMessageRequest struct {
 	Message    string   `json:"message" binding:"required" example:"Hello, everyone!"`
 }
 
-
 type MarkAsReadRequest struct {
 	Phone      string   `json:"phone" binding:"required" example:"5511999999999"`
 	MessageIDs []string `json:"message_ids" binding:"required" example:"[\"msg_1\", \"msg_2\"]"`
@@ -104,7 +102,6 @@ type EditMessageRequest struct {
 	NewText   string `json:"new_text" binding:"required" example:"Edited message text"`
 }
 
-
 type MessageActionResponse struct {
 	Success bool                        `json:"success"`
 	Code    int                         `json:"code"`
@@ -125,7 +122,6 @@ type MessageActionErrorResponse struct {
 	Message string `json:"message" example:"Invalid phone number format"`
 	Details string `json:"details,omitempty" example:"Phone number must include country code"`
 }
-
 
 type MessageStatusData struct {
 	MessageID string    `json:"message_id" example:"msg_123456789"`
@@ -152,7 +148,6 @@ type MessageEventData struct {
 	Caption     string `json:"caption,omitempty"`
 	MediaURL    string `json:"media_url,omitempty"`
 }
-
 
 type SendMessageRequest struct {
 	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
@@ -194,7 +189,6 @@ type BulkMessageResponseData struct {
 	Status    string `json:"status" example:"sent"`
 	Error     string `json:"error,omitempty" example:""`
 }
-
 
 type MessageResponse struct {
 	Success bool                  `json:"success"`
@@ -273,7 +267,6 @@ type LocationMessagePayload struct {
 	Name      string  `json:"name,omitempty" example:"São Paulo"`
 	URL       string  `json:"url,omitempty" example:"https://maps.google.com/..."`
 }
-
 
 func phoneToRemoteJid(phone string) string {
 	if phone == "" {
@@ -423,7 +416,6 @@ func validateMessagePhone(phone string) bool {
 	}
 	return len(phone) >= 10 && len(phone) <= 15
 }
-
 
 func NewMessageActionSuccessResponse(phone, messageID, action string) *MessageActionResponse {
 	return &MessageActionResponse{

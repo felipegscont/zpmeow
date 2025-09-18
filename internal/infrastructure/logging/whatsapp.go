@@ -31,77 +31,13 @@ func (w *WALoggerAdapter) Infof(msg string, args ...interface{}) {
 }
 
 func (w *WALoggerAdapter) Debugf(msg string, args ...interface{}) {
-	return
+	// Debug logging disabled for WhatsApp
 }
 
 func (w *WALoggerAdapter) Sub(module string) waLog.Logger {
 	return &WALoggerAdapter{
 		logger: w.logger.Sub(module),
 	}
-}
-
-func (w *WALoggerAdapter) shouldFilterXMLMessage(msg string) bool {
-	trimmedMsg := strings.TrimSpace(msg)
-
-	if strings.HasPrefix(trimmedMsg, "<") {
-		return true
-	}
-
-	if strings.Contains(trimmedMsg, "<") && strings.Contains(trimmedMsg, ">") {
-		return true
-	}
-
-	xmlPatterns := []string{
-		"decrypting message from",
-		"stored message secret key",
-		"no sessions or sender keys found to migrate",
-		"database has",
-		"prekeys server says we have",
-		"frame websocket read pump starting",
-		"starting handler queue loop",
-		"dialing wss://",
-		"no device list cached for",
-		"ignoring device list notification",
-		"successfully retrieved existing device for jid",
-		"xmlns=",
-		"type=\"get\"",
-		"type=\"set\"",
-		"type=\"result\"",
-		"type=\"error\"",
-		"<!-- ",
-		"device_hash=",
-		"key-index",
-		"routing_info",
-		"edge_routing",
-		"offline count=",
-		"offline_preview",
-		"appdata=",
-		"companion_enc_static=",
-		"abprops=",
-		"creation=",
-		"location=",
-		"props=",
-		"class=\"message\"",
-		"class=\"receipt\"",
-		"class=\"notification\"",
-		"recipient=",
-		"notify=",
-		"peer_recipient_lid=",
-		"verified_level=",
-		"verified_name=",
-		"enc type=",
-		"decrypt-fail=",
-		"polltype=",
-		"mediatype=",
-	}
-
-	msgLower := strings.ToLower(msg)
-	for _, pattern := range xmlPatterns {
-		if strings.Contains(msgLower, pattern) {
-			return true
-		}
-	}
-	return false
 }
 
 func (w *WALoggerAdapter) cleanWhatsAppMessage(msg string) string {

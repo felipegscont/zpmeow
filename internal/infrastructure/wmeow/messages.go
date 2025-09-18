@@ -10,8 +10,6 @@ import (
 	waTypes "go.mau.fi/whatsmeow/types"
 )
 
-
-
 func sendMessageToJID(client *whatsmeow.Client, to string, message *waProto.Message) (*whatsmeow.SendResponse, error) {
 	jid, err := parsePhoneToJID(to)
 	if err != nil {
@@ -235,8 +233,6 @@ func SendLocationMessage(client *whatsmeow.Client, to string, latitude, longitud
 	resp, err := client.SendMessage(context.Background(), jid, message)
 	return &resp, err
 }
-
-
 
 func parsePhoneToJID(phone string) (waTypes.JID, error) {
 	phone = strings.TrimSpace(phone)

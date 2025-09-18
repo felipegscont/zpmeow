@@ -90,7 +90,6 @@ func (w *WebhookConfiguration) Deactivate() {
 	w.updateTimestamp()
 }
 
-
 func (w *WebhookConfiguration) Validate() error {
 	if w.SessionID.IsEmpty() {
 		return ErrInvalidSessionID
@@ -156,4 +155,3 @@ func (w *WebhookConfiguration) ClearEvents() {
 	w.Events = []EventType{}
 	w.updateTimestamp()
 }
-

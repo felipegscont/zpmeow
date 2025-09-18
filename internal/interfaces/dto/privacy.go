@@ -33,7 +33,6 @@ type PrivacyErrorResponse struct {
 	Details string `json:"details,omitempty"`
 }
 
-
 type SetGroupAddPrivacyRequest struct {
 	Value string `json:"value" binding:"required,oneof=all contacts contact_blacklist none"` // Who can add to groups
 }
@@ -71,7 +70,6 @@ type SetAllPrivacySettingsRequest struct {
 type FindPrivacySettingsRequest struct {
 	Settings []string `json:"settings,omitempty"` // Specific settings to retrieve: ["groupAdd", "lastSeen", "status", "profile", "readReceipts", "callAdd", "online"]
 }
-
 
 var ValidPrivacySettings = map[string][]string{
 	"groupadd":     {"all", "contacts", "contact_blacklist", "none"},

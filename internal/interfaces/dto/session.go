@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type CreateSessionRequest struct {
 	Name       string `json:"name" binding:"required" example:"default"`
 	ProxyURL   string `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
@@ -15,7 +14,6 @@ type CreateSessionRequest struct {
 type PairPhoneRequest struct {
 	PhoneNumber string `json:"phone_number" binding:"required" example:"5511999999999"`
 }
-
 
 type SessionInfo struct {
 	ID         string    `json:"id" example:"default"`
@@ -37,7 +35,6 @@ type SessionConnectionInfo struct {
 	LastSeen    time.Time `json:"last_seen,omitempty" example:"2023-01-01T00:00:00Z"`
 	PairCode    string    `json:"pair_code,omitempty" example:"ABCD-1234"`
 }
-
 
 type SessionResponse struct {
 	Success bool                  `json:"success"`
@@ -63,7 +60,6 @@ type SessionErrorResponse struct {
 	Message string `json:"message" example:"Invalid session ID format"`
 	Details string `json:"details,omitempty" example:"Session ID must be alphanumeric"`
 }
-
 
 type CreateSessionResponse struct {
 	Success bool                  `json:"success" example:"true"`
@@ -178,7 +174,6 @@ type SessionStatusResponseData struct {
 	CreatedAt     time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
 	UpdatedAt     time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
-
 
 func NewSessionSuccessResponse(sessionID, action string, session *SessionInfo) *SessionResponse {
 	return &SessionResponse{

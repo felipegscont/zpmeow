@@ -2,7 +2,6 @@ package types
 
 import "time"
 
-
 type ID string
 
 type Timestamp time.Time

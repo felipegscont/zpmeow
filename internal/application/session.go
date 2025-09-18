@@ -3,12 +3,11 @@ package application
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"meow/internal/domain/session"
 	"meow/internal/interfaces/dto"
 	"meow/internal/shared/validation"
-
-	"github.com/google/uuid"
 )
 
 type SessionApp struct {
@@ -16,6 +15,23 @@ type SessionApp struct {
 	sessionService    session.Service
 	identifierService session.IdentifierService
 	validator         *validation.Validator
+	idGenerator       IDGenerator
+}
+
+// DefaultIDGenerator implementa IDGenerator usando UUID
+type DefaultIDGenerator struct{}
+
+func (d DefaultIDGenerator) GenerateSessionID() string {
+	return "session-" + generateRandomID()
+}
+
+func (d DefaultIDGenerator) GenerateAPIKey() string {
+	return "api-" + generateRandomID()
+}
+
+func generateRandomID() string {
+	// Implementação simples sem dependência externa
+	return fmt.Sprintf("%d", time.Now().UnixNano())
 }
 
 func NewSessionApp(
@@ -28,6 +44,22 @@ func NewSessionApp(
 		sessionService:    sessionService,
 		identifierService: session.NewIdentifierService(),
 		validator:         validator,
+		idGenerator:       DefaultIDGenerator{},
+	}
+}
+
+func NewSessionAppWithIDGenerator(
+	sessionRepo session.Repository,
+	sessionService session.Service,
+	validator *validation.Validator,
+	idGenerator IDGenerator,
+) *SessionApp {
+	return &SessionApp{
+		sessionRepo:       sessionRepo,
+		sessionService:    sessionService,
+		identifierService: session.NewIdentifierService(),
+		validator:         validator,
+		idGenerator:       idGenerator,
 	}
 }
 
@@ -36,7 +68,7 @@ func (s *SessionApp) CreateSessionWithRequest(ctx context.Context, req *dto.Crea
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	sessionEntity, err := session.NewSession(uuid.New().String(), req.Name)
+	sessionEntity, err := session.NewSession(s.idGenerator.GenerateSessionID(), req.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session entity: %w", err)
 	}
@@ -46,7 +78,6 @@ func (s *SessionApp) CreateSessionWithRequest(ctx context.Context, req *dto.Crea
 			return nil, fmt.Errorf("invalid proxy URL: %w", err)
 		}
 	}
-
 
 	if err := s.sessionService.ValidateSessionConfiguration(sessionEntity); err != nil {
 		return nil, fmt.Errorf("session configuration validation failed: %w", err)
@@ -120,17 +151,13 @@ func (s *SessionApp) GetSessionByDeviceJID(ctx context.Context, deviceJID string
 	return s.sessionRepo.GetByDeviceJID(ctx, deviceJID)
 }
 
-func (s *SessionApp) ListSessionEntities(ctx context.Context) ([]*session.Session, error) {
+func (s *SessionApp) GetAllSessions(ctx context.Context) ([]*session.Session, error) {
 	sessions, err := s.sessionRepo.GetAll(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list sessions: %w", err)
 	}
 
 	return sessions, nil
-}
-
-func (s *SessionApp) GetAllSessions(ctx context.Context) ([]*session.Session, error) {
-	return s.ListSessionEntities(ctx)
 }
 
 func (s *SessionApp) ConnectSession(ctx context.Context, sessionIDOrName string) (*session.Session, error) {
@@ -200,7 +227,7 @@ func (s *SessionApp) RegenerateApiKey(ctx context.Context, sessionIDOrName strin
 		return "", fmt.Errorf("cannot regenerate API key for connected session")
 	}
 
-	newApiKey := uuid.New().String()
+	newApiKey := s.idGenerator.GenerateAPIKey()
 	err = sessionEntity.RegenerateApiKey(newApiKey)
 	if err != nil {
 		return "", fmt.Errorf("failed to regenerate API key: %w", err)

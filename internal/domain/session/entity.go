@@ -205,8 +205,6 @@ func (s *Session) SetApiKey(apiKey string) error {
 	return nil
 }
 
-
-
 func (s *Session) GetWaJIDString() string {
 	return s.WaJID.Value()
 }

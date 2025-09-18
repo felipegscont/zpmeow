@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type LinkGroupRequest struct {
 	CommunityJID string `json:"community_jid" binding:"required" example:"120363025246125486@g.us"`
 	GroupJID     string `json:"group_jid" binding:"required" example:"120363025246125487@g.us"`
@@ -22,7 +21,6 @@ type GetSubGroupsRequest struct {
 type GetLinkedGroupsParticipantsRequest struct {
 	CommunityJID string `json:"community_jid" binding:"required" example:"120363025246125486@g.us"`
 }
-
 
 type CommunityResponse struct {
 	Success bool                    `json:"success"`
@@ -80,7 +78,6 @@ type CommunityParticipantsData struct {
 	Total        int       `json:"total" example:"2"`
 }
 
-
 type CommunityValidationError struct {
 	Field   string `json:"field"`
 	Message string `json:"message"`
@@ -89,7 +86,6 @@ type CommunityValidationError struct {
 func (e *CommunityValidationError) Error() string {
 	return e.Message
 }
-
 
 func NewCommunitySuccessResponse(sessionID, communityJID, groupJID, action string) *CommunityResponse {
 	return &CommunityResponse{
@@ -156,7 +152,6 @@ func validateCommunityJID(jid string) bool {
 	}
 	return len(jid) > 10 && (jid[len(jid)-5:] == "@g.us")
 }
-
 
 func (r *LinkGroupRequest) Validate() error {
 	if r.CommunityJID == "" {

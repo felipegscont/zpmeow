@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	"meow/internal/domain/session"
 	"meow/internal/infrastructure/logging"
@@ -217,7 +216,7 @@ func (ep *EventProcessor) HandleEvent(evt interface{}) {
 	}
 }
 
-func (ep *EventProcessor) sendWebhook(evt interface{}, eventType string) {
+func (ep *EventProcessor) sendWebhook(_ interface{}, eventType string) {
 	if ep.webhookService == nil {
 		return
 	}
@@ -231,12 +230,7 @@ func (ep *EventProcessor) sendWebhook(evt interface{}, eventType string) {
 	ep.logger.Debugf("Event processed: %s for session %s (webhook disabled during refactoring)", eventType, ep.sessionID)
 }
 
-func (ep *EventProcessor) extractEventTypeName(eventType string) string {
-	if len(eventType) > 8 && eventType[:8] == "*events." {
-		return eventType[8:]
-	}
-	return eventType
-}
+
 
 type WebhookPayload struct {
 	Event     string      `json:"event"`
@@ -245,47 +239,15 @@ type WebhookPayload struct {
 	Data      interface{} `json:"data"`
 }
 
-func (ep *EventProcessor) createWebhookPayload(evt interface{}, eventType string) interface{} {
-	return WebhookPayload{
-		Event:     eventType,
-		SessionID: ep.sessionID,
-		Timestamp: time.Now().Unix(),
-		Data:      evt, // Raw event payload from WhatsApp Meow - will appear last due to struct field order
-	}
-}
 
 
-func (ep *EventProcessor) isMessageEvent(eventType string) bool {
-	messageEvents := []string{"*events.Message", "*events.Receipt"}
-	for _, msgEvent := range messageEvents {
-		if eventType == msgEvent {
-			return true
-		}
-	}
-	return false
-}
 
-func (ep *EventProcessor) isConnectionEvent(eventType string) bool {
-	connectionEvents := []string{"*events.Connected", "*events.Disconnected", "*events.LoggedOut"}
-	for _, connEvent := range connectionEvents {
-		if eventType == connEvent {
-			return true
-		}
-	}
-	return false
-}
 
-func (ep *EventProcessor) isAuthEvent(eventType string) bool {
-	authEvents := []string{"*events.QR", "*events.PairSuccess", "*events.PairError"}
-	for _, authEvent := range authEvents {
-		if eventType == authEvent {
-			return true
-		}
-	}
-	return false
-}
 
-func (ep *EventProcessor) processConnectionEvents(eventType, status string) {
+
+
+
+func (ep *EventProcessor) processConnectionEvents(_, status string) {
 	ep.logger.Infof("Session %s %s", ep.sessionID, status)
 }
 
@@ -438,17 +400,6 @@ func (ep *EventProcessor) handleBlocklist(evt interface{}) {
 }
 
 
-func createMessageData(msg *events.Message) map[string]interface{} {
-	return map[string]interface{}{
-		"messageId": msg.Info.ID,
-		"from":      msg.Info.Sender.String(),
-		"chat":      msg.Info.Chat.String(),
-		"timestamp": msg.Info.Timestamp.Unix(),
-		"fromMe":    msg.Info.IsFromMe,
-		"isGroup":   msg.Info.IsGroup,
-		"type":      getMessageType(msg),
-	}
-}
 
 func getMessageType(msg *events.Message) string {
 	if msg.Message == nil {

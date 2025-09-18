@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-
 type RegisterWebhookRequest struct {
 	URL    string   `json:"url" binding:"required" example:"https://webhook.example.com/meow"`
 	Events []string `json:"events" binding:"required" example:"Message,Receipt,Connected"`
@@ -23,7 +22,6 @@ type TestWebhookRequest struct {
 	EventType string                 `json:"event_type" binding:"required" example:"message"`
 	TestData  map[string]interface{} `json:"test_data,omitempty"`
 }
-
 
 type WebhookInfo struct {
 	WebhookID string    `json:"webhook_id" example:"webhook_123456789"`
@@ -75,7 +73,6 @@ type TestWebhookResult struct {
 	Error        string `json:"error,omitempty" example:""`
 }
 
-
 type WebhookResponse struct {
 	Success bool                  `json:"success"`
 	Code    int                   `json:"code"`
@@ -119,7 +116,6 @@ type SupportedEventsData struct {
 	Count  int      `json:"count" example:"65"`
 }
 
-
 type StandardWebhookResponse struct {
 	Data    StandardWebhookData `json:"data"`
 	Message string              `json:"message" example:"Webhook retrieved successfully"`
@@ -162,4 +158,3 @@ type StandardWebhookDeleteData struct {
 	SessionID string `json:"sessionID" example:"default"`
 	Status    string `json:"status" example:"deleted"`
 }
-

@@ -212,7 +212,6 @@ func GenerateCorrelationID() string {
 	return hex.EncodeToString(bytes)
 }
 
-
 func LogHTTPRequest(logger Logger, method, path string, status int, duration time.Duration, clientIP string) {
 	level := "info"
 	if status >= 500 {

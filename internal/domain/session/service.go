@@ -1,6 +1,5 @@
 package session
 
-
 var (
 	sessionNameMinLength = 3
 	sessionNameMaxLength = 50
@@ -51,7 +50,6 @@ func (s *DomainService) ValidateSessionConfiguration(session *Session) error {
 		return err
 	}
 
-
 	if session.IsConnected() && !session.IsAuthenticated() {
 		return ErrSessionNotConnected
 	}
@@ -82,9 +80,6 @@ func (s *DomainService) ValidateDeviceConnection(session *Session, deviceJID str
 
 	return nil
 }
-
-
-
 
 func ValidateSessionStatus(currentStatus, newStatus Status) error {
 	validTransitions := map[Status][]Status{

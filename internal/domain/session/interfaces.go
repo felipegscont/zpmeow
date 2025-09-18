@@ -10,4 +10,3 @@ type SessionManager interface {
 	DeleteSession(ctx context.Context, id string) error
 	ListSessions(ctx context.Context, limit, offset int) ([]*Session, error)
 }
-

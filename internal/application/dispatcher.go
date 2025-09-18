@@ -11,9 +11,9 @@ import (
 // Interfaces movidas para interfaces.go para evitar duplicação
 
 type EventDispatcher struct {
-	sessionRepo    session.Repository
-	webhookSender  WebhookSender
-	logger         Logger
+	sessionRepo   session.Repository
+	webhookSender WebhookSender
+	logger        Logger
 }
 
 func NewEventDispatcher(sessionRepo session.Repository, webhookSender WebhookSender, logger Logger) *EventDispatcher {
@@ -22,13 +22,6 @@ func NewEventDispatcher(sessionRepo session.Repository, webhookSender WebhookSen
 		webhookSender: webhookSender,
 		logger:        logger,
 	}
-}
-
-type EventPayload struct {
-	Event     string      `json:"event"`
-	SessionID string      `json:"sessionId"`
-	Timestamp int64       `json:"timestamp"`
-	Data      interface{} `json:"data"`
 }
 
 func (ed *EventDispatcher) DispatchEvent(ctx context.Context, sessionID string, eventType string, eventData interface{}) error {
@@ -42,15 +35,15 @@ func (ed *EventDispatcher) DispatchEvent(ctx context.Context, sessionID string, 
 
 	payload := ed.createEventPayload(sessionID, cleanEventType, eventData)
 
+	// Enviar webhook se configurado
+	if err := ed.webhookSender.SendWebhook(ctx, sessionID, "", cleanEventType, payload); err != nil {
+		ed.logger.Errorf("Failed to send webhook for session %s: %v", sessionID, err)
+		// Não retornar erro para não bloquear o fluxo principal
+	}
+
 	ed.logger.Infof("Event processed: %s for session %s", cleanEventType, sessionID)
 
-	_ = payload // Prevent unused variable warning
-
 	return nil
-}
-
-func (ed *EventDispatcher) isEventSubscribed(sessionEntity *session.Session, eventType string) bool {
-	return true
 }
 
 func (ed *EventDispatcher) extractEventTypeName(eventType string) string {
@@ -60,15 +53,25 @@ func (ed *EventDispatcher) extractEventTypeName(eventType string) string {
 	return eventType
 }
 
-func (ed *EventDispatcher) createEventPayload(sessionID, eventType string, eventData interface{}) EventPayload {
-	return EventPayload{
-		Event:     eventType,
+func (ed *EventDispatcher) createEventPayload(sessionID, eventType string, eventData interface{}) EventData {
+	return EventData{
+		Type:      eventType,
 		SessionID: sessionID,
 		Timestamp: time.Now().Unix(),
-		Data:      eventData,
+		Payload:   map[string]interface{}{"data": eventData},
 	}
 }
 
 func (ed *EventDispatcher) ValidateEventType(eventType string) bool {
-	return true // Simplified for this refactor
+	validEvents := map[string]bool{
+		"message.received":     true,
+		"message.sent":         true,
+		"session.connected":    true,
+		"session.disconnected": true,
+		"qr.generated":         true,
+		"session.error":        true,
+		"session.connecting":   true,
+	}
+
+	return validEvents[eventType]
 }

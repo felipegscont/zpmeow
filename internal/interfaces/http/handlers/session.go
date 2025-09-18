@@ -15,7 +15,6 @@ import (
 	"meow/internal/interfaces/dto"
 )
 
-
 type SessionHandler struct {
 	sessionService *application.SessionApp
 	wmeowService   wmeow.Service
@@ -29,8 +28,6 @@ func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeo
 		logger:         logging.GetLogger().Sub("session-handler"),
 	}
 }
-
-
 
 func (h *SessionHandler) validateSessionID(c *gin.Context) (string, bool) {
 	sessionIDOrName := c.Param("id")
@@ -132,15 +129,15 @@ func (h *SessionHandler) logError(operation string, err error) {
 	h.logger.Errorf("Failed to %s: %v", operation, err)
 }
 
-//	@Summary		Get all sessions
-//	@Description	Retrieves a list of all meow sessions
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	dto.SessionListResponse	"Sessions retrieved successfully"
-//	@Failure		500	{object}	dto.SessionResponse		"Internal server error"
-//	@Router			/sessions/list [get]
-//	@Security		ApiKeyAuth
+// @Summary		Get all sessions
+// @Description	Retrieves a list of all meow sessions
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	dto.SessionListResponse	"Sessions retrieved successfully"
+// @Failure		500	{object}	dto.SessionResponse		"Internal server error"
+// @Router			/sessions/list [get]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) GetSessions(c *gin.Context) {
 	h.logOperation("Getting all sessions", "")
 
@@ -160,18 +157,18 @@ func (h *SessionHandler) GetSessions(c *gin.Context) {
 	h.logSuccess("Get all sessions", fmt.Sprintf("retrieved %d sessions", len(sessions)))
 }
 
-//	@Summary		Get session information
-//	@Description	Retrieves detailed information about a specific session by ID or name
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string					true	"Session ID or Name"
-//	@Success		200	{object}	dto.SessionInfoResponse	"Session information retrieved successfully"
-//	@Failure		400	{object}	dto.SessionResponse		"Invalid session ID or name"
-//	@Failure		404	{object}	dto.SessionResponse		"Session not found"
-//	@Failure		500	{object}	dto.SessionResponse		"Internal server error"
-//	@Router			/sessions/{id}/info [get]
-//	@Security		ApiKeyAuth
+// @Summary		Get session information
+// @Description	Retrieves detailed information about a specific session by ID or name
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string					true	"Session ID or Name"
+// @Success		200	{object}	dto.SessionInfoResponse	"Session information retrieved successfully"
+// @Failure		400	{object}	dto.SessionResponse		"Invalid session ID or name"
+// @Failure		404	{object}	dto.SessionResponse		"Session not found"
+// @Failure		500	{object}	dto.SessionResponse		"Internal server error"
+// @Router			/sessions/{id}/info [get]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) GetSession(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
@@ -192,17 +189,17 @@ func (h *SessionHandler) GetSession(c *gin.Context) {
 	h.logSuccess("Get session", sessionID)
 }
 
-//	@Summary		Create a new meow session
-//	@Description	Creates a new meow session and starts the client
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			request	body		dto.CreateSessionRequest	true	"Session creation request"
-//	@Success		201		{object}	dto.CreateSessionResponse	"Session created successfully"
-//	@Failure		400		{object}	dto.SessionResponse			"Invalid request body"
-//	@Failure		500		{object}	dto.SessionResponse			"Internal server error"
-//	@Router			/sessions/create [post]
-//	@Security		ApiKeyAuth
+// @Summary		Create a new meow session
+// @Description	Creates a new meow session and starts the client
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			request	body		dto.CreateSessionRequest	true	"Session creation request"
+// @Success		201		{object}	dto.CreateSessionResponse	"Session created successfully"
+// @Failure		400		{object}	dto.SessionResponse			"Invalid request body"
+// @Failure		500		{object}	dto.SessionResponse			"Internal server error"
+// @Router			/sessions/create [post]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) CreateSession(c *gin.Context) {
 	var req dto.CreateSessionRequest
 	if !h.bindAndValidateRequest(c, &req) {
@@ -236,18 +233,18 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 	h.logSuccess("Create session", session.ID.Value())
 }
 
-//	@Summary		Delete a session
-//	@Description	Deletes a meow session and stops the client
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string				true	"Session ID"
-//	@Success		200	{object}	dto.SessionResponse	"Session deleted successfully"
-//	@Failure		400	{object}	dto.SessionResponse	"Invalid session ID"
-//	@Failure		404	{object}	dto.SessionResponse	"Session not found"
-//	@Failure		500	{object}	dto.SessionResponse	"Internal server error"
-//	@Router			/sessions/{id}/delete [delete]
-//	@Security		ApiKeyAuth
+// @Summary		Delete a session
+// @Description	Deletes a meow session and stops the client
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string				true	"Session ID"
+// @Success		200	{object}	dto.SessionResponse	"Session deleted successfully"
+// @Failure		400	{object}	dto.SessionResponse	"Invalid session ID"
+// @Failure		404	{object}	dto.SessionResponse	"Session not found"
+// @Failure		500	{object}	dto.SessionResponse	"Internal server error"
+// @Router			/sessions/{id}/delete [delete]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
@@ -277,19 +274,18 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	h.logSuccess("Delete session", sessionID)
 }
 
-
-//	@Summary		Connect a session to meow
-//	@Description	Initiates connection to meow and returns QR code if needed. Accepts session ID or name.
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string						true	"Session ID or Name"
-//	@Success		200	{object}	dto.ConnectSessionResponse	"Connection initiated successfully"
-//	@Failure		400	{object}	dto.SessionResponse			"Invalid session ID or name"
-//	@Failure		404	{object}	dto.SessionResponse			"Session not found"
-//	@Failure		500	{object}	dto.SessionResponse			"Internal server error"
-//	@Router			/sessions/{id}/connect [post]
-//	@Security		ApiKeyAuth
+// @Summary		Connect a session to meow
+// @Description	Initiates connection to meow and returns QR code if needed. Accepts session ID or name.
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string						true	"Session ID or Name"
+// @Success		200	{object}	dto.ConnectSessionResponse	"Connection initiated successfully"
+// @Failure		400	{object}	dto.SessionResponse			"Invalid session ID or name"
+// @Failure		404	{object}	dto.SessionResponse			"Session not found"
+// @Failure		500	{object}	dto.SessionResponse			"Internal server error"
+// @Router			/sessions/{id}/connect [post]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) ConnectSession(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
@@ -354,18 +350,18 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 	h.logSuccess("Connect session", sessionID)
 }
 
-//	@Summary		Disconnect a session from meow
-//	@Description	Disconnects the session from meow without deleting it
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string				true	"Session ID"
-//	@Success		200	{object}	dto.SessionResponse	"Session disconnected successfully"
-//	@Failure		400	{object}	dto.SessionResponse	"Invalid session ID"
-//	@Failure		404	{object}	dto.SessionResponse	"Session not found"
-//	@Failure		500	{object}	dto.SessionResponse	"Internal server error"
-//	@Router			/sessions/{id}/disconnect [post]
-//	@Security		ApiKeyAuth
+// @Summary		Disconnect a session from meow
+// @Description	Disconnects the session from meow without deleting it
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string				true	"Session ID"
+// @Success		200	{object}	dto.SessionResponse	"Session disconnected successfully"
+// @Failure		400	{object}	dto.SessionResponse	"Invalid session ID"
+// @Failure		404	{object}	dto.SessionResponse	"Session not found"
+// @Failure		500	{object}	dto.SessionResponse	"Internal server error"
+// @Router			/sessions/{id}/disconnect [post]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
@@ -391,19 +387,19 @@ func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 	h.logSuccess("Disconnect session", sessionID)
 }
 
-//	@Summary		Pair phone number with session
-//	@Description	Pairs a phone number with the session for meow connection
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			id		path		string					true	"Session ID"
-//	@Param			request	body		dto.PairPhoneRequest	true	"Phone pairing request"
-//	@Success		200		{object}	dto.PairPhoneResponse	"Phone pairing initiated successfully"
-//	@Failure		400		{object}	dto.SessionResponse		"Invalid request body or session ID"
-//	@Failure		404		{object}	dto.SessionResponse		"Session not found"
-//	@Failure		500		{object}	dto.SessionResponse		"Internal server error"
-//	@Router			/sessions/{id}/pair [post]
-//	@Security		ApiKeyAuth
+// @Summary		Pair phone number with session
+// @Description	Pairs a phone number with the session for meow connection
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			id		path		string					true	"Session ID"
+// @Param			request	body		dto.PairPhoneRequest	true	"Phone pairing request"
+// @Success		200		{object}	dto.PairPhoneResponse	"Phone pairing initiated successfully"
+// @Failure		400		{object}	dto.SessionResponse		"Invalid request body or session ID"
+// @Failure		404		{object}	dto.SessionResponse		"Session not found"
+// @Failure		500		{object}	dto.SessionResponse		"Internal server error"
+// @Router			/sessions/{id}/pair [post]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) PairPhone(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
@@ -448,18 +444,18 @@ func (h *SessionHandler) PairPhone(c *gin.Context) {
 	h.logSuccess("Pair phone", fmt.Sprintf("session: %s, phone: %s", sessionID, req.PhoneNumber))
 }
 
-//	@Summary		Get session status
-//	@Description	Retrieves the current status and connection information of a session
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string						true	"Session ID"
-//	@Success		200	{object}	dto.SessionStatusResponse	"Session status retrieved successfully"
-//	@Failure		400	{object}	dto.SessionResponse			"Invalid session ID"
-//	@Failure		404	{object}	dto.SessionResponse			"Session not found"
-//	@Failure		500	{object}	dto.SessionResponse			"Internal server error"
-//	@Router			/sessions/{id}/status [get]
-//	@Security		ApiKeyAuth
+// @Summary		Get session status
+// @Description	Retrieves the current status and connection information of a session
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			id	path		string						true	"Session ID"
+// @Success		200	{object}	dto.SessionStatusResponse	"Session status retrieved successfully"
+// @Failure		400	{object}	dto.SessionResponse			"Invalid session ID"
+// @Failure		404	{object}	dto.SessionResponse			"Session not found"
+// @Failure		500	{object}	dto.SessionResponse			"Internal server error"
+// @Router			/sessions/{id}/status [get]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
@@ -500,19 +496,19 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 	h.logSuccess("Get session status", sessionID)
 }
 
-//	@Summary		Update session webhook URL
-//	@Description	Updates the webhook URL and events for a session
-//	@Tags			Sessions
-//	@Accept			json
-//	@Produce		json
-//	@Param			id		path		string						true	"Session ID"
-//	@Param			request	body		dto.UpdateWebhookRequest	true	"Webhook update request"
-//	@Success		200		{object}	dto.SessionResponse			"Webhook updated successfully"
-//	@Failure		400		{object}	dto.SessionResponse			"Invalid request"
-//	@Failure		404		{object}	dto.SessionResponse			"Session not found"
-//	@Failure		500		{object}	dto.SessionResponse			"Internal server error"
-//	@Router			/sessions/{id}/webhook [put]
-//	@Security		ApiKeyAuth
+// @Summary		Update session webhook URL
+// @Description	Updates the webhook URL and events for a session
+// @Tags			Sessions
+// @Accept			json
+// @Produce		json
+// @Param			id		path		string						true	"Session ID"
+// @Param			request	body		dto.UpdateWebhookRequest	true	"Webhook update request"
+// @Success		200		{object}	dto.SessionResponse			"Webhook updated successfully"
+// @Failure		400		{object}	dto.SessionResponse			"Invalid request"
+// @Failure		404		{object}	dto.SessionResponse			"Session not found"
+// @Failure		500		{object}	dto.SessionResponse			"Internal server error"
+// @Router			/sessions/{id}/webhook [put]
+// @Security		ApiKeyAuth
 func (h *SessionHandler) UpdateSessionWebhook(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
@@ -550,4 +546,3 @@ func (h *SessionHandler) UpdateSessionWebhook(c *gin.Context) {
 	h.sendSuccessResponse(c, sessionID, "webhook_update", nil)
 	h.logSuccess("Update session webhook", sessionID)
 }
-

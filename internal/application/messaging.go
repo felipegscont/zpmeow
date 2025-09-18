@@ -10,16 +10,7 @@ import (
 	"meow/internal/shared/validation"
 )
 
-// Extended Message Sender interface for additional operations
-type ExtendedMessageSender interface {
-	MessageSender
-	SendContactMessage(ctx context.Context, sessionID, chatJID, contactVCard string) (interface{}, error)
-	SendLocationMessage(ctx context.Context, sessionID, chatJID string, latitude, longitude float64, name, address string) (interface{}, error)
-	MarkAsRead(ctx context.Context, sessionID, chatJID, messageID string) error
-	ReactToMessage(ctx context.Context, sessionID, chatJID, messageID, reaction string) error
-	EditMessage(ctx context.Context, sessionID, chatJID, messageID, newContent string) error
-	DeleteMessage(ctx context.Context, sessionID, chatJID, messageID string) error
-}
+// Interface movida para interfaces.go para centralização
 
 type MessageApp struct {
 	messageSender ExtendedMessageSender
@@ -232,7 +223,6 @@ func (s *MessageApp) DeleteMessage(ctx context.Context, sessionID string, req *d
 	return s.messageSender.DeleteMessage(ctx, sessionID, chatJID, req.MessageID)
 }
 
-
 func (s *MessageApp) validateSession(ctx context.Context, sessionID string) error {
 	sessionEntity, err := s.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
@@ -250,7 +240,7 @@ func (s *MessageApp) resolveChatJID(chatJID string) string {
 	return chatJID
 }
 
-func (s *MessageApp) buildMessageResponse(result interface{}) *dto.MessageResponse {
+func (s *MessageApp) buildMessageResponse(result *MessageResult) *dto.MessageResponse {
 	messageID := extractMessageID(result)
 
 	return &dto.MessageResponse{
@@ -265,9 +255,9 @@ func (s *MessageApp) buildMessageResponse(result interface{}) *dto.MessageRespon
 	}
 }
 
-func extractMessageID(result interface{}) string {
+func extractMessageID(result *MessageResult) string {
 	if result == nil {
 		return "unknown"
 	}
-	return "msg_" + fmt.Sprintf("%v", result)
+	return result.ID
 }

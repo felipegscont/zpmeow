@@ -9,7 +9,6 @@ import (
 	"meow/internal/infrastructure/logging"
 )
 
-
 type HealthHandler struct {
 	logger logging.Logger
 }
@@ -19,7 +18,6 @@ func NewHealthHandler() *HealthHandler {
 		logger: logging.GetLogger().Sub("health-handler"),
 	}
 }
-
 
 type HealthStandardResponse struct {
 	Success bool                 `json:"success"`
@@ -40,7 +38,6 @@ type HealthErrorResponse struct {
 	Message string `json:"message" example:"Health check failed"`
 	Details string `json:"details,omitempty" example:"Service is not responding"`
 }
-
 
 func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, version string) {
 	response := &HealthStandardResponse{
@@ -64,28 +61,27 @@ func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, ver
 	c.Data(http.StatusOK, "application/json", jsonBytes)
 }
 
-//	@Summary		Health check endpoint
-//	@Description	Returns the health status of the service using standardized response format
-//	@Tags			Health
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	HealthStandardResponse	"Service is healthy"
-//	@Router			/health [get]
+// @Summary		Health check endpoint
+// @Description	Returns the health status of the service using standardized response format
+// @Tags			Health
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	HealthStandardResponse	"Service is healthy"
+// @Router			/health [get]
 func (h *HealthHandler) Health(c *gin.Context) {
 	h.logger.Infof("Health check requested")
-
 
 	h.sendSuccessResponse(c, "ok", "Service is healthy", "1.0.0")
 	h.logger.Infof("Health check completed successfully")
 }
 
-//	@Summary		Ping endpoint
-//	@Description	Simple ping endpoint that returns pong using standardized response format
-//	@Tags			Health
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	HealthStandardResponse	"Pong response"
-//	@Router			/ping [get]
+// @Summary		Ping endpoint
+// @Description	Simple ping endpoint that returns pong using standardized response format
+// @Tags			Health
+// @Accept			json
+// @Produce		json
+// @Success		200	{object}	HealthStandardResponse	"Pong response"
+// @Router			/ping [get]
 func (h *HealthHandler) Ping(c *gin.Context) {
 	h.logger.Infof("Ping requested")
 

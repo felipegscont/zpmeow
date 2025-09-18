@@ -9,7 +9,6 @@ import (
 	"go.mau.fi/whatsmeow/types"
 )
 
-
 type NewsletterInfo struct {
 	JID         string    `json:"jid"`
 	Name        string    `json:"name"`
@@ -31,7 +30,6 @@ type GetNewsletterInfoWithInviteRequest struct {
 	InviteKey string `json:"invite_key" binding:"required" example:"invite_key_123"`
 }
 
-
 type CreateNewsletterRequest struct {
 	Name        string `json:"name" binding:"required" example:"My Newsletter"`
 	Description string `json:"description,omitempty" example:"Newsletter description"`
@@ -51,7 +49,6 @@ type CreateNewsletterResult struct {
 	Name        string    `json:"name"`
 	Description string    `json:"description,omitempty"`
 }
-
 
 type GetNewsletterMessagesRequest struct {
 	JID    string `json:"jid" binding:"required" example:"120363123456789012@newsletter"`
@@ -84,7 +81,6 @@ func (r *GetNewsletterMessageUpdatesRequest) ToWhatsmeowParams() (*whatsmeow.Get
 	return params, nil
 }
 
-
 type FollowNewsletterRequest struct {
 	JID string `json:"jid" binding:"required" example:"120363123456789012@newsletter"`
 }
@@ -92,7 +88,6 @@ type FollowNewsletterRequest struct {
 type UnfollowNewsletterRequest struct {
 	JID string `json:"jid" binding:"required" example:"120363123456789012@newsletter"`
 }
-
 
 type NewsletterReactionRequest struct {
 	JID       string `json:"jid" binding:"required" example:"120363123456789012@newsletter"`
@@ -124,7 +119,6 @@ type SendNewsletterMessageRequest struct {
 	Caption     string `json:"caption,omitempty" example:"Image caption"`
 }
 
-
 type UploadNewsletterMediaRequest struct {
 	Data      string `json:"data" binding:"required" example:"base64_encoded_data"` // Base64 encoded media
 	MediaType string `json:"media_type" binding:"required" example:"image"`         // Media type: image, video, audio, document
@@ -146,7 +140,6 @@ type UploadNewsletterMediaResult struct {
 	FileHash   string `json:"file_hash"`
 	FileLength int64  `json:"file_length"`
 }
-
 
 type NewsletterInfoResponse struct {
 	Success bool            `json:"success"`
@@ -191,7 +184,6 @@ type SendNewsletterMessageResponse struct {
 	Timestamp string `json:"timestamp,omitempty"`
 	Error     string `json:"error,omitempty"`
 }
-
 
 func (r *CreateNewsletterRequest) ToWhatsmeowParams() (*whatsmeow.CreateNewsletterParams, error) {
 	params := &whatsmeow.CreateNewsletterParams{

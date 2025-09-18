@@ -17,7 +17,6 @@ type SessionService interface {
 	TransitionToError(session *Session, reason string) error
 }
 
-
 type ConnectionManager interface {
 	EstablishConnection(ctx context.Context, sessionID string) error
 	TerminateConnection(ctx context.Context, sessionID string) error

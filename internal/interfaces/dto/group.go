@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type CreateGroupRequest struct {
 	Name         string   `json:"name" binding:"required" example:"My Group"`
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
@@ -106,7 +105,6 @@ type UpdateGroupRequestsReq struct {
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-
 type GroupInfo struct {
 	JID          string   `json:"jid" example:"120363025246125486@g.us"`
 	Name         string   `json:"name" example:"My Group"`
@@ -120,7 +118,6 @@ type GroupInfo struct {
 	Locked       bool     `json:"locked" example:"false"`
 	Ephemeral    bool     `json:"ephemeral" example:"false"`
 }
-
 
 type GroupResponse struct {
 	Success bool                `json:"success"`
@@ -145,7 +142,6 @@ type GroupErrorResponse struct {
 	Message string `json:"message" example:"Invalid group JID format"`
 	Details string `json:"details,omitempty" example:"Group JID must end with @g.us"`
 }
-
 
 type CreateGroupResponse struct {
 	Success bool                    `json:"success" example:"true"`
@@ -224,7 +220,6 @@ type GetInviteLinkResponseData struct {
 	InviteLink string    `json:"invite_link" example:"https://chat.meow.com/ABC123"`
 }
 
-
 func NewGroupSuccessResponse(sessionID, action string, group *GroupInfo) *GroupResponse {
 	return &GroupResponse{
 		Success: true,
@@ -296,7 +291,6 @@ func NewGroupOperationResponse(sessionID, action, message string) *GroupResponse
 		},
 	}
 }
-
 
 func (r *CreateGroupRequest) Validate() error {
 	if r.Name == "" {

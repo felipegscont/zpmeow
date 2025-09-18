@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-
 type CheckContactRequest struct {
 	Phones []string `json:"phones" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
@@ -20,7 +19,6 @@ type GetAvatarRequest struct {
 type SetContactPresenceRequest struct {
 	State string `json:"state" binding:"required" example:"available"`
 }
-
 
 type ContactCheckResult struct {
 	Query        string `json:"query" example:"5511999999999"`
@@ -52,7 +50,6 @@ type AvatarInfo struct {
 	PictureID string    `json:"picture_id,omitempty" example:"pic_123"`
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T12:00:00Z"`
 }
-
 
 type ContactResponse struct {
 	Success bool                  `json:"success"`
@@ -90,7 +87,6 @@ type ContactsData struct {
 	Contacts  []ContactInfo `json:"contacts"`
 	Count     int           `json:"count" example:"10"`
 }
-
 
 func NewContactSuccessResponse(action string, checkResults []ContactCheckResult, contactInfos []ContactInfo) *ContactResponse {
 	return &ContactResponse{
@@ -148,7 +144,6 @@ func NewContactsResponse(contacts []ContactInfo) *ContactsResponse {
 		},
 	}
 }
-
 
 type CheckUserRequest = CheckContactRequest
 type GetUserInfoRequest = GetContactInfoRequest

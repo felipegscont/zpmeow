@@ -11,7 +11,6 @@ func NewConverter() *Converter {
 	return &Converter{}
 }
 
-
 func (c *Converter) SessionToInfo(session *session.Session) dto.SessionInfo {
 	return dto.SessionInfo{
 		ID:        session.ID.Value(),

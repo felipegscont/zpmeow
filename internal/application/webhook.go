@@ -8,27 +8,7 @@ import (
 	"meow/internal/domain/session"
 )
 
-type WebhookInfo struct {
-	URL    string   `json:"url"`
-	Events []string `json:"events"`
-	Active bool     `json:"active"`
-}
-
-type WebhookService interface {
-	SetWebhook(ctx context.Context, sessionID, webhookURL string, events []string) error
-
-	GetWebhook(ctx context.Context, sessionID string) (*WebhookInfo, error)
-
-	UpdateWebhook(ctx context.Context, sessionID, webhookURL string, events []string, active bool) error
-
-	DeleteWebhook(ctx context.Context, sessionID string) error
-
-	TestWebhook(ctx context.Context, sessionID, message string) error
-
-	ValidateWebhookURL(url string) error
-
-	ValidateEvents(events []string) error
-}
+// Interfaces movidas para interfaces.go para centralização
 
 type WebhookApp struct {
 	sessionRepo   session.Repository

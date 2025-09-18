@@ -27,18 +27,18 @@ func NewPrivacyHandler(sessionService *application.SessionApp, wmeowService wmeo
 	}
 }
 
-//	@Summary		Set multiple privacy settings
-//	@Description	Set multiple privacy settings in a single request
-//	@Tags			Privacy
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string								true	"Session ID"
-//	@Param			request		body		dto.SetAllPrivacySettingsRequest	true	"Privacy settings request"
-//	@Success		200			{object}	dto.PrivacySettingsResponse
-//	@Failure		400			{object}	dto.PrivacySettingsResponse
-//	@Failure		404			{object}	dto.PrivacySettingsResponse
-//	@Failure		500			{object}	dto.PrivacySettingsResponse
-//	@Router			/session/{sessionId}/privacy/set [put]
+// @Summary		Set multiple privacy settings
+// @Description	Set multiple privacy settings in a single request
+// @Tags			Privacy
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string								true	"Session ID"
+// @Param			request		body		dto.SetAllPrivacySettingsRequest	true	"Privacy settings request"
+// @Success		200			{object}	dto.PrivacySettingsResponse
+// @Failure		400			{object}	dto.PrivacySettingsResponse
+// @Failure		404			{object}	dto.PrivacySettingsResponse
+// @Failure		500			{object}	dto.PrivacySettingsResponse
+// @Router			/session/{sessionId}/privacy/set [put]
 func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -237,17 +237,17 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	})
 }
 
-//	@Summary		Get blocked contacts list
-//	@Description	Get the list of blocked contacts (blocklist)
-//	@Tags			Privacy
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string	true	"Session ID"
-//	@Success		200			{object}	dto.BlocklistResponse
-//	@Failure		400			{object}	dto.BlocklistResponse
-//	@Failure		404			{object}	dto.BlocklistResponse
-//	@Failure		500			{object}	dto.BlocklistResponse
-//	@Router			/session/{sessionId}/privacy/blocklist [get]
+// @Summary		Get blocked contacts list
+// @Description	Get the list of blocked contacts (blocklist)
+// @Tags			Privacy
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string	true	"Session ID"
+// @Success		200			{object}	dto.BlocklistResponse
+// @Failure		400			{object}	dto.BlocklistResponse
+// @Failure		404			{object}	dto.BlocklistResponse
+// @Failure		500			{object}	dto.BlocklistResponse
+// @Router			/session/{sessionId}/privacy/blocklist [get]
 func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	if err := validateSessionID(sessionID); err != nil {
@@ -293,18 +293,18 @@ func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 	})
 }
 
-//	@Summary		Update blocklist (block/unblock contact)
-//	@Description	Block or unblock a contact
-//	@Tags			Privacy
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string						true	"Session ID"
-//	@Param			request		body		dto.UpdateBlocklistRequest	true	"Update blocklist request"
-//	@Success		200			{object}	dto.BlocklistResponse
-//	@Failure		400			{object}	dto.BlocklistResponse
-//	@Failure		404			{object}	dto.BlocklistResponse
-//	@Failure		500			{object}	dto.BlocklistResponse
-//	@Router			/session/{sessionId}/privacy/blocklist [put]
+// @Summary		Update blocklist (block/unblock contact)
+// @Description	Block or unblock a contact
+// @Tags			Privacy
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string						true	"Session ID"
+// @Param			request		body		dto.UpdateBlocklistRequest	true	"Update blocklist request"
+// @Success		200			{object}	dto.BlocklistResponse
+// @Failure		400			{object}	dto.BlocklistResponse
+// @Failure		404			{object}	dto.BlocklistResponse
+// @Failure		500			{object}	dto.BlocklistResponse
+// @Router			/session/{sessionId}/privacy/blocklist [put]
 func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 	if err := validateSessionID(sessionID); err != nil {
@@ -375,7 +375,6 @@ func (h *PrivacyHandler) UpdateBlocklist(c *gin.Context) {
 	})
 }
 
-
 func validateJID(jidStr string) error {
 	if jidStr == "" {
 		return fmt.Errorf("JID cannot be empty")
@@ -441,18 +440,18 @@ func createNotFoundError(resource string) *dto.PrivacyErrorResponse {
 	}
 }
 
-//	@Summary		Find specific privacy settings
-//	@Description	Get specific privacy settings or all settings if none specified
-//	@Tags			Privacy
-//	@Accept			json
-//	@Produce		json
-//	@Param			sessionId	path		string							true	"Session ID"
-//	@Param			request		body		dto.FindPrivacySettingsRequest	false	"Find privacy settings request (optional)"
-//	@Success		200			{object}	dto.PrivacySettingsResponse
-//	@Failure		400			{object}	dto.PrivacySettingsResponse
-//	@Failure		404			{object}	dto.PrivacySettingsResponse
-//	@Failure		500			{object}	dto.PrivacySettingsResponse
-//	@Router			/session/{sessionId}/privacy/find [post]
+// @Summary		Find specific privacy settings
+// @Description	Get specific privacy settings or all settings if none specified
+// @Tags			Privacy
+// @Accept			json
+// @Produce		json
+// @Param			sessionId	path		string							true	"Session ID"
+// @Param			request		body		dto.FindPrivacySettingsRequest	false	"Find privacy settings request (optional)"
+// @Success		200			{object}	dto.PrivacySettingsResponse
+// @Failure		400			{object}	dto.PrivacySettingsResponse
+// @Failure		404			{object}	dto.PrivacySettingsResponse
+// @Failure		500			{object}	dto.PrivacySettingsResponse
+// @Router			/session/{sessionId}/privacy/find [post]
 func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 

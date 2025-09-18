@@ -63,7 +63,7 @@ func (s *ChatApp) GetChatHistory(ctx context.Context, sessionID, phone string, l
 	return history, nil
 }
 
-func (s *ChatApp) ListChats(ctx context.Context, sessionID string) ([]map[string]interface{}, error) {
+func (s *ChatApp) ListChats(ctx context.Context, sessionID string) ([]ChatInfo, error) {
 	if err := s.validator.ValidateSessionID(sessionID); err != nil {
 		return nil, fmt.Errorf("invalid session ID: %w", err)
 	}
@@ -77,14 +77,18 @@ func (s *ChatApp) ListChats(ctx context.Context, sessionID string) ([]map[string
 		return nil, fmt.Errorf("session is not connected")
 	}
 
-	chats := make([]map[string]interface{}, 0)
+	chats := make([]ChatInfo, 0)
 
-	chats = append(chats, map[string]interface{}{
-		"jid":          "5511999999999@s.meow.net",
-		"name":         "Contact Name",
-		"last_message": "Hello!",
-		"unread_count": 0,
-		"is_group":     false,
+	chats = append(chats, ChatInfo{
+		JID:           "5511999999999@s.meow.net",
+		Name:          "Contact Name",
+		LastMessage:   "Hello!",
+		UnreadCount:   0,
+		IsGroup:       false,
+		LastTimestamp: 0,
+		IsMuted:       false,
+		IsPinned:      false,
+		IsArchived:    false,
 	})
 
 	return chats, nil

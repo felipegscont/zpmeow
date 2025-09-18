@@ -240,7 +240,6 @@ func loadSecurityConfig() SecurityConfig {
 	}
 }
 
-
 func getEnvOrDefault(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value

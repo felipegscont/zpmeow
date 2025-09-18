@@ -20,7 +20,6 @@ var (
 
 	ErrCannotActivateWithoutURL    = errors.New("cannot activate webhook without URL")
 	ErrCannotActivateWithoutEvents = errors.New("cannot activate webhook without events")
-
 )
 
 type WebhookError struct {
@@ -79,7 +78,6 @@ func NewWebhookNotActiveError(sessionID string) *WebhookError {
 		ErrWebhookNotActive,
 	)
 }
-
 
 func IsWebhookError(err error) bool {
 	_, ok := err.(*WebhookError)

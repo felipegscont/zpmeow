@@ -86,7 +86,6 @@ type SecurityConfigProvider interface {
 	GetMaxRequestSize() int64
 }
 
-
 func (c *Config) GetDatabase() DatabaseConfigProvider {
 	return &c.Database
 }
@@ -119,7 +118,6 @@ func (c *Config) GetSecurity() SecurityConfigProvider {
 	return &c.Security
 }
 
-
 func (d *DatabaseConfig) GetHost() string                   { return d.Host }
 func (d *DatabaseConfig) GetPort() string                   { return d.Port }
 func (d *DatabaseConfig) GetUser() string                   { return d.User }
@@ -131,18 +129,15 @@ func (d *DatabaseConfig) GetMaxIdleConns() int              { return d.MaxIdleCo
 func (d *DatabaseConfig) GetConnMaxLifetime() time.Duration { return d.ConnMaxLifetime }
 func (d *DatabaseConfig) GetURL() string                    { return d.URL }
 
-
 func (s *ServerConfig) GetPort() string                { return s.Port }
 func (s *ServerConfig) GetMode() string                { return s.Mode }
 func (s *ServerConfig) GetReadTimeout() time.Duration  { return s.ReadTimeout }
 func (s *ServerConfig) GetWriteTimeout() time.Duration { return s.WriteTimeout }
 func (s *ServerConfig) GetIdleTimeout() time.Duration  { return s.IdleTimeout }
 
-
 func (a *AuthConfig) GetGlobalAPIKey() string           { return a.GlobalAPIKey }
 func (a *AuthConfig) GetSessionTimeout() time.Duration  { return a.SessionTimeout }
 func (a *AuthConfig) GetTokenExpiration() time.Duration { return a.TokenExpiration }
-
 
 func (l *LoggingConfig) GetLevel() string       { return l.Level }
 func (l *LoggingConfig) GetFormat() string      { return l.Format }
@@ -155,7 +150,6 @@ func (l *LoggingConfig) GetFileMaxAge() int     { return l.FileMaxAge }
 func (l *LoggingConfig) GetFileCompress() bool  { return l.FileCompress }
 func (l *LoggingConfig) GetFileFormat() string  { return l.FileFormat }
 
-
 func (c *CORSConfig) GetAllowAllOrigins() bool   { return c.AllowAllOrigins }
 func (c *CORSConfig) GetAllowOrigins() []string  { return c.AllowOrigins }
 func (c *CORSConfig) GetAllowMethods() []string  { return c.AllowMethods }
@@ -164,20 +158,17 @@ func (c *CORSConfig) GetExposeHeaders() []string { return c.ExposeHeaders }
 func (c *CORSConfig) GetAllowCredentials() bool  { return c.AllowCredentials }
 func (c *CORSConfig) GetMaxAge() int             { return c.MaxAge }
 
-
 func (w *WebhookConfig) GetTimeout() time.Duration        { return w.Timeout }
 func (w *WebhookConfig) GetMaxRetries() int               { return w.MaxRetries }
 func (w *WebhookConfig) GetInitialBackoff() time.Duration { return w.InitialBackoff }
 func (w *WebhookConfig) GetMaxBackoff() time.Duration     { return w.MaxBackoff }
 func (w *WebhookConfig) GetBackoffMultiplier() float64    { return w.BackoffMultiplier }
 
-
 func (w *MeowConfig) GetMaxRetries() int                  { return w.MaxRetries }
 func (w *MeowConfig) GetRetryInterval() time.Duration     { return w.RetryInterval }
 func (w *MeowConfig) GetConnectionTimeout() time.Duration { return w.ConnectionTimeout }
 func (w *MeowConfig) GetQRCodeTimeout() time.Duration     { return w.QRCodeTimeout }
 func (w *MeowConfig) GetReconnectDelay() time.Duration    { return w.ReconnectDelay }
-
 
 func (s *SecurityConfig) GetRateLimitEnabled() bool        { return s.RateLimitEnabled }
 func (s *SecurityConfig) GetRateLimitRPS() int             { return s.RateLimitRPS }
