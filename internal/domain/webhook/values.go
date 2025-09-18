@@ -4,14 +4,40 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-
-	"meow/internal/shared/events"
-	"meow/internal/shared/types"
 )
 
-type SessionID = types.SessionID
+// SessionID represents a session identifier for webhook
+type SessionID struct {
+	value string
+}
 
-var NewSessionID = types.NewSessionID
+// NewSessionID creates a new SessionID
+func NewSessionID(value string) (SessionID, error) {
+	if value == "" {
+		return SessionID{}, fmt.Errorf("session ID cannot be empty")
+	}
+
+	if len(value) < 1 || len(value) > 100 {
+		return SessionID{}, fmt.Errorf("session ID must be between 1 and 100 characters")
+	}
+
+	return SessionID{value: value}, nil
+}
+
+// Value returns the session ID value
+func (s SessionID) Value() string {
+	return s.value
+}
+
+// String returns the string representation
+func (s SessionID) String() string {
+	return s.value
+}
+
+// IsEmpty checks if the session ID is empty
+func (s SessionID) IsEmpty() bool {
+	return s.value == ""
+}
 
 type WebhookURL struct {
 	value string
@@ -83,14 +109,30 @@ func (w WebhookURL) Path() string {
 	return parsedURL.Path
 }
 
-type EventType = events.EventType
+// EventType represents the type of event that can trigger a webhook
+type EventType string
 
 const (
-	EventTypeMessage      = events.EventTypeMessage
-	EventTypeConnected    = events.EventTypeConnected
-	EventTypeDisconnected = events.EventTypeDisconnected
-	EventTypeAll          = events.EventTypeAll
+	EventTypeMessage      EventType = "message"
+	EventTypeConnected    EventType = "connected"
+	EventTypeDisconnected EventType = "disconnected"
+	EventTypeAll          EventType = "all"
 )
+
+// String returns the string representation of the event type
+func (e EventType) String() string {
+	return string(e)
+}
+
+// IsValid checks if the event type is valid
+func (e EventType) IsValid() bool {
+	switch e {
+	case EventTypeMessage, EventTypeConnected, EventTypeDisconnected, EventTypeAll:
+		return true
+	default:
+		return false
+	}
+}
 
 func ParseEventType(s string) (EventType, error) {
 	eventType := EventType(s)
@@ -130,9 +172,19 @@ func ParseEventTypes(events []string) ([]EventType, error) {
 }
 
 func GetAllEventTypes() []EventType {
-	return events.GetAllEventTypes()
+	return []EventType{
+		EventTypeMessage,
+		EventTypeConnected,
+		EventTypeDisconnected,
+		EventTypeAll,
+	}
 }
 
 func GetEventTypeNames() []string {
-	return events.GetEventTypeNames()
+	return []string{
+		string(EventTypeMessage),
+		string(EventTypeConnected),
+		string(EventTypeDisconnected),
+		string(EventTypeAll),
+	}
 }
