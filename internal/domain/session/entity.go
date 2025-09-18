@@ -1,9 +1,12 @@
 package session
 
 import (
-	"time"
+	"fmt"
+
+	"meow/internal/domain/common"
 )
 
+// Status represents the current status of a session
 type Status string
 
 const (
@@ -13,6 +16,7 @@ const (
 	StatusError        Status = "error"
 )
 
+// IsValid checks if the status is valid
 func (s Status) IsValid() bool {
 	switch s {
 	case StatusDisconnected, StatusConnecting, StatusConnected, StatusError:
@@ -22,18 +26,35 @@ func (s Status) IsValid() bool {
 	}
 }
 
-type Session struct {
-	ID        SessionID
-	Name      SessionName
-	WaJID     WaJID
-	Status    Status
-	QRCode    QRCode
-	ProxyURL  ProxyURL
-	ApiKey    ApiKey
-	CreatedAt time.Time
-	UpdatedAt time.Time
+// String returns the string representation of the status
+func (s Status) String() string {
+	return string(s)
 }
 
+// Session represents a WhatsApp session aggregate root
+type Session struct {
+	common.AggregateRoot
+
+	// Core attributes
+	id     SessionID
+	name   SessionName
+	status Status
+
+	// WhatsApp specific
+	waJID  WaJID
+	qrCode QRCode
+
+	// Configuration
+	proxyConfig     ProxyConfiguration
+	webhookEndpoint WebhookEndpoint
+	apiKey          ApiKey
+
+	// Timestamps
+	createdAt common.Timestamp
+	updatedAt common.Timestamp
+}
+
+// NewSession creates a new session aggregate
 func NewSession(id, name string) (*Session, error) {
 	sessionID, err := NewSessionID(id)
 	if err != nil {
@@ -45,38 +66,92 @@ func NewSession(id, name string) (*Session, error) {
 		return nil, err
 	}
 
+	// Create empty value objects for new session
 	waJID, _ := NewWaJID("")
 	qrCode, _ := NewQRCode("")
+	proxyConfig, _ := NewProxyConfiguration("")
+	webhookEndpoint, _ := NewWebhookEndpoint("")
 	apiKey, _ := NewApiKey("temp-key") // Temporary key, will be replaced by application layer
 
-	now := time.Now()
-	return &Session{
-		ID:        sessionID,
-		Name:      sessionName,
-		WaJID:     waJID,
-		Status:    StatusDisconnected,
-		QRCode:    qrCode,
-		ProxyURL:  ProxyURL{}, // Empty proxy URL
-		ApiKey:    apiKey,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}, nil
+	now := common.Now()
+
+	session := &Session{
+		AggregateRoot:   common.NewAggregateRoot(sessionID.ID),
+		id:              sessionID,
+		name:            sessionName,
+		status:          StatusDisconnected,
+		waJID:           waJID,
+		qrCode:          qrCode,
+		proxyConfig:     proxyConfig,
+		webhookEndpoint: webhookEndpoint,
+		apiKey:          apiKey,
+		createdAt:       now,
+		updatedAt:       now,
+	}
+
+	// Publish domain event
+	event := NewSessionCreatedEvent(sessionID.Value(), sessionName.Value())
+	session.AddEvent(event)
+
+	return session, nil
 }
 
+// Getters for aggregate attributes
+func (s *Session) SessionID() SessionID {
+	return s.id
+}
+
+func (s *Session) Name() SessionName {
+	return s.name
+}
+
+func (s *Session) Status() Status {
+	return s.status
+}
+
+func (s *Session) WaJID() WaJID {
+	return s.waJID
+}
+
+func (s *Session) QRCode() QRCode {
+	return s.qrCode
+}
+
+func (s *Session) ProxyConfiguration() ProxyConfiguration {
+	return s.proxyConfig
+}
+
+func (s *Session) WebhookEndpoint() WebhookEndpoint {
+	return s.webhookEndpoint
+}
+
+func (s *Session) ApiKey() ApiKey {
+	return s.apiKey
+}
+
+func (s *Session) CreatedAt() common.Timestamp {
+	return s.createdAt
+}
+
+func (s *Session) UpdatedAt() common.Timestamp {
+	return s.updatedAt
+}
+
+// Business logic methods
 func (s *Session) IsConnected() bool {
-	return s.Status == StatusConnected
+	return s.status == StatusConnected
 }
 
 func (s *Session) IsDisconnected() bool {
-	return s.Status == StatusDisconnected
+	return s.status == StatusDisconnected
 }
 
 func (s *Session) IsConnecting() bool {
-	return s.Status == StatusConnecting
+	return s.status == StatusConnecting
 }
 
 func (s *Session) HasError() bool {
-	return s.Status == StatusError
+	return s.status == StatusError
 }
 
 func (s *Session) CanConnect() bool {
@@ -84,147 +159,248 @@ func (s *Session) CanConnect() bool {
 }
 
 func (s *Session) HasQRCode() bool {
-	return !s.QRCode.IsEmpty()
+	return !s.qrCode.IsEmpty()
 }
 
 func (s *Session) HasProxy() bool {
-	return !s.ProxyURL.IsEmpty()
+	return !s.proxyConfig.IsEmpty()
 }
 
 func (s *Session) IsAuthenticated() bool {
-	return !s.WaJID.IsEmpty()
+	return !s.waJID.IsEmpty()
 }
 
-func (s *Session) SetStatus(status Status) {
-	if !status.IsValid() {
-		return // Ignore invalid status changes
+// Connect attempts to connect the session
+func (s *Session) Connect() error {
+	if !s.CanConnect() {
+		return fmt.Errorf("session cannot connect from current status: %s", s.status)
 	}
-	s.Status = status
+
+	oldStatus := s.status
+	s.status = StatusConnecting
 	s.updateTimestamp()
+
+	// Publish event if status actually changed
+	if oldStatus != StatusConnecting {
+		event := NewSessionConnectedEvent(s.id.Value(), s.waJID.Value())
+		s.AddEvent(event)
+	}
+
+	return nil
 }
 
+// Disconnect disconnects the session
+func (s *Session) Disconnect(reason string) error {
+	if s.IsDisconnected() {
+		return nil // Already disconnected
+	}
+
+	s.status = StatusDisconnected
+	s.updateTimestamp()
+
+	// Clear QR code when disconnecting
+	s.qrCode, _ = NewQRCode("")
+
+	// Publish event
+	event := NewSessionDisconnectedEvent(s.id.Value(), reason)
+	s.AddEvent(event)
+
+	return nil
+}
+
+// SetConnected marks the session as connected
+func (s *Session) SetConnected() error {
+	if !s.IsConnecting() {
+		return fmt.Errorf("session must be connecting to be marked as connected")
+	}
+
+	s.status = StatusConnected
+	s.updateTimestamp()
+
+	// Publish event
+	event := NewSessionConnectedEvent(s.id.Value(), s.waJID.Value())
+	s.AddEvent(event)
+
+	return nil
+}
+
+// SetError sets the session to error status
+func (s *Session) SetError(errorMessage string) {
+	s.status = StatusError
+	s.updateTimestamp()
+
+	// Publish event
+	event := NewSessionErrorEvent(s.id.Value(), errorMessage, "connection_error")
+	s.AddEvent(event)
+}
+
+// SetQRCode sets the QR code for the session
 func (s *Session) SetQRCode(qrCode string) error {
 	qr, err := NewQRCode(qrCode)
 	if err != nil {
 		return err
 	}
-	s.QRCode = qr
+
+	s.qrCode = qr
 	s.updateTimestamp()
+
+	// Publish configuration change event
+	changes := map[string]interface{}{
+		"qr_code_updated": true,
+	}
+	event := NewSessionConfigurationChangedEvent(s.id.Value(), changes)
+	s.AddEvent(event)
+
 	return nil
 }
 
-func (s *Session) SetWaJID(jid string) error {
+// Authenticate sets the WhatsApp JID and marks session as authenticated
+func (s *Session) Authenticate(jid string) error {
 	waJID, err := NewWaJID(jid)
 	if err != nil {
 		return err
 	}
-	s.WaJID = waJID
+
+	s.waJID = waJID
 	s.updateTimestamp()
+
+	// Clear QR code after authentication
+	s.qrCode, _ = NewQRCode("")
+
+	// Publish authentication event
+	event := NewSessionAuthenticatedEvent(s.id.Value(), jid)
+	s.AddEvent(event)
+
 	return nil
 }
 
-func (s *Session) SetProxyURL(proxyURL string) error {
-	proxy, err := NewProxyURL(proxyURL)
+// SetProxyConfiguration configures the proxy
+func (s *Session) SetProxyConfiguration(proxyConfig string) error {
+	proxy, err := NewProxyConfiguration(proxyConfig)
 	if err != nil {
 		return err
 	}
-	s.ProxyURL = proxy
+
+	s.proxyConfig = proxy
 	s.updateTimestamp()
+
+	// Publish configuration change event
+	changes := map[string]interface{}{
+		"proxy_configuration": proxyConfig,
+	}
+	event := NewSessionConfigurationChangedEvent(s.id.Value(), changes)
+	s.AddEvent(event)
+
 	return nil
 }
 
-func (s *Session) ClearQRCode() {
-	s.QRCode = QRCode{}
-	s.updateTimestamp()
-}
-
-func (s *Session) ClearProxy() {
-	s.ProxyURL = ProxyURL{} // Empty proxy URL
-	s.updateTimestamp()
-}
-
-func (s *Session) updateTimestamp() {
-	s.UpdatedAt = time.Now()
-}
-
-func (s *Session) Validate() error {
-	if err := s.validateID(); err != nil {
-		return err
-	}
-	if err := s.validateName(); err != nil {
-		return err
-	}
-	if err := s.validateStatus(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Session) validateID() error {
-	if s.ID.IsEmpty() {
-		return ErrInvalidSessionID
-	}
-	return nil
-}
-
-func (s *Session) validateName() error {
-	if s.Name.IsEmpty() {
-		return ErrInvalidSessionName
-	}
-	return nil
-}
-
-func (s *Session) validateStatus() error {
-	if !s.Status.IsValid() {
-		return ErrInvalidSessionStatus
-	}
-	return nil
-}
-
-func (s *Session) HasApiKey() bool {
-	return !s.ApiKey.IsEmpty()
-}
-
-func (s *Session) RegenerateApiKey(newApiKey string) error {
-	apiKey, err := NewApiKey(newApiKey)
+// SetWebhookEndpoint configures the webhook endpoint
+func (s *Session) SetWebhookEndpoint(webhookEndpoint string) error {
+	webhook, err := NewWebhookEndpoint(webhookEndpoint)
 	if err != nil {
 		return err
 	}
-	s.ApiKey = apiKey
+
+	s.webhookEndpoint = webhook
 	s.updateTimestamp()
+
+	// Publish configuration change event
+	changes := map[string]interface{}{
+		"webhook_endpoint": webhookEndpoint,
+	}
+	event := NewSessionConfigurationChangedEvent(s.id.Value(), changes)
+	s.AddEvent(event)
+
 	return nil
 }
 
+// SetApiKey sets the API key for the session
 func (s *Session) SetApiKey(apiKey string) error {
 	key, err := NewApiKey(apiKey)
 	if err != nil {
 		return err
 	}
-	s.ApiKey = key
+
+	s.apiKey = key
 	s.updateTimestamp()
+
 	return nil
 }
 
+// ClearQRCode clears the QR code
+func (s *Session) ClearQRCode() {
+	s.qrCode, _ = NewQRCode("")
+	s.updateTimestamp()
+}
+
+// ClearProxy removes the proxy configuration
+func (s *Session) ClearProxy() {
+	s.proxyConfig, _ = NewProxyConfiguration("")
+	s.updateTimestamp()
+
+	// Publish configuration change event
+	changes := map[string]interface{}{
+		"proxy_cleared": true,
+	}
+	event := NewSessionConfigurationChangedEvent(s.id.Value(), changes)
+	s.AddEvent(event)
+}
+
+// updateTimestamp updates the last modified timestamp
+func (s *Session) updateTimestamp() {
+	s.updatedAt = common.Now()
+}
+
+// Validate validates the session aggregate
+func (s *Session) Validate() error {
+	if s.id.IsEmpty() {
+		return ErrInvalidSessionID
+	}
+
+	if s.name.IsEmpty() {
+		return ErrInvalidSessionName
+	}
+
+	if !s.status.IsValid() {
+		return ErrInvalidSessionStatus
+	}
+
+	return nil
+}
+
+// Delete marks the session for deletion
+func (s *Session) Delete() {
+	// Publish deletion event
+	event := NewSessionDeletedEvent(s.id.Value(), s.name.Value())
+	s.AddEvent(event)
+}
+
+// HasApiKey checks if session has an API key
+func (s *Session) HasApiKey() bool {
+	return !s.apiKey.IsEmpty()
+}
+
+// GetWaJIDString returns the WhatsApp JID as string
 func (s *Session) GetWaJIDString() string {
-	return s.WaJID.Value()
+	return s.waJID.Value()
 }
 
+// GetQRCodeString returns the QR code as string
 func (s *Session) GetQRCodeString() string {
-	return s.QRCode.Value()
+	return s.qrCode.Value()
 }
 
+// GetApiKeyString returns the API key as string
 func (s *Session) GetApiKeyString() string {
-	return s.ApiKey.Value()
+	return s.apiKey.Value()
 }
 
-func (s *Session) SetWaJIDString(jid string) error {
-	return s.SetWaJID(jid)
+// HasWebhook checks if session has webhook configured
+func (s *Session) HasWebhook() bool {
+	return !s.webhookEndpoint.IsEmpty()
 }
 
-func (s *Session) SetQRCodeString(qr string) error {
-	return s.SetQRCode(qr)
-}
-
-func (s *Session) SetApiKeyString(key string) error {
-	return s.SetApiKey(key)
+// GetWebhookEndpointString returns the webhook endpoint as string
+func (s *Session) GetWebhookEndpointString() string {
+	return s.webhookEndpoint.Value()
 }

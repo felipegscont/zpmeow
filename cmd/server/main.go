@@ -24,20 +24,24 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	_ "meow/docs" // Import for swagger docs
 	"meow/internal/application"
 	"meow/internal/config"
 	"meow/internal/domain/session"
-	"meow/internal/infrastructure/database"
-	"meow/internal/infrastructure/database/repository"
-	"meow/internal/infrastructure/logging"
-	"meow/internal/infrastructure/middleware"
-	"meow/internal/infrastructure/webhooks"
-	"meow/internal/infrastructure/wmeow"
-	"meow/internal/interfaces/http/handlers"
-	"meow/internal/interfaces/http/routes"
-	"meow/internal/shared/validation"
+	"meow/internal/infra/database"
+	"meow/internal/infra/database/repository"
+	"meow/internal/infra/logging"
+	"meow/internal/infra/middleware"
+	"meow/internal/infra/webhooks"
+	"meow/internal/infra/wmeow"
+	"meow/internal/interfaces/handlers"
+	"meow/internal/interfaces/routes"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -66,37 +70,28 @@ func main() {
 	}
 
 	dbLog := logging.GetWALogger("Database")
-	container, err := sqlstore.New(context.Background(), "postgres", cfg.GetDatabaseURL(), dbLog)
+	_, err = sqlstore.New(context.Background(), "postgres", cfg.GetDatabaseURL(), dbLog)
 	if err != nil {
 		log.Fatalf("Failed to create whatsmeow container: %v", err)
 	}
-
-	waLogger := logging.GetWALogger("MeowService")
 
 	// Create session repository
 	sessionRepo := repository.NewPostgresRepo(db)
 
 	// Create webhook service
-	webhookService := webhooks.NewService()
+	_ = webhooks.NewService()
 
 	// Create WhatsApp service (infrastructure implementation)
-	wmeowService := wmeow.NewService(container, waLogger, sessionRepo, cfg.GetMeow(), webhookService)
+	wmeowService := wmeow.NewService()
 
-	// Create session service with proper dependencies
-	domainSessionService := session.NewService()
-	validator := validation.NewValidator()
-	appSessionService := application.NewSessionApp(sessionRepo, domainSessionService, validator)
+	// Create domain service
+	domainService := session.NewService()
 
-	// Create webhook application service
-	webhookAppService := application.NewWebhookApp(sessionRepo, webhookService)
+	// Create application services with proper dependencies
+	appSessionService := application.NewSessionApp(sessionRepo, domainService)
+	webhookAppService := application.NewWebhookApp(sessionRepo)
 
-	// Connect active sessions on startup
-	log.Info("Connecting active sessions on startup...")
-	if err := wmeowService.ConnectOnStartup(context.Background()); err != nil {
-		log.Errorf("Failed to connect active sessions on startup: %v", err)
-	} else {
-		log.Info("Active sessions connected successfully")
-	}
+	log.Info("WhatsApp service initialized")
 
 	log.Info("Session service initialized")
 
@@ -105,7 +100,7 @@ func main() {
 
 	// Use application service in handlers
 	sessionHandler := handlers.NewSessionHandler(appSessionService, wmeowService)
-	healthHandler := handlers.NewHealthHandler()
+	healthHandler := handlers.NewHealthHandler(db)
 	messageHandler := handlers.NewMessageHandler(appSessionService, wmeowService)
 	chatHandler := handlers.NewChatHandler(appSessionService, wmeowService)
 	groupHandler := handlers.NewGroupHandler(appSessionService, wmeowService)
@@ -120,8 +115,22 @@ func main() {
 	// Create Gin router with custom middleware (no default logging)
 	ginRouter := gin.New()
 
-	// Add recovery middleware
-	ginRouter.Use(gin.Recovery())
+	// Add security and performance middlewares
+	ginRouter.Use(middleware.SecurityHeadersMiddleware())
+	ginRouter.Use(middleware.ContentSecurityMiddleware())
+	ginRouter.Use(middleware.RequestIDMiddleware())
+	ginRouter.Use(middleware.RecoveryMiddleware())
+	ginRouter.Use(middleware.TimeoutMiddleware(25 * time.Second)) // Slightly less than server timeout
+	ginRouter.Use(middleware.RateLimitMiddleware(100))            // 100 requests per minute per IP
+	ginRouter.Use(middleware.RequestValidationMiddleware())
+	ginRouter.Use(middleware.APIVersionMiddleware())
+	ginRouter.Use(middleware.MetricsMiddleware())
+	ginRouter.Use(middleware.PerformanceMiddleware())
+	ginRouter.Use(middleware.RequestSizeMiddleware(10 * 1024 * 1024)) // 10MB limit
+	ginRouter.Use(middleware.CacheControlMiddleware())
+	ginRouter.Use(middleware.CircuitBreakerMiddleware(10, 5*time.Minute)) // 10 errors in 5 minutes
+	ginRouter.Use(middleware.SlowRequestMiddleware(2 * time.Second))      // Log requests > 2s
+	ginRouter.Use(middleware.AuditMiddleware())                           // Audit important actions
 
 	// Add custom logging middleware only for errors and important requests
 	ginRouter.Use(gin.LoggerWithConfig(gin.LoggerConfig{
@@ -145,11 +154,54 @@ func main() {
 	// Add CORS middleware with configuration
 	ginRouter.Use(middleware.CORS(cfg.GetCORS()))
 
-	routes.SetupRoutes(ginRouter, sessionHandler, healthHandler, messageHandler, chatHandler, groupHandler, communityHandler, webhookHandler, contactHandler, newsletterHandler, privacyHandler, authMiddleware)
-
-	addr := fmt.Sprintf(":%s", cfg.GetServer().GetPort())
-	log.Infof("Server listening on %s", addr)
-	if err := ginRouter.Run(addr); err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+	// Setup routes with handler dependencies
+	handlerDeps := &routes.HandlerDependencies{
+		HealthHandler:     healthHandler,
+		SessionHandler:    sessionHandler,
+		ContactHandler:    contactHandler,
+		ChatHandler:       chatHandler,
+		MessageHandler:    messageHandler,
+		GroupHandler:      groupHandler,
+		CommunityHandler:  communityHandler,
+		NewsletterHandler: newsletterHandler,
+		WebhookHandler:    webhookHandler,
+		PrivacyHandler:    privacyHandler,
 	}
+
+	routes.SetupRoutes(ginRouter, handlerDeps, authMiddleware)
+
+	// Create HTTP server with timeouts
+	addr := fmt.Sprintf(":%s", cfg.GetServer().GetPort())
+	srv := &http.Server{
+		Addr:         addr,
+		Handler:      ginRouter,
+		ReadTimeout:  30 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	// Start server in a goroutine
+	go func() {
+		log.Infof("Server listening on %s", addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start server: %v", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Info("Shutting down server...")
+
+	// Create a context with timeout for shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Shutdown server gracefully
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Errorf("Server forced to shutdown: %v", err)
+	}
+
+	log.Info("Server exited")
 }

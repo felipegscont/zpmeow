@@ -39,6 +39,7 @@ type ContactInfo struct {
 	Notify       string `json:"notify,omitempty" example:"João"`
 	PushName     string `json:"push_name,omitempty" example:"João"`
 	BusinessName string `json:"business_name,omitempty" example:"Empresa João"`
+	Phone        string `json:"phone,omitempty" example:"5511999999999"`
 	IsBlocked    bool   `json:"is_blocked" example:"false"`
 	IsMuted      bool   `json:"is_muted" example:"false"`
 }
@@ -145,23 +146,5 @@ func NewContactsResponse(contacts []ContactInfo) *ContactsResponse {
 	}
 }
 
-type CheckUserRequest = CheckContactRequest
-type GetUserInfoRequest = GetContactInfoRequest
-type SetUserPresenceRequest = SetContactPresenceRequest
-type UserCheckResult = ContactCheckResult
-type UserInfo = ContactInfo
-type UserResponse = ContactResponse
-type UserData = ContactData
-type UserErrorResponse = ContactErrorResponse
-
-func NewUserSuccessResponse(action string, checkResults []ContactCheckResult, contactInfos []ContactInfo) *ContactResponse {
-	return NewContactSuccessResponse(action, checkResults, contactInfos)
-}
-
-func NewUserErrorResponse(code int, errorCode, message, details string) *ContactResponse {
-	return NewContactErrorResponse(code, errorCode, message, details)
-}
-
-func NewUserAvatarResponse(avatar *AvatarInfo) *ContactResponse {
-	return NewContactAvatarResponse(avatar)
-}
+// Note: User-related operations should use Contact types directly
+// to maintain consistency and avoid confusion with type aliases

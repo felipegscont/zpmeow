@@ -1,9 +1,11 @@
 package dto
 
 import (
+	"fmt"
 	"time"
 )
 
+// Group request types
 type CreateGroupRequest struct {
 	Name         string   `json:"name" binding:"required" example:"My Group"`
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
@@ -14,14 +16,11 @@ type GetGroupInfoRequest struct {
 }
 
 type JoinGroupRequest struct {
-	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.meow.com/ABC123"`
+	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 }
 
 type JoinGroupWithInviteRequest struct {
-	GroupJID   string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.meow.net"`
-	Code       string `json:"code" binding:"required" example:"ABC123DEF456"`
-	Expiration int64  `json:"expiration" binding:"required" example:"1640995200"`
+	InviteCode string `json:"invite_code" binding:"required" example:"ABC123DEF456"`
 }
 
 type LeaveGroupRequest struct {
@@ -30,23 +29,20 @@ type LeaveGroupRequest struct {
 
 type GetInviteLinkRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Reset    bool   `json:"reset,omitempty" example:"false"`
+	Reset    bool   `json:"reset" example:"false"`
 }
 
 type GetInviteInfoRequest struct {
-	InviteLink string `json:"invite_link" binding:"required" example:"https://chat.meow.com/ABC123"`
+	InviteCode string `json:"invite_code" binding:"required" example:"ABC123DEF456"`
 }
 
 type GroupInviteInfoReq struct {
-	GroupJID   string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Inviter    string `json:"inviter" binding:"required" example:"5511999999999@s.meow.net"`
-	Code       string `json:"code" binding:"required" example:"ABC123DEF456"`
-	Expiration int64  `json:"expiration" binding:"required" example:"1640995200"`
+	InviteCode string `json:"invite_code" binding:"required" example:"ABC123DEF456"`
 }
 
 type UpdateParticipantsRequest struct {
 	GroupJID     string   `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Action       string   `json:"action" binding:"required" example:"add"`
+	Action       string   `json:"action" binding:"required" example:"add"` // "add" or "remove"
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
@@ -62,7 +58,7 @@ type SetGroupTopicRequest struct {
 
 type SetGroupPhotoRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Photo    string `json:"photo" binding:"required" example:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..."`
+	Photo    string `json:"photo" binding:"required" example:"base64_encoded_image"`
 }
 
 type RemoveGroupPhotoRequest struct {
@@ -70,8 +66,8 @@ type RemoveGroupPhotoRequest struct {
 }
 
 type SetGroupAnnounceRequest struct {
-	GroupJID     string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	AnnounceOnly bool   `json:"announce_only" example:"true"`
+	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
+	Announce bool   `json:"announce" example:"true"`
 }
 
 type SetGroupLockedRequest struct {
@@ -82,43 +78,241 @@ type SetGroupLockedRequest struct {
 type SetGroupEphemeralRequest struct {
 	GroupJID  string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
 	Ephemeral bool   `json:"ephemeral" example:"true"`
-	Duration  int    `json:"duration,omitempty" example:"86400"`
 }
 
-type GroupJoinApprovalReq struct {
-	GroupJID        string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	RequireApproval bool   `json:"require_approval" binding:"required" example:"true"`
+type SetGroupJoinApprovalRequest struct {
+	GroupJID     string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
+	JoinApproval bool   `json:"join_approval" example:"true"`
 }
 
-type GroupMemberModeReq struct {
+type SetGroupMemberAddModeRequest struct {
+	GroupJID      string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
+	MemberAddMode string `json:"member_add_mode" binding:"required" example:"admin_only"`
+}
+
+type GetGroupRequestParticipantsRequest struct {
 	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Mode     string `json:"mode" binding:"required" example:"admin" enum:"all,admin"`
 }
 
-type GetGroupRequestsReq struct {
-	GroupJID string `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-}
-
-type UpdateGroupRequestsReq struct {
+type UpdateGroupRequestParticipantsRequest struct {
 	GroupJID     string   `json:"group_jid" binding:"required" example:"120363025246125486@g.us"`
-	Action       string   `json:"action" binding:"required" example:"approve"`
+	Action       string   `json:"action" binding:"required" example:"approve"` // "approve" or "reject"
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-type GroupInfo struct {
-	JID          string   `json:"jid" example:"120363025246125486@g.us"`
-	Name         string   `json:"name" example:"My Group"`
-	Topic        string   `json:"topic,omitempty" example:"Group topic description"`
-	Participants []string `json:"participants" example:"[\"5511999999999@s.meow.net\", \"5511888888888@s.meow.net\"]"`
-	Admins       []string `json:"admins" example:"[\"5511999999999@s.meow.net\"]"`
-	Owner        string   `json:"owner" example:"5511999999999@s.meow.net"`
-	CreatedAt    int64    `json:"created_at" example:"1640995200"`
-	Size         int      `json:"size" example:"2"`
-	Announce     bool     `json:"announce" example:"false"`
-	Locked       bool     `json:"locked" example:"false"`
-	Ephemeral    bool     `json:"ephemeral" example:"false"`
+// Aliases for backward compatibility
+type GroupJoinApprovalReq = SetGroupJoinApprovalRequest
+type GroupMemberModeReq = SetGroupMemberAddModeRequest
+type GetGroupRequestsReq = GetGroupRequestParticipantsRequest
+type UpdateGroupRequestsReq = UpdateGroupRequestParticipantsRequest
+
+// Validation methods
+func (r *CreateGroupRequest) Validate() error {
+	if r.Name == "" {
+		return fmt.Errorf("group name is required")
+	}
+	if len(r.Participants) == 0 {
+		return fmt.Errorf("at least one participant is required")
+	}
+	return nil
 }
 
+func (r *GetGroupInfoRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *JoinGroupRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *JoinGroupWithInviteRequest) Validate() error {
+	if r.InviteCode == "" {
+		return fmt.Errorf("invite code is required")
+	}
+	return nil
+}
+
+func (r *LeaveGroupRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *GetInviteLinkRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *GetInviteInfoRequest) Validate() error {
+	if r.InviteCode == "" {
+		return fmt.Errorf("invite code is required")
+	}
+	return nil
+}
+
+func (r *GroupInviteInfoReq) Validate() error {
+	if r.InviteCode == "" {
+		return fmt.Errorf("invite code is required")
+	}
+	return nil
+}
+
+func (r *UpdateParticipantsRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	if r.Action == "" {
+		return fmt.Errorf("action is required")
+	}
+	if r.Action != "add" && r.Action != "remove" {
+		return fmt.Errorf("action must be 'add' or 'remove'")
+	}
+	if len(r.Participants) == 0 {
+		return fmt.Errorf("at least one participant is required")
+	}
+	return nil
+}
+
+func (r *SetGroupNameRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	if r.Name == "" {
+		return fmt.Errorf("group name is required")
+	}
+	return nil
+}
+
+func (r *SetGroupTopicRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *SetGroupPhotoRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	if r.Photo == "" {
+		return fmt.Errorf("photo is required")
+	}
+	return nil
+}
+
+func (r *RemoveGroupPhotoRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *SetGroupAnnounceRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *SetGroupLockedRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *SetGroupEphemeralRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *SetGroupJoinApprovalRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *SetGroupMemberAddModeRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	if r.MemberAddMode == "" {
+		return fmt.Errorf("member add mode is required")
+	}
+	return nil
+}
+
+func (r *GetGroupRequestParticipantsRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	return nil
+}
+
+func (r *UpdateGroupRequestParticipantsRequest) Validate() error {
+	if r.GroupJID == "" {
+		return fmt.Errorf("group JID is required")
+	}
+	if r.Action == "" {
+		return fmt.Errorf("action is required")
+	}
+	if r.Action != "approve" && r.Action != "reject" {
+		return fmt.Errorf("action must be 'approve' or 'reject'")
+	}
+	if len(r.Participants) == 0 {
+		return fmt.Errorf("at least one participant is required")
+	}
+	return nil
+}
+
+// Group-related types used across the application
+
+type GroupInfo struct {
+	JID              string   `json:"jid"`
+	Name             string   `json:"name"`
+	Description      string   `json:"description"`
+	Topic            string   `json:"topic"`
+	Participants     []string `json:"participants"`
+	Admins           []string `json:"admins"`
+	Owner            string   `json:"owner"`
+	CreatedAt        int64    `json:"createdAt"`
+	Size             int      `json:"size"`
+	IsAnnounce       bool     `json:"isAnnounce"`
+	IsLocked         bool     `json:"isLocked"`
+	IsEphemeral      bool     `json:"isEphemeral"`
+	Announce         bool     `json:"announce"`
+	Locked           bool     `json:"locked"`
+	Ephemeral        bool     `json:"ephemeral"`
+	ParticipantCount int      `json:"participantCount"`
+}
+
+type GroupList struct {
+	Groups []GroupInfo `json:"groups"`
+	Total  int         `json:"total"`
+}
+
+type InviteInfo struct {
+	GroupJID   string `json:"groupJid"`
+	GroupName  string `json:"groupName"`
+	InviteCode string `json:"inviteCode"`
+	Inviter    string `json:"inviter"`
+	ExpiresAt  int64  `json:"expiresAt"`
+	IsValid    bool   `json:"isValid"`
+}
+
+// Group response structures
 type GroupResponse struct {
 	Success bool                `json:"success"`
 	Code    int                 `json:"code"`
@@ -127,14 +321,14 @@ type GroupResponse struct {
 }
 
 type GroupData struct {
-	SessionID  string      `json:"session_id,omitempty" example:"default"`
+	SessionID  string      `json:"session_id" example:"default"`
 	Action     string      `json:"action" example:"create"`
 	Status     string      `json:"status" example:"success"`
 	Timestamp  time.Time   `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 	Group      *GroupInfo  `json:"group,omitempty"`
 	Groups     []GroupInfo `json:"groups,omitempty"`
-	InviteLink string      `json:"invite_link,omitempty" example:"https://chat.meow.com/ABC123"`
-	Message    string      `json:"message,omitempty" example:"Operation completed successfully"`
+	InviteLink string      `json:"invite_link,omitempty"`
+	Message    string      `json:"message,omitempty"`
 }
 
 type GroupErrorResponse struct {
@@ -143,83 +337,7 @@ type GroupErrorResponse struct {
 	Details string `json:"details,omitempty" example:"Group JID must end with @g.us"`
 }
 
-type CreateGroupResponse struct {
-	Success bool                    `json:"success" example:"true"`
-	Code    int                     `json:"code" example:"201"`
-	Data    CreateGroupResponseData `json:"data"`
-	Error   *GroupErrorResponse     `json:"error,omitempty"`
-}
-
-type CreateGroupResponseData struct {
-	SessionID string     `json:"session_id" example:"default"`
-	Action    string     `json:"action" example:"create"`
-	Status    string     `json:"status" example:"success"`
-	Timestamp time.Time  `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Group     *GroupInfo `json:"group"`
-}
-
-type ListGroupsResponse struct {
-	Success bool                   `json:"success" example:"true"`
-	Code    int                    `json:"code" example:"200"`
-	Data    ListGroupsResponseData `json:"data"`
-	Error   *GroupErrorResponse    `json:"error,omitempty"`
-}
-
-type ListGroupsResponseData struct {
-	SessionID string      `json:"session_id" example:"default"`
-	Action    string      `json:"action" example:"list"`
-	Status    string      `json:"status" example:"success"`
-	Timestamp time.Time   `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Groups    []GroupInfo `json:"groups"`
-	Total     int         `json:"total" example:"5"`
-}
-
-type GetGroupInfoResponse struct {
-	Success bool                     `json:"success" example:"true"`
-	Code    int                      `json:"code" example:"200"`
-	Data    GetGroupInfoResponseData `json:"data"`
-	Error   *GroupErrorResponse      `json:"error,omitempty"`
-}
-
-type GetGroupInfoResponseData struct {
-	SessionID string     `json:"session_id" example:"default"`
-	Action    string     `json:"action" example:"info"`
-	Status    string     `json:"status" example:"success"`
-	Timestamp time.Time  `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Group     *GroupInfo `json:"group"`
-}
-
-type JoinGroupResponse struct {
-	Success bool                  `json:"success" example:"true"`
-	Code    int                   `json:"code" example:"200"`
-	Data    JoinGroupResponseData `json:"data"`
-	Error   *GroupErrorResponse   `json:"error,omitempty"`
-}
-
-type JoinGroupResponseData struct {
-	SessionID string     `json:"session_id" example:"default"`
-	Action    string     `json:"action" example:"join"`
-	Status    string     `json:"status" example:"success"`
-	Timestamp time.Time  `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Group     *GroupInfo `json:"group"`
-}
-
-type GetInviteLinkResponse struct {
-	Success bool                      `json:"success" example:"true"`
-	Code    int                       `json:"code" example:"200"`
-	Data    GetInviteLinkResponseData `json:"data"`
-	Error   *GroupErrorResponse       `json:"error,omitempty"`
-}
-
-type GetInviteLinkResponseData struct {
-	SessionID  string    `json:"session_id" example:"default"`
-	Action     string    `json:"action" example:"invite_link"`
-	Status     string    `json:"status" example:"success"`
-	Timestamp  time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	GroupJID   string    `json:"group_jid" example:"120363025246125486@g.us"`
-	InviteLink string    `json:"invite_link" example:"https://chat.meow.com/ABC123"`
-}
-
+// Helper functions
 func NewGroupSuccessResponse(sessionID, action string, group *GroupInfo) *GroupResponse {
 	return &GroupResponse{
 		Success: true,
@@ -234,28 +352,10 @@ func NewGroupSuccessResponse(sessionID, action string, group *GroupInfo) *GroupR
 	}
 }
 
-func NewGroupListResponse(sessionID string, groups []GroupInfo) *GroupResponse {
-	return &GroupResponse{
-		Success: true,
-		Code:    200,
-		Data: GroupData{
-			SessionID: sessionID,
-			Action:    "list",
-			Status:    "success",
-			Timestamp: time.Now(),
-			Groups:    groups,
-		},
-	}
-}
-
 func NewGroupErrorResponse(code int, errorCode, message, details string) *GroupResponse {
 	return &GroupResponse{
 		Success: false,
 		Code:    code,
-		Data: GroupData{
-			Status:    "error",
-			Timestamp: time.Now(),
-		},
 		Error: &GroupErrorResponse{
 			Code:    errorCode,
 			Message: message,
@@ -264,16 +364,16 @@ func NewGroupErrorResponse(code int, errorCode, message, details string) *GroupR
 	}
 }
 
-func NewInviteLinkResponse(sessionID, groupJID, inviteLink string) *GroupResponse {
+func NewGroupListResponse(sessionID string, groups []GroupInfo) *GroupResponse {
 	return &GroupResponse{
 		Success: true,
 		Code:    200,
 		Data: GroupData{
-			SessionID:  sessionID,
-			Action:     "invite_link",
-			Status:     "success",
-			Timestamp:  time.Now(),
-			InviteLink: inviteLink,
+			SessionID: sessionID,
+			Action:    "list_groups",
+			Status:    "success",
+			Timestamp: time.Now(),
+			Groups:    groups,
 		},
 	}
 }
@@ -292,108 +392,16 @@ func NewGroupOperationResponse(sessionID, action, message string) *GroupResponse
 	}
 }
 
-func (r *CreateGroupRequest) Validate() error {
-	if r.Name == "" {
-		return &GroupValidationError{Field: "name", Message: "Group name is required"}
+func NewInviteLinkResponse(sessionID, groupJID, inviteLink string) *GroupResponse {
+	return &GroupResponse{
+		Success: true,
+		Code:    200,
+		Data: GroupData{
+			SessionID:  sessionID,
+			Action:     "get_invite_link",
+			Status:     "success",
+			Timestamp:  time.Now(),
+			InviteLink: inviteLink,
+		},
 	}
-	if len(r.Participants) == 0 {
-		return &GroupValidationError{Field: "participants", Message: "At least one participant is required"}
-	}
-	for _, participant := range r.Participants {
-		if !validatePhone(participant) {
-			return &GroupValidationError{Field: "participants", Message: "Invalid phone number format: " + participant}
-		}
-	}
-	return nil
-}
-
-func (r *UpdateParticipantsRequest) Validate() error {
-	if r.GroupJID == "" {
-		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
-	}
-	if !validateGroupJID(r.GroupJID) {
-		return &GroupValidationError{Field: "group_jid", Message: "Invalid group JID format"}
-	}
-	validActions := []string{"add", "remove", "promote", "demote"}
-	isValidAction := false
-	for _, action := range validActions {
-		if r.Action == action {
-			isValidAction = true
-			break
-		}
-	}
-	if !isValidAction {
-		return &GroupValidationError{Field: "action", Message: "Invalid action. Must be: add, remove, promote, or demote"}
-	}
-	if len(r.Participants) == 0 {
-		return &GroupValidationError{Field: "participants", Message: "At least one participant is required"}
-	}
-	for _, participant := range r.Participants {
-		if !validatePhone(participant) {
-			return &GroupValidationError{Field: "participants", Message: "Invalid phone number format: " + participant}
-		}
-	}
-	return nil
-}
-
-type GroupValidationError struct {
-	Field   string `json:"field"`
-	Message string `json:"message"`
-}
-
-func (e *GroupValidationError) Error() string {
-	return e.Field + ": " + e.Message
-}
-
-func validatePhone(phone string) bool {
-	if phone == "" {
-		return false
-	}
-	return len(phone) >= 10 && len(phone) <= 15
-}
-
-func validateGroupJID(groupJID string) bool {
-	if groupJID == "" {
-		return false
-	}
-	return len(groupJID) > 5 && groupJID[len(groupJID)-5:] == "@g.us"
-}
-
-func (r *GetGroupRequestsReq) Validate() error {
-	if r.GroupJID == "" {
-		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
-	}
-	if !validateGroupJID(r.GroupJID) {
-		return &GroupValidationError{Field: "group_jid", Message: "Invalid group JID format"}
-	}
-	return nil
-}
-
-func (r *UpdateGroupRequestsReq) Validate() error {
-	if r.GroupJID == "" {
-		return &GroupValidationError{Field: "group_jid", Message: "Group JID is required"}
-	}
-	if !validateGroupJID(r.GroupJID) {
-		return &GroupValidationError{Field: "group_jid", Message: "Invalid group JID format"}
-	}
-	validActions := []string{"approve", "reject"}
-	isValidAction := false
-	for _, action := range validActions {
-		if r.Action == action {
-			isValidAction = true
-			break
-		}
-	}
-	if !isValidAction {
-		return &GroupValidationError{Field: "action", Message: "Invalid action. Must be: approve or reject"}
-	}
-	if len(r.Participants) == 0 {
-		return &GroupValidationError{Field: "participants", Message: "At least one participant is required"}
-	}
-	for _, participant := range r.Participants {
-		if !validatePhone(participant) {
-			return &GroupValidationError{Field: "participants", Message: "Invalid phone number format: " + participant}
-		}
-	}
-	return nil
 }

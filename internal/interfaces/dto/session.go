@@ -4,179 +4,165 @@ import (
 	"time"
 )
 
+// Session-related request types
+
+// CreateSessionRequest represents a request to create a new session
 type CreateSessionRequest struct {
-	Name       string `json:"name" binding:"required" example:"default"`
-	ProxyURL   string `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
-	WebhookURL string `json:"webhook_url,omitempty" example:"https://webhook.example.com/meow"`
-	Events     string `json:"events,omitempty" example:"message,status"`
+	Name       string `json:"name" validate:"required,min=1,max=50" binding:"required" example:"default"`
+	WebhookURL string `json:"webhook_url,omitempty" validate:"omitempty,webhook_url" example:"https://webhook.example.com/whatsapp"`
+	Events     string `json:"events,omitempty" validate:"omitempty,max=500" example:"message,status"`
+	ProxyURL   string `json:"proxy_url,omitempty" validate:"omitempty,url" example:"http://proxy.example.com:8080"`
 }
 
+// Validate validates the CreateSessionRequest
+func (r *CreateSessionRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
+}
+
+// PairPhoneRequest represents a request to pair a phone number
 type PairPhoneRequest struct {
-	PhoneNumber string `json:"phone_number" binding:"required" example:"5511999999999"`
+	Phone string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
 }
 
-type SessionInfo struct {
-	ID         string    `json:"id" example:"default"`
-	Name       string    `json:"name" example:"default"`
-	Status     string    `json:"status" example:"connected"`
-	WaJID      string    `json:"wa_jid,omitempty" example:"5511999999999@s.meow.net"`
-	ProxyURL   string    `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
-	WebhookURL string    `json:"webhook_url,omitempty" example:"https://webhook.example.com/meow"`
-	Events     []string  `json:"events,omitempty" example:"message,status"`
-	ApiKey     string    `json:"api_key,omitempty" example:"550e8400-e29b-41d4-a716-446655440000"`
-	CreatedAt  time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
-	UpdatedAt  time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
+// Validate validates the PairPhoneRequest
+func (r *PairPhoneRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
-type SessionConnectionInfo struct {
-	QRCode      string    `json:"qr_code,omitempty" example:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."`
-	Connected   bool      `json:"connected" example:"true"`
-	IsConnected bool      `json:"is_connected" example:"true"`
-	LastSeen    time.Time `json:"last_seen,omitempty" example:"2023-01-01T00:00:00Z"`
-	PairCode    string    `json:"pair_code,omitempty" example:"ABCD-1234"`
-}
+// Session-related response types
 
+// SessionResponse represents a generic session response
 type SessionResponse struct {
-	Success bool                  `json:"success"`
-	Code    int                   `json:"code"`
-	Data    SessionData           `json:"data"`
-	Error   *SessionErrorResponse `json:"error,omitempty"`
+	Success   bool        `json:"success"`
+	Code      int         `json:"code"`
+	Data      SessionData `json:"data"`
+	Error     *ErrorInfo  `json:"error,omitempty"`
+	Timestamp time.Time   `json:"timestamp"`
 }
 
+// SessionData represents session response data
 type SessionData struct {
-	SessionID  string                 `json:"session_id,omitempty" example:"default"`
-	Action     string                 `json:"action" example:"create"`
-	Status     string                 `json:"status" example:"success"`
-	Timestamp  time.Time              `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Session    *SessionInfo           `json:"session,omitempty"`
-	Connection *SessionConnectionInfo `json:"connection,omitempty"`
-	Sessions   []SessionInfo          `json:"sessions,omitempty"`
-	QRCode     string                 `json:"qr_code,omitempty" example:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."`
-	PairCode   string                 `json:"pair_code,omitempty" example:"ABCD-1234"`
+	SessionID string        `json:"session_id" example:"session_123"`
+	Action    string        `json:"action" example:"create"`
+	Status    string        `json:"status" example:"success"`
+	Timestamp time.Time     `json:"timestamp" example:"2023-01-01T00:00:00Z"`
+	Session   *SessionInfo  `json:"session,omitempty"`
+	Sessions  []SessionInfo `json:"sessions,omitempty"`
+	QRCode    string        `json:"qr_code,omitempty"`
 }
 
-type SessionErrorResponse struct {
-	Code    string `json:"code" example:"INVALID_SESSION_ID"`
-	Message string `json:"message" example:"Invalid session ID format"`
-	Details string `json:"details,omitempty" example:"Session ID must be alphanumeric"`
-}
-
+// CreateSessionResponse represents a response to session creation
 type CreateSessionResponse struct {
-	Success bool                  `json:"success" example:"true"`
-	Code    int                   `json:"code" example:"201"`
-	Data    SessionCreateData     `json:"data"`
-	Error   *SessionErrorResponse `json:"error,omitempty"`
+	Success   bool              `json:"success"`
+	Code      int               `json:"code"`
+	Data      SessionCreateData `json:"data"`
+	Error     *ErrorInfo        `json:"error,omitempty"`
+	Timestamp time.Time         `json:"timestamp"`
 }
 
+// SessionCreateData represents session creation response data
 type SessionCreateData struct {
-	SessionID string       `json:"session_id" example:"550e8400-e29b-41d4-a716-446655440000"`
+	SessionID string       `json:"session_id" example:"session_123"`
 	Action    string       `json:"action" example:"create"`
 	Status    string       `json:"status" example:"success"`
 	Timestamp time.Time    `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 	Session   *SessionInfo `json:"session"`
 }
 
-type SessionInfoResponse struct {
-	Success bool                    `json:"success" example:"true"`
-	Code    int                     `json:"code" example:"200"`
-	Data    SessionInfoResponseData `json:"data"`
-	Error   *SessionErrorResponse   `json:"error,omitempty"`
-}
-
-type SessionInfoResponseData struct {
-	SessionID string       `json:"session_id" example:"default"`
-	Action    string       `json:"action" example:"get"`
-	Status    string       `json:"status" example:"success"`
-	Timestamp time.Time    `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Session   *SessionInfo `json:"session"`
-}
-
-type SessionListResponse struct {
-	Success bool                    `json:"success" example:"true"`
-	Code    int                     `json:"code" example:"200"`
-	Data    SessionListResponseData `json:"data"`
-	Error   *SessionErrorResponse   `json:"error,omitempty"`
-}
-
-type SessionListResponseData struct {
-	Action    string        `json:"action" example:"list"`
-	Status    string        `json:"status" example:"success"`
-	Timestamp time.Time     `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Sessions  []SessionInfo `json:"sessions"`
-	Total     int           `json:"total" example:"5"`
-}
-
+// ConnectSessionResponse represents a response to session connection
 type ConnectSessionResponse struct {
-	Success bool                  `json:"success" example:"true"`
-	Code    int                   `json:"code" example:"200"`
-	Data    SessionConnectData    `json:"data"`
-	Error   *SessionErrorResponse `json:"error,omitempty"`
+	Success   bool               `json:"success"`
+	Code      int                `json:"code"`
+	Data      SessionConnectData `json:"data"`
+	Error     *ErrorInfo         `json:"error,omitempty"`
+	Timestamp time.Time          `json:"timestamp"`
 }
 
+// SessionConnectData represents session connection response data
 type SessionConnectData struct {
-	SessionID  string                 `json:"session_id" example:"default"`
+	SessionID  string                 `json:"session_id" example:"session_123"`
 	Action     string                 `json:"action" example:"connect"`
 	Status     string                 `json:"status" example:"success"`
 	Timestamp  time.Time              `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Session    *SessionInfo           `json:"session,omitempty"`
-	Connection *SessionConnectionInfo `json:"connection,omitempty"`
-	QRCode     string                 `json:"qr_code,omitempty" example:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."`
+	Session    *SessionInfo           `json:"session"`
+	Connection *SessionConnectionInfo `json:"connection"`
+	QRCode     string                 `json:"qr_code,omitempty"`
 }
 
-type QRCodeResponse struct {
-	Success bool                  `json:"success" example:"true"`
-	Code    int                   `json:"code" example:"200"`
-	Data    QRCodeResponseData    `json:"data"`
-	Error   *SessionErrorResponse `json:"error,omitempty"`
+// SessionConnectionInfo represents session connection information
+type SessionConnectionInfo struct {
+	QRCode      string `json:"qr_code,omitempty"`
+	Connected   bool   `json:"connected"`
+	IsConnected bool   `json:"is_connected"`
 }
 
-type QRCodeResponseData struct {
-	SessionID string    `json:"session_id" example:"default"`
-	Action    string    `json:"action" example:"qr"`
+// PairPhoneResponse represents a response to phone pairing
+type PairPhoneResponse struct {
+	Success   bool                  `json:"success"`
+	Code      int                   `json:"code"`
+	Data      PairPhoneResponseData `json:"data"`
+	Error     *ErrorInfo            `json:"error,omitempty"`
+	Timestamp time.Time             `json:"timestamp"`
+}
+
+// PairPhoneResponseData represents phone pairing response data
+type PairPhoneResponseData struct {
+	SessionID string    `json:"session_id" example:"session_123"`
+	Action    string    `json:"action" example:"pair"`
 	Status    string    `json:"status" example:"success"`
 	Timestamp time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	QRCode    string    `json:"qr_code" example:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..."`
+	Phone     string    `json:"phone" example:"5511999999999"`
+	Code      string    `json:"code,omitempty" example:"123456"`
 }
 
-type PairPhoneResponse struct {
-	Success bool                  `json:"success" example:"true"`
-	Code    int                   `json:"code" example:"200"`
-	Data    PairPhoneResponseData `json:"data"`
-	Error   *SessionErrorResponse `json:"error,omitempty"`
-}
-
-type PairPhoneResponseData struct {
-	SessionID   string    `json:"session_id" example:"default"`
-	Action      string    `json:"action" example:"pair"`
-	Status      string    `json:"status" example:"success"`
-	Timestamp   time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	PhoneNumber string    `json:"phone_number" example:"5511999999999"`
-	PairCode    string    `json:"pair_code" example:"ABCD-1234"`
-}
-
+// SessionStatusResponse represents a response to session status request
 type SessionStatusResponse struct {
-	Success bool                      `json:"success" example:"true"`
-	Code    int                       `json:"code" example:"200"`
-	Data    SessionStatusResponseData `json:"data"`
-	Error   *SessionErrorResponse     `json:"error,omitempty"`
+	Success   bool                      `json:"success"`
+	Code      int                       `json:"code"`
+	Data      SessionStatusResponseData `json:"data"`
+	Error     *ErrorInfo                `json:"error,omitempty"`
+	Timestamp time.Time                 `json:"timestamp"`
 }
 
+// SessionStatusResponseData represents session status response data
 type SessionStatusResponseData struct {
-	SessionID     string    `json:"session_id" example:"default"`
+	SessionID     string    `json:"session_id" example:"session_123"`
 	Action        string    `json:"action" example:"status"`
 	Status        string    `json:"status" example:"success"`
 	Timestamp     time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
-	Name          string    `json:"name" example:"default"`
+	Name          string    `json:"name" example:"My Session"`
 	SessionStatus string    `json:"session_status" example:"connected"`
-	WaJID         string    `json:"wa_jid,omitempty" example:"5511999999999@s.meow.net"`
-	IsConnected   bool      `json:"is_connected" example:"true"`
+	WaJID         string    `json:"wa_jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	IsConnected   bool      `json:"is_connected"`
 	ClientStatus  string    `json:"client_status" example:"connected"`
 	CreatedAt     time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
 	UpdatedAt     time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
-func NewSessionSuccessResponse(sessionID, action string, session *SessionInfo) *SessionResponse {
-	return &SessionResponse{
+// SessionErrorResponse represents an error response for session operations
+type SessionErrorResponse struct {
+	Success   bool       `json:"success"`
+	Code      int        `json:"code"`
+	Error     *ErrorInfo `json:"error"`
+	Timestamp time.Time  `json:"timestamp"`
+}
+
+// SessionListResponse represents a response containing multiple sessions
+type SessionListResponse struct {
+	Success   bool        `json:"success"`
+	Code      int         `json:"code"`
+	Data      SessionData `json:"data"`
+	Error     *ErrorInfo  `json:"error,omitempty"`
+	Timestamp time.Time   `json:"timestamp"`
+}
+
+// Response constructors
+
+// NewSessionSuccessResponse creates a standardized success response for session operations
+func NewSessionSuccessResponse(sessionID, action string, data interface{}) *SessionResponse {
+	response := &SessionResponse{
 		Success: true,
 		Code:    200,
 		Data: SessionData{
@@ -184,11 +170,23 @@ func NewSessionSuccessResponse(sessionID, action string, session *SessionInfo) *
 			Action:    action,
 			Status:    "success",
 			Timestamp: time.Now(),
-			Session:   session,
 		},
+		Timestamp: time.Now(),
 	}
+
+	switch v := data.(type) {
+	case *SessionInfo:
+		response.Data.Session = v
+	case []SessionInfo:
+		response.Data.Sessions = v
+	case string:
+		response.Data.QRCode = v
+	}
+
+	return response
 }
 
+// NewSessionErrorResponse creates a standardized error response for session operations
 func NewSessionErrorResponse(code int, errorCode, message, details string) *SessionResponse {
 	return &SessionResponse{
 		Success: false,
@@ -197,10 +195,72 @@ func NewSessionErrorResponse(code int, errorCode, message, details string) *Sess
 			Status:    "error",
 			Timestamp: time.Now(),
 		},
-		Error: &SessionErrorResponse{
+		Error: &ErrorInfo{
 			Code:    errorCode,
 			Message: message,
 			Details: details,
 		},
+		Timestamp: time.Now(),
+	}
+}
+
+// NewCreateSessionSuccessResponse creates a success response for session creation
+func NewCreateSessionSuccessResponse(sessionInfo *SessionInfo) *CreateSessionResponse {
+	return &CreateSessionResponse{
+		Success: true,
+		Code:    201,
+		Data: SessionCreateData{
+			SessionID: sessionInfo.ID,
+			Action:    "create",
+			Status:    "success",
+			Timestamp: time.Now(),
+			Session:   sessionInfo,
+		},
+		Timestamp: time.Now(),
+	}
+}
+
+// NewConnectSessionSuccessResponse creates a success response for session connection
+func NewConnectSessionSuccessResponse(sessionInfo *SessionInfo, connectionInfo *SessionConnectionInfo, qrCode string) *ConnectSessionResponse {
+	return &ConnectSessionResponse{
+		Success: true,
+		Code:    200,
+		Data: SessionConnectData{
+			SessionID:  sessionInfo.ID,
+			Action:     "connect",
+			Status:     "success",
+			Timestamp:  time.Now(),
+			Session:    sessionInfo,
+			Connection: connectionInfo,
+			QRCode:     qrCode,
+		},
+		Timestamp: time.Now(),
+	}
+}
+
+// NewPairPhoneSuccessResponse creates a success response for phone pairing
+func NewPairPhoneSuccessResponse(sessionID, phone, code string) *PairPhoneResponse {
+	return &PairPhoneResponse{
+		Success: true,
+		Code:    200,
+		Data: PairPhoneResponseData{
+			SessionID: sessionID,
+			Action:    "pair",
+			Status:    "success",
+			Timestamp: time.Now(),
+			Phone:     phone,
+			Code:      code,
+		},
+		Timestamp: time.Now(),
+	}
+}
+
+// NewSessionStatusSuccessResponse creates a success response for session status
+func NewSessionStatusSuccessResponse(data SessionStatusResponseData) *SessionStatusResponse {
+	return &SessionStatusResponse{
+		Success:   true,
+		Code:      200,
+		Data:      data,
+		Timestamp: time.Now(),
 	}
 }

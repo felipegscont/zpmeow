@@ -144,7 +144,7 @@ public/uploads/
 **/assets/media/
 
 # IMPORTANT: Do NOT ignore source code directories
-!internal/infrastructure/media/
+!internal/infra/media/
 !**/infrastructure/media/
 
 # Cache directories

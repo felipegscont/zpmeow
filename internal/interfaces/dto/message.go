@@ -8,60 +8,114 @@ import (
 )
 
 type SendTextRequest struct {
-	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	Body  string `json:"body" binding:"required" example:"Hello, World!"`
+	Phone string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	Body  string `json:"body" validate:"required,min=1,max=4096" binding:"required" example:"Hello, World!"`
+}
+
+// Validate validates the SendTextRequest
+func (r *SendTextRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
 type SendMediaRequest struct {
-	Phone     string `json:"phone" binding:"required" example:"5511999999999"`
-	MediaType string `json:"media_type" binding:"required" example:"image"`
-	MediaURL  string `json:"media_url" binding:"required" example:"https://example.com/image.jpg"`
-	Caption   string `json:"caption,omitempty" example:"Check out this image!"`
+	Phone     string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	MediaType string `json:"media_type" validate:"required,oneof=image video audio document" binding:"required" example:"image"`
+	MediaURL  string `json:"media_url" validate:"required,url" binding:"required" example:"https://example.com/image.jpg"`
+	Caption   string `json:"caption,omitempty" validate:"omitempty,max=1024" example:"Check out this image!"`
+}
+
+// Validate validates the SendMediaRequest
+func (r *SendMediaRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
 type SendLocationRequest struct {
-	Phone     string  `json:"phone" binding:"required" example:"5511999999999"`
-	Latitude  float64 `json:"latitude" binding:"required" example:"-23.5505"`
-	Longitude float64 `json:"longitude" binding:"required" example:"-46.6333"`
-	Name      string  `json:"name,omitempty" example:"São Paulo"`
-	Address   string  `json:"address,omitempty" example:"São Paulo, SP, Brazil"`
+	Phone     string  `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	Latitude  float64 `json:"latitude" validate:"required,min=-90,max=90" binding:"required" example:"-23.5505"`
+	Longitude float64 `json:"longitude" validate:"required,min=-180,max=180" binding:"required" example:"-46.6333"`
+	Name      string  `json:"name,omitempty" validate:"omitempty,max=100" example:"São Paulo"`
+	Address   string  `json:"address,omitempty" validate:"omitempty,max=500" example:"São Paulo, SP, Brazil"`
+}
+
+// Validate validates the SendLocationRequest
+func (r *SendLocationRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
 type SendContactRequest struct {
-	Phone        string `json:"phone" binding:"required" example:"5511999999999"`
-	ContactName  string `json:"contact_name" binding:"required" example:"John Doe"`
-	ContactPhone string `json:"contact_phone" binding:"required" example:"5511888888888"`
+	Phone        string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	ContactName  string `json:"contact_name" validate:"required,min=1,max=100" binding:"required" example:"John Doe"`
+	ContactPhone string `json:"contact_phone" validate:"required,phone_number" binding:"required" example:"5511888888888"`
+}
+
+// Validate validates the SendContactRequest
+func (r *SendContactRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
 type SendImageRequest struct {
-	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
-	Image   string `json:"image" binding:"required" example:"data:image/jpeg;base64,/9j/4AAQ..."` // Base64 data URL or HTTP URL
-	Caption string `json:"caption,omitempty" example:"Check out this image!"`
+	Phone   string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	Image   string `json:"image" validate:"required,min=1" binding:"required" example:"data:image/jpeg;base64,/9j/4AAQ..."` // Base64 data URL or HTTP URL
+	Caption string `json:"caption,omitempty" validate:"omitempty,max=1024" example:"Check out this image!"`
+}
+
+// Validate validates the SendImageRequest
+func (r *SendImageRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
 type SendAudioRequest struct {
-	Phone string `json:"phone" binding:"required" example:"5511999999999"`
-	Audio string `json:"audio" binding:"required" example:"data:audio/mp3;base64,SUQzBAA..."` // Base64 data URL or HTTP URL
+	Phone string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	Audio string `json:"audio" validate:"required,min=1" binding:"required" example:"data:audio/mp3;base64,SUQzBAA..."` // Base64 data URL or HTTP URL
 	PTT   bool   `json:"ptt,omitempty" example:"true"`                                        // Push to talk
 }
 
+// Validate validates the SendAudioRequest
+func (r *SendAudioRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
+}
+
 type SendVideoRequest struct {
-	Phone       string `json:"phone" binding:"required" example:"5511999999999"`
-	Video       string `json:"video" binding:"required" example:"data:video/mp4;base64,AAAAIGZ0eXA..."` // Base64 data URL or HTTP URL
-	Caption     string `json:"caption,omitempty" example:"Check out this video!"`
+	Phone       string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	Video       string `json:"video" validate:"required,min=1" binding:"required" example:"data:video/mp4;base64,AAAAIGZ0eXA..."` // Base64 data URL or HTTP URL
+	Caption     string `json:"caption,omitempty" validate:"omitempty,max=1024" example:"Check out this video!"`
 	GifPlayback bool   `json:"gif_playback,omitempty" example:"false"`
 }
 
+// Validate validates the SendVideoRequest
+func (r *SendVideoRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
+}
+
 type SendDocumentRequest struct {
-	Phone    string `json:"phone" binding:"required" example:"5511999999999"`
-	Document string `json:"document" binding:"required" example:"data:application/pdf;base64,JVBERi0x..."` // Base64 data URL or HTTP URL
-	FileName string `json:"filename,omitempty" example:"document.pdf"`
-	MimeType string `json:"mimetype,omitempty" example:"application/pdf"`
+	Phone    string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	Document string `json:"document" validate:"required,min=1" binding:"required" example:"data:application/pdf;base64,JVBERi0x..."` // Base64 data URL or HTTP URL
+	FileName string `json:"filename,omitempty" validate:"omitempty,max=255" example:"document.pdf"`
+	MimeType string `json:"mimetype,omitempty" validate:"omitempty,max=100" example:"application/pdf"`
+}
+
+// Validate validates the SendDocumentRequest
+func (r *SendDocumentRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
 type SendStickerRequest struct {
-	Phone   string `json:"phone" binding:"required" example:"5511999999999"`
-	Sticker string `json:"sticker" binding:"required" example:"data:image/webp;base64,UklGRnoGAABXRUJQ..."` // Base64 data URL or HTTP URL
+	Phone   string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	Sticker string `json:"sticker" validate:"required,min=1" binding:"required" example:"data:image/webp;base64,UklGRnoGAABXRUJQ..."` // Base64 data URL or HTTP URL
+}
+
+// Validate validates the SendStickerRequest
+func (r *SendStickerRequest) Validate() error {
+	validator := NewValidator()
+	return validator.Validate(r)
 }
 
 type MessageStatusRequest struct {
@@ -441,111 +495,4 @@ func NewMessageActionErrorResponse(code int, errorCode, message, details string)
 			Details: details,
 		},
 	}
-}
-
-func (r *SendTextRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.Body == "" {
-		return &MessageValidationError{Field: "body", Message: "Message body is required"}
-	}
-	return nil
-}
-
-func (r *SendMediaRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	validTypes := []string{"image", "audio", "video", "document", "sticker"}
-	isValid := false
-	for _, validType := range validTypes {
-		if r.MediaType == validType {
-			isValid = true
-			break
-		}
-	}
-	if !isValid {
-		return &MessageValidationError{Field: "media_type", Message: "Invalid media type"}
-	}
-	if r.MediaURL == "" {
-		return &MessageValidationError{Field: "media_url", Message: "Media URL is required"}
-	}
-	return nil
-}
-
-func (r *SendLocationRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.Latitude < -90 || r.Latitude > 90 {
-		return &MessageValidationError{Field: "latitude", Message: "Latitude must be between -90 and 90"}
-	}
-	if r.Longitude < -180 || r.Longitude > 180 {
-		return &MessageValidationError{Field: "longitude", Message: "Longitude must be between -180 and 180"}
-	}
-	return nil
-}
-
-func (r *SendContactRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.ContactName == "" {
-		return &MessageValidationError{Field: "contact_name", Message: "Contact name is required"}
-	}
-	if r.ContactPhone == "" {
-		return &MessageValidationError{Field: "contact_phone", Message: "Contact phone is required"}
-	}
-	return nil
-}
-
-func (r *SendImageRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.Image == "" {
-		return &MessageValidationError{Field: "image", Message: "Image data is required"}
-	}
-	return nil
-}
-
-func (r *SendAudioRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.Audio == "" {
-		return &MessageValidationError{Field: "audio", Message: "Audio data is required"}
-	}
-	return nil
-}
-
-func (r *SendVideoRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.Video == "" {
-		return &MessageValidationError{Field: "video", Message: "Video data is required"}
-	}
-	return nil
-}
-
-func (r *SendDocumentRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.Document == "" {
-		return &MessageValidationError{Field: "document", Message: "Document data is required"}
-	}
-	return nil
-}
-
-func (r *SendStickerRequest) Validate() error {
-	if !validateMessagePhone(r.Phone) {
-		return &MessageValidationError{Field: "phone", Message: "Invalid phone number format"}
-	}
-	if r.Sticker == "" {
-		return &MessageValidationError{Field: "sticker", Message: "Sticker data is required"}
-	}
-	return nil
 }

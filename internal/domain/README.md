@@ -1,59 +1,74 @@
-# Domain Layer
+# Domain Layer - DDD Clean Architecture
 
 Esta camada contém apenas **conceitos de domínio puros**, seguindo rigorosamente os princípios de Domain-Driven Design (DDD).
 
-## 🏛️ Princípios Seguidos
+## 🏛️ Princípios DDD Aplicados
 
-- **Independência de Infraestrutura**: Nenhuma dependência de frameworks, bancos de dados ou APIs externas
-- **Regras de Negócio Puras**: Apenas lógica que reflete o conhecimento do domínio
-- **Linguagem Ubíqua**: Termos e conceitos que fazem sentido para especialistas do domínio
-- **Entidades Ricas**: Objetos com comportamento, não apenas estruturas de dados
+### Core Concepts
+- **Entities**: Objetos com identidade única e ciclo de vida
+- **Value Objects**: Objetos imutáveis definidos por seus valores
+- **Aggregates**: Cluster de objetos tratados como uma unidade
+- **Aggregate Root**: Ponto de entrada único para o aggregate
+- **Domain Services**: Lógica que não pertence a uma entidade específica
+- **Repository Interfaces**: Contratos para persistência (implementados na infra)
+- **Domain Events**: Eventos que representam mudanças importantes no domínio
 
-## 📁 Estrutura
+### Design Principles
+- **Independência de Infraestrutura**: Zero dependências externas
+- **Regras de Negócio Puras**: Apenas lógica de domínio
+- **Linguagem Ubíqua**: Termos do negócio WhatsApp API
+- **Invariantes de Domínio**: Regras que sempre devem ser verdadeiras
+- **Encapsulamento**: Estado interno protegido
+
+## 📁 Estrutura DDD Limpa
 
 ```
 internal/domain/
-├── session/                    # Contexto de Sessão WhatsApp
-│   ├── entity.go              # Entidade Session + Status enum
-│   ├── repository.go          # Interface para persistência
-│   ├── service.go             # Interface de serviços de domínio
-│   ├── services.go            # Implementação de regras de negócio
-│   ├── valueobjects.go        # Value Objects (SessionName, ProxyURL, etc.)
-│   ├── identifier.go          # Serviço de identificação de sessões
-│   ├── interfaces.go          # Interfaces de domínio puras
-│   └── errors.go              # Erros específicos do domínio
-└── webhook/                    # Contexto de Webhook
-    ├── entity.go              # Entidade WebhookConfiguration
-    ├── repository.go          # Interface para persistência
-    ├── values.go              # Value Objects (WebhookURL, EventType, etc.)
-    └── errors.go              # Erros específicos do domínio
+├── session/                    # Bounded Context: Session Management
+│   ├── aggregate.go           # Session Aggregate Root
+│   ├── entity.go              # Session Entity (core business object)
+│   ├── value_objects.go       # Value Objects (SessionName, ApiKey, etc.)
+│   ├── repository.go          # Repository Interface
+│   ├── service.go             # Domain Service Interface
+│   ├── events.go              # Domain Events
+│   └── errors.go              # Domain-specific Errors
+└── common/                     # Shared Domain Concepts
+    ├── value_objects.go       # Common Value Objects (ID, Timestamp)
+    └── events.go              # Base Domain Event types
 ```
 
-## 🎯 Contextos de Domínio
+## 🎯 Bounded Context: Session Management
 
-### Session - Contexto Principal
-- **Session** é a entidade central com **regras de negócio complexas**
-- Tem **ciclo de vida próprio** (criação, conexão, desconexão, exclusão)
-- Possui **invariantes de domínio** (transições de estado, validações)
-- É o **conceito central** do negócio WhatsApp API
+### Session Aggregate
+**Session** é o **Aggregate Root** principal do sistema:
 
-### Webhook - Contexto Separado
-- **WebhookConfiguration** como agregado independente
-- **Regras de negócio próprias** (validação de URL, eventos, ativação)
-- **Separação de responsabilidades** da Session
-- **Bounded Context** bem definido
+#### Core Responsibilities
+- **Gerenciar ciclo de vida**: Criação → Conexão → Desconexão → Exclusão
+- **Manter invariantes**: Estado consistente, transições válidas
+- **Encapsular regras de negócio**: Validações, autenticação, configuração
+- **Publicar eventos de domínio**: Mudanças de estado importantes
 
-### O que foi removido e por quê?
+#### Aggregate Composition
+- **Session Entity** (Aggregate Root)
+  - Identity: SessionID (Value Object)
+  - Core attributes: Name, Status, Timestamps
+  - Behavior: Connect, Disconnect, Authenticate, Configure
 
-#### ❌ Message
-- **Não é entidade**: É um evento/comando, não tem ciclo de vida próprio
-- **Sem regras de negócio**: Apenas transferência de dados
-- **Movido para**: `internal/shared/types` como DTO
+- **Value Objects**
+  - SessionName: Nome único da sessão
+  - ApiKey: Chave de autenticação
+  - WaJID: Identificador WhatsApp
+  - QRCode: Código QR para pareamento
+  - ProxyURL: Configuração de proxy
+  - WebhookConfig: Configuração de webhooks
 
-#### ❌ Media
-- **Não é conceito de domínio**: É detalhe técnico de processamento
-- **Sem regras de negócio**: Apenas validações técnicas
-- **Movido para**: `internal/infra/media` como serviço de infraestrutura
+#### Domain Services
+- **SessionDomainService**: Regras que envolvem múltiplas entidades
+- **SessionIdentifierService**: Resolução e validação de identificadores
+
+#### Domain Events
+- SessionCreated, SessionConnected, SessionDisconnected
+- SessionAuthenticated, SessionConfigurationChanged
 
 ## 🔧 Componentes do Session
 
