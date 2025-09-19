@@ -1,6 +1,5 @@
 package session
 
-// Removed unused variables sessionNameMinLength and sessionNameMaxLength
 
 type Service interface {
 	CanConnect(session *Session) bool

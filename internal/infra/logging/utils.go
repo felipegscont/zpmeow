@@ -203,7 +203,6 @@ func (c *LogContextBuilder) Apply(logger Logger) LogContext {
 func GenerateTraceID() string {
 	bytes := make([]byte, 8)
 	if _, err := rand.Read(bytes); err != nil {
-		// Fallback to timestamp-based ID if random generation fails
 		return fmt.Sprintf("%x", time.Now().UnixNano())
 	}
 	return hex.EncodeToString(bytes)
@@ -212,7 +211,6 @@ func GenerateTraceID() string {
 func GenerateCorrelationID() string {
 	bytes := make([]byte, 6)
 	if _, err := rand.Read(bytes); err != nil {
-		// Fallback to timestamp-based ID if random generation fails
 		return fmt.Sprintf("%x", time.Now().UnixNano())[0:12]
 	}
 	return hex.EncodeToString(bytes)

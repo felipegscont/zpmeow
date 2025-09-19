@@ -41,7 +41,6 @@ func (r *SendMediaRequest) Validate() error {
 	}
 	switch r.MediaType {
 	case "image", "video", "audio", "document":
-		// ok
 	default:
 		return errors.New("media_type must be one of: image, video, audio, document")
 	}

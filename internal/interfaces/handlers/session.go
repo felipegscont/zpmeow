@@ -262,7 +262,6 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	}
 
 	if err := h.wmeowService.StopClient(session.SessionID().Value()); err != nil {
-		// Log as warning instead of error since client might already be stopped
 		h.logger.Warnf("Could not stop client for session %s (may already be stopped): %v", session.SessionID().Value(), err)
 	}
 

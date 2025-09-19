@@ -52,7 +52,6 @@ func (c *WebhookHTTPClient) Post(ctx context.Context, url string, payload interf
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			// Log error but don't fail the webhook operation
 			fmt.Printf("Warning: failed to close response body: %v\n", err)
 		}
 	}()

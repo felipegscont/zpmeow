@@ -109,7 +109,6 @@ func (uc *CreateSessionUseCase) Handle(ctx context.Context, cmd CreateSessionCom
 		return nil, fmt.Errorf("failed to persist session: %w", err)
 	}
 
-	// Assign generated ID to domain entity and emit created event
 	if err := sessionEntity.SetID(generatedID); err != nil {
 		uc.logger.Warn(ctx, "Failed to assign generated ID to session entity", "sessionID", generatedID, "error", err)
 	} else {

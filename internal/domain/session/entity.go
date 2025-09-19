@@ -61,7 +61,6 @@ func NewSession(id, name string) (*Session, error) {
 	qrCode, _ := NewQRCode("")
 	proxyConfig, _ := NewProxyConfiguration("")
 	webhookEndpoint, _ := NewWebhookEndpoint("")
-	// apiKey intentionally unset; will be set by application layer via SetApiKey()
 
 	now := common.Now()
 
@@ -79,7 +78,6 @@ func NewSession(id, name string) (*Session, error) {
 		updatedAt:       now,
 	}
 
-	// Only emit created event when we have a non-empty ID
 	if !session.id.IsEmpty() {
 		event := NewSessionCreatedEvent(sessionID.Value(), sessionName.Value())
 		session.AddEvent(event)
@@ -367,8 +365,6 @@ func (s *Session) GetWebhookEndpointString() string {
 	return s.webhookEndpoint.Value()
 }
 
-// SetID assigns a persisted ID to the session aggregate.
-// Should be called by the application layer after the repository generates the ID.
 func (s *Session) SetID(id string) error {
 	newID, err := NewSessionID(id)
 	if err != nil {
@@ -378,8 +374,6 @@ func (s *Session) SetID(id string) error {
 	return nil
 }
 
-// MarkCreated emits the SessionCreatedEvent using the current session ID and name.
-// Should be invoked after SetID when the session is persisted.
 func (s *Session) MarkCreated() {
 	event := NewSessionCreatedEvent(s.id.Value(), s.name.Value())
 	s.AddEvent(event)

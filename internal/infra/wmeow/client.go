@@ -32,7 +32,6 @@ type WameowClient struct {
 	qrCode       string
 	qrCodeBase64 string // Base64 encoded QR code image
 	qrLoopActive bool
-	// Removed unused field qrLoopCancel
 
 	eventHandlerID uint32
 
@@ -167,7 +166,6 @@ func (c *WameowClient) Disconnect() error {
 	c.logger.Debugf("WameowClient.Disconnect: Status set to disconnected for session %s", c.sessionID)
 
 	c.logger.Debugf("WameowClient.Disconnect: Updating session status in database for session %s", c.sessionID)
-	// Run database update in goroutine with timeout to avoid blocking
 	go func() {
 		c.sessionHelper.UpdateSessionStatus(c.sessionID, session.StatusDisconnected)
 		c.logger.Debugf("WameowClient.Disconnect: Database update completed for session %s", c.sessionID)
@@ -432,7 +430,6 @@ func (c *WameowClient) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 func (c *WameowClient) stopQRLoop() {
 	c.logger.Debugf("WameowClient.stopQRLoop: Attempting to acquire lock for session %s", c.sessionID)
 
-	// Don't acquire lock here since Disconnect() already has it - this would cause deadlock
 	if c.qrLoopActive {
 		c.logger.Debugf("WameowClient.stopQRLoop: QR loop is active, sending stop signal for session %s", c.sessionID)
 		select {

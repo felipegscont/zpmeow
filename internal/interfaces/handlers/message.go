@@ -49,7 +49,6 @@ func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
 		}
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				// Log error but don't fail the operation
 				fmt.Printf("Warning: failed to close response body: %v\n", err)
 			}
 		}()
