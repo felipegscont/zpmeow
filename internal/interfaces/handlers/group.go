@@ -281,7 +281,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	groupInfo, err := h.wmeowService.JoinGroup(ctx, sessionID, req.GroupJID)
+	_, err = h.wmeowService.JoinGroup(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -292,7 +292,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	groupInfo, err = h.wmeowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
+	groupInfo, err := h.wmeowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		response := dto.NewGroupSuccessResponse(sessionID, "join", nil)
 		response.Data.Message = "Group joined successfully"

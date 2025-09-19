@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-
 type NewsletterInfo struct {
 	JID             string `json:"jid"`
 	Name            string `json:"name"`
@@ -13,12 +12,12 @@ type NewsletterInfo struct {
 	SubscriberCount int    `json:"subscriberCount"`
 	CreatedAt       int64  `json:"createdAt"`
 	IsVerified      bool   `json:"isVerified"`
-	Picture     string `json:"picture,omitempty"`
-	Verified    bool   `json:"verified"`
-	UpdatedAt   string `json:"updated_at,omitempty"`
-	OwnerJID    string `json:"owner_jid,omitempty"`
-	Subscribers int    `json:"subscribers"`
-	Muted       bool   `json:"muted"`
+	Picture         string `json:"picture,omitempty"`
+	Verified        bool   `json:"verified"`
+	UpdatedAt       string `json:"updated_at,omitempty"`
+	OwnerJID        string `json:"owner_jid,omitempty"`
+	Subscribers     int    `json:"subscribers"`
+	Muted           bool   `json:"muted"`
 }
 
 type NewsletterList struct {
@@ -60,7 +59,6 @@ type ToggleMuteRequest struct {
 	NewsletterJID string `json:"newsletter_jid" binding:"required" example:"120363025246125486@newsletter"`
 	Mute          bool   `json:"mute" example:"true"`
 }
-
 
 type CreateNewsletterRequest struct {
 	Name        string `json:"name" binding:"required" example:"My Newsletter"`

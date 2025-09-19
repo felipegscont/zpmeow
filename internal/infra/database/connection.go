@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 
 	"zpmeow/internal/config"
@@ -48,7 +49,11 @@ func RunMigrations(cfg *config.Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to connect to database for migrations: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Printf("Error closing database connection: %v", err)
+		}
+	}()
 
 	driver, err := postgres.WithInstance(db.DB, &postgres.Config{})
 	if err != nil {

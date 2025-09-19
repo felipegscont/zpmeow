@@ -367,7 +367,6 @@ func (s *Session) GetWebhookEndpointString() string {
 	return s.webhookEndpoint.Value()
 }
 
-
 // SetID assigns a persisted ID to the session aggregate.
 // Should be called by the application layer after the repository generates the ID.
 func (s *Session) SetID(id string) error {

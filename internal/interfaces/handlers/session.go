@@ -262,11 +262,12 @@ func (h *SessionHandler) DeleteSession(c *gin.Context) {
 	}
 
 	if err := h.wmeowService.StopClient(session.SessionID().Value()); err != nil {
-		h.logger.Errorf("Failed to stop client for session %s: %v", session.SessionID().Value(), err)
+		// Log as warning instead of error since client might already be stopped
+		h.logger.Warnf("Could not stop client for session %s (may already be stopped): %v", session.SessionID().Value(), err)
 	}
 
-	if err := h.sessionService.DeleteSession(c.Request.Context(), sessionID); err != nil {
-		h.logError("delete session "+sessionID, err)
+	if err := h.sessionService.DeleteSession(c.Request.Context(), session.SessionID().Value()); err != nil {
+		h.logError("delete session "+session.SessionID().Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "DELETE_SESSION_FAILED", "Failed to delete session", err.Error())
 		return
 	}
@@ -366,26 +367,34 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 func (h *SessionHandler) DisconnectSession(c *gin.Context) {
 	sessionID, ok := h.validateSessionID(c)
 	if !ok {
+		h.logger.Debugf("DisconnectSession: validateSessionID failed for %s", sessionID)
 		return
 	}
 
 	h.logOperation("Disconnecting session", sessionID)
+	h.logger.Debugf("DisconnectSession: Starting disconnect for session %s", sessionID)
 
 	session, err := h.sessionService.GetSession(c.Request.Context(), sessionID)
 	if err != nil {
+		h.logger.Debugf("DisconnectSession: Failed to get session %s: %v", sessionID, err)
 		h.logError("get session "+sessionID+" for disconnection", err)
 		h.sendErrorResponse(c, http.StatusNotFound, "SESSION_NOT_FOUND", "Session not found", err.Error())
 		return
 	}
 
+	h.logger.Debugf("DisconnectSession: Found session %s (ID: %s), calling StopClient", sessionID, session.SessionID().Value())
+
 	if err := h.wmeowService.StopClient(session.SessionID().Value()); err != nil {
+		h.logger.Debugf("DisconnectSession: StopClient failed for session %s: %v", session.SessionID().Value(), err)
 		h.logError("stop client for session "+session.SessionID().Value(), err)
 		h.sendErrorResponse(c, http.StatusInternalServerError, "STOP_CLIENT_FAILED", "Failed to disconnect session", err.Error())
 		return
 	}
 
+	h.logger.Debugf("DisconnectSession: StopClient succeeded for session %s, sending success response", sessionID)
 	h.sendSuccessResponse(c, sessionID, "disconnect", nil)
 	h.logSuccess("Disconnect session", sessionID)
+	h.logger.Debugf("DisconnectSession: Completed successfully for session %s", sessionID)
 }
 
 // @Summary		Pair phone number with session

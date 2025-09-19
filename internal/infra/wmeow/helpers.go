@@ -33,25 +33,31 @@ func NewSessionHelper(sessionRepo session.Repository, logger logging.Logger) *Se
 }
 
 func (h *SessionHelper) UpdateSessionStatus(sessionID string, status session.Status) {
+	h.logger.Debugf("SessionHelper.UpdateSessionStatus: Starting update for session %s to status %s", sessionID, status)
+
 	if h.sessionRepo == nil {
 		h.logger.Warnf("No session repository available for session %s", sessionID)
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	h.logger.Debugf("SessionHelper.UpdateSessionStatus: Getting session %s from database", sessionID)
 	sessionEntity, err := h.sessionRepo.GetByID(ctx, sessionID)
 	if err != nil {
 		h.logger.Errorf("Failed to get session %s from database: %v", sessionID, err)
 		return
 	}
 
+	h.logger.Debugf("SessionHelper.UpdateSessionStatus: Current status for session %s is %s, target status is %s", sessionID, sessionEntity.Status(), status)
+
 	switch status {
 	case session.StatusConnected:
 		if sessionEntity.IsConnected() {
-			// Already connected; no-op
+			h.logger.Debugf("SessionHelper.UpdateSessionStatus: Session %s already connected, no-op", sessionID)
 		} else if sessionEntity.IsConnecting() {
+			h.logger.Debugf("SessionHelper.UpdateSessionStatus: Setting session %s as connected", sessionID)
 			if err := sessionEntity.SetConnected(); err != nil {
 				h.logger.Errorf("Failed to set session %s as connected: %v", sessionID, err)
 				return
@@ -61,6 +67,7 @@ func (h *SessionHelper) UpdateSessionStatus(sessionID string, status session.Sta
 			return
 		}
 	case session.StatusDisconnected:
+		h.logger.Debugf("SessionHelper.UpdateSessionStatus: Disconnecting session %s", sessionID)
 		err := sessionEntity.Disconnect("status update")
 		if err != nil {
 			h.logger.Errorf("Failed to disconnect session %s: %v", sessionID, err)
@@ -68,8 +75,9 @@ func (h *SessionHelper) UpdateSessionStatus(sessionID string, status session.Sta
 		}
 	case session.StatusConnecting:
 		if sessionEntity.IsConnected() || sessionEntity.IsConnecting() {
-			// Already connected or connecting; no-op
+			h.logger.Debugf("SessionHelper.UpdateSessionStatus: Session %s already connected/connecting, no-op", sessionID)
 		} else {
+			h.logger.Debugf("SessionHelper.UpdateSessionStatus: Setting session %s as connecting", sessionID)
 			if err := sessionEntity.Connect(); err != nil {
 				h.logger.Errorf("Failed to set session %s as connecting: %v", sessionID, err)
 				return
@@ -77,12 +85,14 @@ func (h *SessionHelper) UpdateSessionStatus(sessionID string, status session.Sta
 		}
 	}
 
+	h.logger.Debugf("SessionHelper.UpdateSessionStatus: Updating session %s in database", sessionID)
 	if err := h.sessionRepo.Update(ctx, sessionEntity); err != nil {
 		h.logger.Errorf("Failed to update session %s status to %s in database: %v", sessionID, status, err)
 		return
 	}
 
 	h.logger.Infof("Successfully updated session %s status to %s in database", sessionID, status)
+	h.logger.Debugf("SessionHelper.UpdateSessionStatus: Completed successfully for session %s", sessionID)
 }
 
 func (h *SessionHelper) UpdateSessionQRCode(sessionID string, qrCode string) {
@@ -100,7 +110,10 @@ func (h *SessionHelper) UpdateSessionQRCode(sessionID string, qrCode string) {
 		return
 	}
 
-	sessionEntity.SetQRCode(qrCode)
+	if err := sessionEntity.SetQRCode(qrCode); err != nil {
+		h.logger.Errorf("Failed to set QR code for session %s: %v", sessionID, err)
+		return
+	}
 
 	if err := h.sessionRepo.Update(ctx, sessionEntity); err != nil {
 		h.logger.Errorf("Failed to update session %s QR code in database: %v", sessionID, err)
@@ -229,10 +242,22 @@ func (h *ConnectionHelper) SafeConnect(client *whatsmeow.Client, sessionID strin
 }
 
 func (h *ConnectionHelper) SafeDisconnect(client *whatsmeow.Client, sessionID string) {
-	if client != nil && client.IsConnected() {
-		h.logger.Infof("Disconnecting client for session %s", sessionID)
-		client.Disconnect()
+	h.logger.Debugf("ConnectionHelper.SafeDisconnect: Starting for session %s", sessionID)
+
+	if client == nil {
+		h.logger.Debugf("ConnectionHelper.SafeDisconnect: Client is nil for session %s", sessionID)
+		return
 	}
+
+	if !client.IsConnected() {
+		h.logger.Debugf("ConnectionHelper.SafeDisconnect: Client not connected for session %s", sessionID)
+		return
+	}
+
+	h.logger.Infof("Disconnecting client for session %s", sessionID)
+	h.logger.Debugf("ConnectionHelper.SafeDisconnect: Calling client.Disconnect() for session %s", sessionID)
+	client.Disconnect()
+	h.logger.Debugf("ConnectionHelper.SafeDisconnect: Completed for session %s", sessionID)
 }
 
 func IsDeviceRegistered(client *whatsmeow.Client) bool {

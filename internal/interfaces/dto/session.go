@@ -20,8 +20,6 @@ type SessionInfo struct {
 	UpdatedAt  time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
-
-
 type CreateSessionRequest struct {
 	Name       string `json:"name" validate:"required,min=1,max=50" binding:"required" example:"default"`
 	WebhookURL string `json:"webhook_url,omitempty" validate:"omitempty,webhook_url" example:"https://webhook.example.com/whatsapp"`
@@ -61,7 +59,6 @@ func (r *PairPhoneRequest) Validate() error {
 	}
 	return nil
 }
-
 
 type SessionResponse struct {
 	Success   bool        `json:"success"`
@@ -173,7 +170,6 @@ type SessionListResponse struct {
 	Error     *ErrorInfo  `json:"error,omitempty"`
 	Timestamp time.Time   `json:"timestamp"`
 }
-
 
 func NewSessionSuccessResponse(sessionID, action string, data interface{}) *SessionResponse {
 	response := &SessionResponse{

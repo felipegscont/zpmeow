@@ -263,11 +263,10 @@ func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 // @Summary		Upload media for newsletter
 // @Description	Upload media files (image, video, audio, document) for use in newsletter messages. Returns MediaHandle required for sending media messages.
 // @Tags			Newsletters
-// @Accept			multipart/form-data
+// @Accept			json
 // @Produce		json
-// @Param			sessionId	path		string	true	"Session ID"
-// @Param			file		formData	file	true	"Media file to upload"
-// @Param			media_type	formData	string	true	"Media type (image, video, audio, document)"
+// @Param			sessionId	path		string							true	"Session ID"
+// @Param			request		body		dto.UploadNewsletterMediaRequest	true	"Upload media request"
 // @Success		200			{object}	dto.StandardResponse	"Media uploaded successfully"
 // @Failure		400			{object}	dto.StandardResponse				"Bad request - Invalid file or parameters"
 // @Failure		404			{object}	dto.StandardResponse				"Session not found or not connected"
@@ -550,12 +549,12 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 		SubscriberCount: info.Subscribers,
 		CreatedAt:       info.CreatedAt,
 		IsVerified:      info.IsVerified,
-		Picture:     "",
-		Verified:    info.IsVerified,
-		UpdatedAt:   "",
-		OwnerJID:    "",
-		Subscribers: info.Subscribers,
-		Muted:       false,
+		Picture:         "",
+		Verified:        info.IsVerified,
+		UpdatedAt:       "",
+		OwnerJID:        "",
+		Subscribers:     info.Subscribers,
+		Muted:           false,
 	}
 
 	c.JSON(http.StatusOK, dto.NewsletterInfoResponse{
@@ -574,7 +573,7 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 // @Failure		400			{object}	dto.NewsletterListResponse	"Bad request"
 // @Failure		500			{object}	dto.NewsletterListResponse	"Internal server error"
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/newsletters [get]
+// @Router			/session/{sessionId}/newsletter/list [get]
 func (h *NewsletterHandler) ListNewsletters(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -759,7 +758,6 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 		})
 		return
 	}
-
 
 	err := h.wmeowService.SendNewsletterMessage(c.Request.Context(), sessionID, newsletterJID, req.Message)
 	if err != nil {

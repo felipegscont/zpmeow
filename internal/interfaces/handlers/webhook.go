@@ -246,7 +246,6 @@ func (h *WebhookHandler) ListEvents(c *gin.Context) {
 	})
 }
 
-
 func (h *WebhookHandler) isValidEvent(event string, validEvents []string) bool {
 	for _, validEvent := range validEvents {
 		if event == validEvent {

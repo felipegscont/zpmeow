@@ -2152,6 +2152,21 @@ definitions:
     - media_type
     - session_id
     type: object
+  dto.UploadNewsletterMediaRequest:
+    properties:
+      data:
+        description: Base64 encoded media
+        type: string
+      filename:
+        example: image.jpg
+        type: string
+      media_type:
+        example: image
+        type: string
+    required:
+    - data
+    - media_type
+    type: object
   dto.VideoMessagePayload:
     properties:
       caption:
@@ -4338,6 +4353,11 @@ paths:
         name: sessionId
         required: true
         type: string
+      - description: Message ID
+        in: path
+        name: messageId
+        required: true
+        type: string
       - description: Delete request
         in: body
         name: request
@@ -4434,6 +4454,11 @@ paths:
       - description: Session ID
         in: path
         name: sessionId
+        required: true
+        type: string
+      - description: Message ID
+        in: path
+        name: messageId
         required: true
         type: string
       - description: React request
@@ -5070,53 +5095,7 @@ paths:
       summary: Unsubscribe from newsletter
       tags:
       - Newsletters
-  /session/{sessionId}/newsletter/upload:
-    post:
-      consumes:
-      - multipart/form-data
-      description: Upload media files (image, video, audio, document) for use in newsletter
-        messages. Returns MediaHandle required for sending media messages.
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Media file to upload
-        in: formData
-        name: file
-        required: true
-        type: file
-      - description: Media type (image, video, audio, document)
-        in: formData
-        name: media_type
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Media uploaded successfully
-          schema:
-            $ref: '#/definitions/dto.StandardResponse'
-        "400":
-          description: Bad request - Invalid file or parameters
-          schema:
-            $ref: '#/definitions/dto.StandardResponse'
-        "404":
-          description: Session not found or not connected
-          schema:
-            $ref: '#/definitions/dto.StandardResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/dto.StandardResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Upload media for newsletter
-      tags:
-      - Newsletters
-  /session/{sessionId}/newsletters:
+  /session/{sessionId}/newsletter/list:
     get:
       consumes:
       - application/json
@@ -5145,6 +5124,48 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: List newsletters
+      tags:
+      - Newsletters
+  /session/{sessionId}/newsletter/upload:
+    post:
+      consumes:
+      - application/json
+      description: Upload media files (image, video, audio, document) for use in newsletter
+        messages. Returns MediaHandle required for sending media messages.
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Upload media request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UploadNewsletterMediaRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Media uploaded successfully
+          schema:
+            $ref: '#/definitions/dto.StandardResponse'
+        "400":
+          description: Bad request - Invalid file or parameters
+          schema:
+            $ref: '#/definitions/dto.StandardResponse'
+        "404":
+          description: Session not found or not connected
+          schema:
+            $ref: '#/definitions/dto.StandardResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/dto.StandardResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Upload media for newsletter
       tags:
       - Newsletters
   /session/{sessionId}/privacy/blocklist:

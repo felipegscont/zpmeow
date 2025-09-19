@@ -11,7 +11,8 @@ import (
 	"zpmeow/internal/infra/logging"
 
 	"go.mau.fi/whatsmeow"
-	waProto "go.mau.fi/whatsmeow/binary/proto"
+	waCommon "go.mau.fi/whatsmeow/proto/waCommon"
+	waProto "go.mau.fi/whatsmeow/proto/waE2E"
 	"go.mau.fi/whatsmeow/store/sqlstore"
 	waTypes "go.mau.fi/whatsmeow/types"
 	waLog "go.mau.fi/whatsmeow/util/log"
@@ -260,16 +261,23 @@ func (m *MeowService) StartClient(sessionID string) error {
 
 func (m *MeowService) StopClient(sessionID string) error {
 	m.logger.Infof("Stopping client for session %s", sessionID)
+	m.logger.Debugf("StopClient: Looking for client for session %s", sessionID)
+
 	client := m.getClient(sessionID)
 	if client == nil {
+		m.logger.Debugf("StopClient: No client found for session %s", sessionID)
 		return fmt.Errorf("client not found for session %s", sessionID)
 	}
 
+	m.logger.Debugf("StopClient: Found client for session %s, calling Disconnect()", sessionID)
 	if err := client.Disconnect(); err != nil {
+		m.logger.Debugf("StopClient: Disconnect() failed for session %s: %v", sessionID, err)
 		return fmt.Errorf("failed to disconnect client: %w", err)
 	}
 
+	m.logger.Debugf("StopClient: Disconnect() succeeded for session %s, removing client", sessionID)
 	m.removeClient(sessionID)
+	m.logger.Debugf("StopClient: Completed successfully for session %s", sessionID)
 	return nil
 }
 
@@ -604,7 +612,7 @@ func (m *MeowService) ReactToMessage(ctx context.Context, sessionID, phone, mess
 
 	reactionMsg := &waProto.Message{
 		ReactionMessage: &waProto.ReactionMessage{
-			Key: &waProto.MessageKey{
+			Key: &waCommon.MessageKey{
 				RemoteJID: &recipientStr,
 				FromMe:    &fromMe,
 				ID:        &actualMessageID,
@@ -953,7 +961,7 @@ func (m *MeowService) ListGroups(ctx context.Context, sessionID string) ([]Group
 		return nil, fmt.Errorf("client not connected for session %s", sessionID)
 	}
 
-	groups, err := client.GetClient().GetJoinedGroups()
+	groups, err := client.GetClient().GetJoinedGroups(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get joined groups: %w", err)
 	}
@@ -2038,7 +2046,6 @@ func (m *MeowService) UpdateSessionSubscriptions(sessionID string, events []stri
 	return nil
 }
 
-
 func (m *MeowService) SetDisappearingTimer(ctx context.Context, sessionID, chatJID string, duration time.Duration) error {
 	client, err := m.validateAndGetClient(sessionID)
 	if err != nil {
@@ -2068,7 +2075,7 @@ func (m *MeowService) ListChats(ctx context.Context, sessionID, chatType string)
 	var chats []ChatInfo
 
 	if chatType == "" || chatType == "groups" || chatType == "all" {
-		groups, err := client.GetClient().GetJoinedGroups()
+		groups, err := client.GetClient().GetJoinedGroups(ctx)
 		if err == nil {
 			for _, group := range groups {
 				timestamp := time.Now().Unix() // Default timestamp
@@ -2182,7 +2189,6 @@ func (m *MeowService) ArchiveChat(ctx context.Context, sessionID, chatJID string
 	m.logger.Debugf("Chat %s %s in session %s", chatJID, action, sessionID)
 	return nil
 }
-
 
 func (m *MeowService) GetNewsletterMessageUpdates(ctx context.Context, sessionID, newsletterID string) ([]NewsletterMessage, error) {
 	_, err := m.validateAndGetClient(sessionID)
@@ -2382,7 +2388,6 @@ func (m *MeowService) GetNewsletterMessages(ctx context.Context, sessionID, news
 	m.logger.Debugf("Retrieved %d messages for newsletter %s in session %s", len(messages), newsletterID, sessionID)
 	return messages, nil
 }
-
 
 func (m *MeowService) GetPrivacySettings(ctx context.Context, sessionID string) (*PrivacySettings, error) {
 	_, err := m.validateAndGetClient(sessionID)

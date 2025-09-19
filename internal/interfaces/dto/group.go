@@ -274,7 +274,6 @@ func (r *UpdateGroupRequestParticipantsRequest) Validate() error {
 	return nil
 }
 
-
 type GroupInfo struct {
 	JID              string   `json:"jid"`
 	Name             string   `json:"name"`

@@ -381,7 +381,6 @@ func (r *PostgresRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, 
 
 func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain.Session, error) {
 
-
 	sessionID, err := sessiondomain.NewSessionID(model.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session ID: %w", err)
@@ -489,7 +488,6 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 	}
 
 	_ = events // Suppress unused variable warning
-
 
 	return sessionEntity, nil
 }

@@ -47,7 +47,12 @@ func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to download from URL: %w", err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				// Log error but don't fail the operation
+				fmt.Printf("Warning: failed to close response body: %v\n", err)
+			}
+		}()
 
 		if resp.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("failed to download from URL: status %d", resp.StatusCode)
@@ -341,7 +346,7 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			sessionId	path		string						true	"Session ID"
-// @ParamX		messageId	path		string						true	"Message ID"
+// @Param			messageId	path		string						true	"Message ID"
 // @Param			request		body		dto.ReactToMessageRequest	true	"React request"
 // @Success		200			{object}	dto.MessageActionResponse
 // @Failure		400			{object}	dto.MessageActionResponse
@@ -414,7 +419,7 @@ func (h *MessageHandler) ReactToMessage(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			sessionId	path		string						true	"Session ID"
-// @ParamX		messageId	path		string						true	"Message ID"
+// @Param			messageId	path		string						true	"Message ID"
 // @Param			request		body		dto.DeleteMessageRequest	true	"Delete request"
 // @Success		200			{object}	dto.MessageActionResponse
 // @Failure		400			{object}	dto.MessageActionResponse
@@ -938,7 +943,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 
 	ctx := c.Request.Context()
 	var sendResp *whatsmeow.SendResponse
-	sendResp, err = h.wmeowService.SendDocumentMessage(ctx, sessionID, req.Phone, documentData, filename, "", "application/octet-stream")
+	sendResp, err = h.wmeowService.SendDocumentMessage(ctx, sessionID, req.Phone, documentData, filename, "", mimeType)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
 			http.StatusInternalServerError,
@@ -950,7 +955,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 	}
 
 	messageID := string(sendResp.ID)
-	messageResponse := dto.NewDocumentResponse(true, http.StatusOK, req.Phone, messageID, req.Document, filename, "application/octet-stream", true)
+	messageResponse := dto.NewDocumentResponse(true, http.StatusOK, req.Phone, messageID, req.Document, filename, mimeType, true)
 	c.JSON(http.StatusOK, messageResponse)
 }
 

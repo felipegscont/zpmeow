@@ -54,7 +54,6 @@ func (ep *EventProcessor) HandleEvent(evt interface{}) {
 	}
 }
 
-
 func (ep *EventProcessor) processConnectionEvents(eventType, status string) {
 	ep.logger.Infof("Session %s %s", ep.sessionID, status)
 	data := map[string]interface{}{
@@ -62,7 +61,9 @@ func (ep *EventProcessor) processConnectionEvents(eventType, status string) {
 		"status":    status,
 		"event":     eventType,
 	}
-	sendWebhook(ep.webhookURL, data)
+	if err := sendWebhook(ep.webhookURL, data); err != nil {
+		ep.logger.Errorf("Failed to send webhook: %v", err)
+	}
 }
 
 func (ep *EventProcessor) processAuthEvents(eventType string, eventData interface{}) {
@@ -86,14 +87,18 @@ func (ep *EventProcessor) processAuthEvents(eventType string, eventData interfac
 		}
 	}
 
-	sendWebhook(ep.webhookURL, data)
+	if err := sendWebhook(ep.webhookURL, data); err != nil {
+		ep.logger.Errorf("Failed to send webhook: %v", err)
+	}
 }
 
 func (ep *EventProcessor) handleMessage(evt interface{}) {
 	msg := evt.(*events.Message)
 	ep.logger.Infof("Message received from %s in session %s", msg.Info.Sender, ep.sessionID)
 	data := createMessageData(msg)
-	sendWebhook(ep.webhookURL, data)
+	if err := sendWebhook(ep.webhookURL, data); err != nil {
+		ep.logger.Errorf("Failed to send webhook: %v", err)
+	}
 }
 
 func (ep *EventProcessor) handleConnected(evt interface{}) {
@@ -133,7 +138,9 @@ func (ep *EventProcessor) handleReceipt(evt interface{}) {
 		"event":     "receipt",
 		"messageId": receipt.MessageIDs,
 	}
-	sendWebhook(ep.webhookURL, data)
+	if err := sendWebhook(ep.webhookURL, data); err != nil {
+		ep.logger.Errorf("Failed to send webhook: %v", err)
+	}
 }
 
 func (ep *EventProcessor) handlePresence(evt interface{}) {
@@ -151,7 +158,9 @@ func (ep *EventProcessor) handlePresence(evt interface{}) {
 		"from":      presence.From.String(),
 		"presence":  status,
 	}
-	sendWebhook(ep.webhookURL, data)
+	if err := sendWebhook(ep.webhookURL, data); err != nil {
+		ep.logger.Errorf("Failed to send webhook: %v", err)
+	}
 }
 
 func (ep *EventProcessor) handleChatPresence(evt interface{}) {
@@ -160,10 +169,12 @@ func (ep *EventProcessor) handleChatPresence(evt interface{}) {
 	data := map[string]interface{}{
 		"sessionId": ep.sessionID,
 		"event":     "chat_presence",
-		"chat":      chatPresence.MessageSource.Chat.String(),
+		"chat":      chatPresence.Chat.String(),
 		"presence":  string(chatPresence.State),
 	}
-	sendWebhook(ep.webhookURL, data)
+	if err := sendWebhook(ep.webhookURL, data); err != nil {
+		ep.logger.Errorf("Failed to send webhook: %v", err)
+	}
 }
 
 func sendWebhook(url string, _ interface{}) error {

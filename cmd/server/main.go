@@ -63,7 +63,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Errorf("Error closing database connection: %v", err)
+		}
+	}()
 
 	if err := database.RunMigrations(cfg); err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
@@ -99,7 +103,6 @@ func main() {
 		}
 	}()
 
-
 	log.Info("Session service initialized")
 
 	authMiddleware := middleware.NewAuthMiddleware(cfg, sessionRepo, log)
@@ -118,7 +121,6 @@ func main() {
 	gin.SetMode(cfg.GetServer().GetMode())
 
 	ginRouter := gin.New()
-
 
 	ginRouter.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		SkipPaths: []string{"/ping", "/health"}, // Skip health check logs

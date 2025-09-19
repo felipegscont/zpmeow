@@ -3259,6 +3259,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
                         "description": "Delete request",
                         "name": "request",
                         "in": "body",
@@ -3411,6 +3418,13 @@ const docTemplate = `{
                         "type": "string",
                         "description": "Session ID",
                         "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Message ID",
+                        "name": "messageId",
                         "in": "path",
                         "required": true
                     },
@@ -4137,6 +4151,55 @@ const docTemplate = `{
                 }
             }
         },
+        "/session/{sessionId}/newsletter/list": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get a list of all subscribed newsletters for a session",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "List newsletters",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Newsletters retrieved successfully",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NewsletterListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NewsletterListResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.NewsletterListResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/session/{sessionId}/newsletter/upload": {
             "post": {
                 "security": [
@@ -4146,7 +4209,7 @@ const docTemplate = `{
                 ],
                 "description": "Upload media files (image, video, audio, document) for use in newsletter messages. Returns MediaHandle required for sending media messages.",
                 "consumes": [
-                    "multipart/form-data"
+                    "application/json"
                 ],
                 "produces": [
                     "application/json"
@@ -4164,18 +4227,13 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "type": "file",
-                        "description": "Media file to upload",
-                        "name": "file",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Media type (image, video, audio, document)",
-                        "name": "media_type",
-                        "in": "formData",
-                        "required": true
+                        "description": "Upload media request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.UploadNewsletterMediaRequest"
+                        }
                     }
                 ],
                 "responses": {
@@ -4458,55 +4516,6 @@ const docTemplate = `{
                         "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/dto.StandardResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/session/{sessionId}/newsletters": {
-            "get": {
-                "security": [
-                    {
-                        "ApiKeyAuth": []
-                    }
-                ],
-                "description": "Get a list of all subscribed newsletters for a session",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Newsletters"
-                ],
-                "summary": "List newsletters",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "sessionId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Newsletters retrieved successfully",
-                        "schema": {
-                            "$ref": "#/definitions/dto.NewsletterListResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.NewsletterListResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.NewsletterListResponse"
                         }
                     }
                 }
@@ -8432,6 +8441,27 @@ const docTemplate = `{
                 "session_id": {
                     "type": "string",
                     "example": "default"
+                }
+            }
+        },
+        "dto.UploadNewsletterMediaRequest": {
+            "type": "object",
+            "required": [
+                "data",
+                "media_type"
+            ],
+            "properties": {
+                "data": {
+                    "description": "Base64 encoded media",
+                    "type": "string"
+                },
+                "filename": {
+                    "type": "string",
+                    "example": "image.jpg"
+                },
+                "media_type": {
+                    "type": "string",
+                    "example": "image"
                 }
             }
         },

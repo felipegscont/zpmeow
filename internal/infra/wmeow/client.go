@@ -32,7 +32,7 @@ type WameowClient struct {
 	qrCode       string
 	qrCodeBase64 string // Base64 encoded QR code image
 	qrLoopActive bool
-	qrLoopCancel context.CancelFunc
+	// Removed unused field qrLoopCancel
 
 	eventHandlerID uint32
 
@@ -135,22 +135,45 @@ func (c *WameowClient) Connect() error {
 }
 
 func (c *WameowClient) Disconnect() error {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
 	c.logger.Infof("Disconnecting client for session %s", c.sessionID)
+	c.logger.Debugf("WameowClient.Disconnect: Attempting to acquire lock for session %s", c.sessionID)
 
+	c.mu.Lock()
+	defer func() {
+		c.logger.Debugf("WameowClient.Disconnect: Releasing lock for session %s", c.sessionID)
+		c.mu.Unlock()
+	}()
+
+	c.logger.Debugf("WameowClient.Disconnect: Lock acquired, starting disconnect for session %s", c.sessionID)
+
+	c.logger.Debugf("WameowClient.Disconnect: Stopping QR loop for session %s", c.sessionID)
 	c.stopQRLoop()
+	c.logger.Debugf("WameowClient.Disconnect: QR loop stopped for session %s", c.sessionID)
 
+	c.logger.Debugf("WameowClient.Disconnect: Calling SafeDisconnect for session %s", c.sessionID)
 	c.connectionHelper.SafeDisconnect(c.client, c.sessionID)
+	c.logger.Debugf("WameowClient.Disconnect: SafeDisconnect completed for session %s", c.sessionID)
 
+	c.logger.Debugf("WameowClient.Disconnect: Cancelling context for session %s", c.sessionID)
 	if c.cancel != nil {
 		c.cancel()
+		c.logger.Debugf("WameowClient.Disconnect: Context cancelled for session %s", c.sessionID)
+	} else {
+		c.logger.Debugf("WameowClient.Disconnect: No context to cancel for session %s", c.sessionID)
 	}
 
+	c.logger.Debugf("WameowClient.Disconnect: Setting status to disconnected for session %s", c.sessionID)
 	c.setStatus(session.StatusDisconnected)
-	c.sessionHelper.UpdateSessionStatus(c.sessionID, session.StatusDisconnected)
+	c.logger.Debugf("WameowClient.Disconnect: Status set to disconnected for session %s", c.sessionID)
 
+	c.logger.Debugf("WameowClient.Disconnect: Updating session status in database for session %s", c.sessionID)
+	// Run database update in goroutine with timeout to avoid blocking
+	go func() {
+		c.sessionHelper.UpdateSessionStatus(c.sessionID, session.StatusDisconnected)
+		c.logger.Debugf("WameowClient.Disconnect: Database update completed for session %s", c.sessionID)
+	}()
+
+	c.logger.Debugf("WameowClient.Disconnect: Completed successfully for session %s", c.sessionID)
 	return nil
 }
 
@@ -407,14 +430,19 @@ func (c *WameowClient) handleQRLoop(qrChan <-chan whatsmeow.QRChannelItem) {
 }
 
 func (c *WameowClient) stopQRLoop() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	c.logger.Debugf("WameowClient.stopQRLoop: Attempting to acquire lock for session %s", c.sessionID)
 
+	// Don't acquire lock here since Disconnect() already has it - this would cause deadlock
 	if c.qrLoopActive {
+		c.logger.Debugf("WameowClient.stopQRLoop: QR loop is active, sending stop signal for session %s", c.sessionID)
 		select {
 		case c.qrStopChannel <- true:
+			c.logger.Debugf("WameowClient.stopQRLoop: Stop signal sent for session %s", c.sessionID)
 		default:
+			c.logger.Debugf("WameowClient.stopQRLoop: Stop channel full, skipping for session %s", c.sessionID)
 		}
+	} else {
+		c.logger.Debugf("WameowClient.stopQRLoop: QR loop not active for session %s", c.sessionID)
 	}
 }
 

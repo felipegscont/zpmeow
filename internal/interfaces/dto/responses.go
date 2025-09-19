@@ -2,7 +2,6 @@ package dto
 
 import "time"
 
-
 type MessageResult struct {
 	ID        string    `json:"id"`
 	Timestamp time.Time `json:"timestamp"`

@@ -145,4 +145,3 @@ func NewContactsResponse(contacts []ContactInfo) *ContactsResponse {
 		},
 	}
 }
-
