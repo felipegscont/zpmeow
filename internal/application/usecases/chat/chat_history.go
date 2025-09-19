@@ -9,7 +9,6 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// GetChatHistoryQuery represents the query to get chat history
 type GetChatHistoryQuery struct {
 	SessionID string
 	ChatJID   string
@@ -17,7 +16,6 @@ type GetChatHistoryQuery struct {
 	Offset    int
 }
 
-// Validate validates the get chat history query
 func (q GetChatHistoryQuery) Validate() error {
 	if strings.TrimSpace(q.SessionID) == "" {
 		return common.NewValidationError("sessionID", q.SessionID, "session ID is required")
@@ -42,7 +40,6 @@ func (q GetChatHistoryQuery) Validate() error {
 	return nil
 }
 
-// MessageView represents a message view model
 type MessageView struct {
 	ID        string
 	ChatJID   string
@@ -56,7 +53,6 @@ type MessageView struct {
 	Caption   string
 }
 
-// GetChatHistoryResult represents the result of getting chat history
 type GetChatHistoryResult struct {
 	SessionID string
 	ChatJID   string
@@ -66,14 +62,12 @@ type GetChatHistoryResult struct {
 	Offset    int
 }
 
-// GetChatHistoryUseCase handles getting chat message history
 type GetChatHistoryUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewGetChatHistoryUseCase creates a new GetChatHistoryUseCase
 func NewGetChatHistoryUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -86,22 +80,18 @@ func NewGetChatHistoryUseCase(
 	}
 }
 
-// Handle executes the get chat history use case
 func (uc *GetChatHistoryUseCase) Handle(ctx context.Context, query GetChatHistoryQuery) (*GetChatHistoryResult, error) {
-	// 1. Validate query
 	if err := query.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid get chat history query", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, query.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", query.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -109,7 +99,6 @@ func (uc *GetChatHistoryUseCase) Handle(ctx context.Context, query GetChatHistor
 		)
 	}
 
-	// 4. Get chat history via WhatsApp service
 	messages, err := uc.whatsappService.GetChatHistory(ctx, query.SessionID, query.ChatJID, query.Limit, query.Offset)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get chat history",
@@ -119,7 +108,6 @@ func (uc *GetChatHistoryUseCase) Handle(ctx context.Context, query GetChatHistor
 		return nil, fmt.Errorf("failed to get chat history: %w", err)
 	}
 
-	// 5. Convert to view models
 	messageViews := make([]MessageView, len(messages))
 	for i, message := range messages {
 		messageViews[i] = MessageView{
@@ -141,7 +129,6 @@ func (uc *GetChatHistoryUseCase) Handle(ctx context.Context, query GetChatHistor
 		"chatJID", query.ChatJID,
 		"messageCount", len(messageViews))
 
-	// 6. Return result
 	return &GetChatHistoryResult{
 		SessionID: query.SessionID,
 		ChatJID:   query.ChatJID,
@@ -152,7 +139,6 @@ func (uc *GetChatHistoryUseCase) Handle(ctx context.Context, query GetChatHistor
 	}, nil
 }
 
-// SetPresenceCommand represents the command to set presence in a chat
 type SetPresenceCommand struct {
 	SessionID string
 	ChatJID   string
@@ -160,7 +146,6 @@ type SetPresenceCommand struct {
 	Media     string // optional media type for recording state
 }
 
-// Validate validates the set presence command
 func (c SetPresenceCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -189,7 +174,6 @@ func (c SetPresenceCommand) Validate() error {
 	return nil
 }
 
-// SetPresenceResult represents the result of setting presence
 type SetPresenceResult struct {
 	SessionID string
 	ChatJID   string
@@ -197,14 +181,12 @@ type SetPresenceResult struct {
 	Success   bool
 }
 
-// SetPresenceUseCase handles setting presence in chats
 type SetPresenceUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewSetPresenceUseCase creates a new SetPresenceUseCase
 func NewSetPresenceUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -217,22 +199,18 @@ func NewSetPresenceUseCase(
 	}
 }
 
-// Handle executes the set presence use case
 func (uc *SetPresenceUseCase) Handle(ctx context.Context, cmd SetPresenceCommand) (*SetPresenceResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid set presence command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -240,7 +218,6 @@ func (uc *SetPresenceUseCase) Handle(ctx context.Context, cmd SetPresenceCommand
 		)
 	}
 
-	// 4. Set presence via WhatsApp service
 	if err := uc.whatsappService.SetPresence(ctx, cmd.SessionID, cmd.ChatJID, cmd.State, cmd.Media); err != nil {
 		uc.logger.Error(ctx, "Failed to set presence",
 			"sessionID", cmd.SessionID,
@@ -255,7 +232,6 @@ func (uc *SetPresenceUseCase) Handle(ctx context.Context, cmd SetPresenceCommand
 		"chatJID", cmd.ChatJID,
 		"state", cmd.State)
 
-	// 5. Return result
 	return &SetPresenceResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,

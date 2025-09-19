@@ -217,7 +217,6 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "online")
-		// Online setting not supported in current PrivacySettings struct
 	}
 
 	data := &dto.PrivacySettingsData{
@@ -286,8 +285,6 @@ func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 		return
 	}
 
-	// Convert ContactInfo to JID strings
-	// blocklist is already a slice of strings (JIDs)
 	jids := blocklist
 
 	c.JSON(http.StatusOK, dto.BlocklistResponse{

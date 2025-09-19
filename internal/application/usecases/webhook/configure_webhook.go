@@ -9,7 +9,6 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// ConfigureWebhookCommand represents the command to configure webhook for a session
 type ConfigureWebhookCommand struct {
 	SessionID string
 	URL       string
@@ -17,7 +16,6 @@ type ConfigureWebhookCommand struct {
 	Enabled   bool
 }
 
-// Validate validates the configure webhook command
 func (c ConfigureWebhookCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -40,7 +38,6 @@ func (c ConfigureWebhookCommand) Validate() error {
 	return nil
 }
 
-// ConfigureWebhookResult represents the result of configuring webhook
 type ConfigureWebhookResult struct {
 	SessionID string
 	URL       string
@@ -49,13 +46,11 @@ type ConfigureWebhookResult struct {
 	Success   bool
 }
 
-// ConfigureWebhookUseCase handles webhook configuration for sessions
 type ConfigureWebhookUseCase struct {
 	sessionRepo ports.SessionRepository
 	logger      ports.Logger
 }
 
-// NewConfigureWebhookUseCase creates a new ConfigureWebhookUseCase
 func NewConfigureWebhookUseCase(
 	sessionRepo ports.SessionRepository,
 	logger ports.Logger,
@@ -66,22 +61,18 @@ func NewConfigureWebhookUseCase(
 	}
 }
 
-// Handle executes the configure webhook use case
 func (uc *ConfigureWebhookUseCase) Handle(ctx context.Context, cmd ConfigureWebhookCommand) (*ConfigureWebhookResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid configure webhook command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Configure webhook endpoint in session
 	if cmd.Enabled && cmd.URL != "" {
 		if err := sessionEntity.SetWebhookEndpoint(cmd.URL); err != nil {
 			uc.logger.Error(ctx, "Failed to set webhook endpoint",
@@ -91,7 +82,6 @@ func (uc *ConfigureWebhookUseCase) Handle(ctx context.Context, cmd ConfigureWebh
 			return nil, fmt.Errorf("failed to set webhook endpoint: %w", err)
 		}
 	} else {
-		// Clear webhook if disabled
 		if err := sessionEntity.SetWebhookEndpoint(""); err != nil {
 			uc.logger.Error(ctx, "Failed to clear webhook endpoint",
 				"sessionID", cmd.SessionID,
@@ -100,7 +90,6 @@ func (uc *ConfigureWebhookUseCase) Handle(ctx context.Context, cmd ConfigureWebh
 		}
 	}
 
-	// 4. Update session in repository
 	if err := uc.sessionRepo.Update(ctx, sessionEntity); err != nil {
 		uc.logger.Error(ctx, "Failed to update session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to update session: %w", err)
@@ -112,7 +101,6 @@ func (uc *ConfigureWebhookUseCase) Handle(ctx context.Context, cmd ConfigureWebh
 		"enabled", cmd.Enabled,
 		"eventCount", len(cmd.Events))
 
-	// 5. Return result
 	return &ConfigureWebhookResult{
 		SessionID: cmd.SessionID,
 		URL:       cmd.URL,
@@ -122,13 +110,11 @@ func (uc *ConfigureWebhookUseCase) Handle(ctx context.Context, cmd ConfigureWebh
 	}, nil
 }
 
-// TestWebhookCommand represents the command to test webhook endpoint
 type TestWebhookCommand struct {
 	SessionID string
 	URL       string
 }
 
-// Validate validates the test webhook command
 func (c TestWebhookCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -145,7 +131,6 @@ func (c TestWebhookCommand) Validate() error {
 	return nil
 }
 
-// TestWebhookResult represents the result of testing webhook
 type TestWebhookResult struct {
 	SessionID    string
 	URL          string
@@ -154,14 +139,12 @@ type TestWebhookResult struct {
 	Message      string
 }
 
-// TestWebhookUseCase handles testing webhook endpoints
 type TestWebhookUseCase struct {
 	sessionRepo         ports.SessionRepository
 	notificationService ports.NotificationService
 	logger              ports.Logger
 }
 
-// NewTestWebhookUseCase creates a new TestWebhookUseCase
 func NewTestWebhookUseCase(
 	sessionRepo ports.SessionRepository,
 	notificationService ports.NotificationService,
@@ -174,22 +157,18 @@ func NewTestWebhookUseCase(
 	}
 }
 
-// Handle executes the test webhook use case
 func (uc *TestWebhookUseCase) Handle(ctx context.Context, cmd TestWebhookCommand) (*TestWebhookResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid test webhook command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	_, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Send test webhook
 	testPayload := map[string]interface{}{
 		"event":     "webhook.test",
 		"sessionID": cmd.SessionID,
@@ -217,7 +196,6 @@ func (uc *TestWebhookUseCase) Handle(ctx context.Context, cmd TestWebhookCommand
 		"sessionID", cmd.SessionID,
 		"url", cmd.URL)
 
-	// 4. Return result
 	return &TestWebhookResult{
 		SessionID:    cmd.SessionID,
 		URL:          cmd.URL,

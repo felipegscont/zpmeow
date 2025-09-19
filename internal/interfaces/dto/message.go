@@ -12,7 +12,6 @@ type SendTextRequest struct {
 	Body  string `json:"body" validate:"required,min=1,max=4096" binding:"required" example:"Hello, World!"`
 }
 
-// Validate validates the SendTextRequest
 func (r *SendTextRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -25,7 +24,6 @@ type SendMediaRequest struct {
 	Caption   string `json:"caption,omitempty" validate:"omitempty,max=1024" example:"Check out this image!"`
 }
 
-// Validate validates the SendMediaRequest
 func (r *SendMediaRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -39,7 +37,6 @@ type SendLocationRequest struct {
 	Address   string  `json:"address,omitempty" validate:"omitempty,max=500" example:"São Paulo, SP, Brazil"`
 }
 
-// Validate validates the SendLocationRequest
 func (r *SendLocationRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -51,7 +48,6 @@ type SendContactRequest struct {
 	ContactPhone string `json:"contact_phone" validate:"required,phone_number" binding:"required" example:"5511888888888"`
 }
 
-// Validate validates the SendContactRequest
 func (r *SendContactRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -63,7 +59,6 @@ type SendImageRequest struct {
 	Caption string `json:"caption,omitempty" validate:"omitempty,max=1024" example:"Check out this image!"`
 }
 
-// Validate validates the SendImageRequest
 func (r *SendImageRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -75,7 +70,6 @@ type SendAudioRequest struct {
 	PTT   bool   `json:"ptt,omitempty" example:"true"`                                                                  // Push to talk
 }
 
-// Validate validates the SendAudioRequest
 func (r *SendAudioRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -88,7 +82,6 @@ type SendVideoRequest struct {
 	GifPlayback bool   `json:"gif_playback,omitempty" example:"false"`
 }
 
-// Validate validates the SendVideoRequest
 func (r *SendVideoRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -101,7 +94,6 @@ type SendDocumentRequest struct {
 	MimeType string `json:"mimetype,omitempty" validate:"omitempty,max=100" example:"application/pdf"`
 }
 
-// Validate validates the SendDocumentRequest
 func (r *SendDocumentRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
@@ -112,7 +104,6 @@ type SendStickerRequest struct {
 	Sticker string `json:"sticker" validate:"required,min=1" binding:"required" example:"data:image/webp;base64,UklGRnoGAABXRUJQ..."` // Base64 data URL or HTTP URL
 }
 
-// Validate validates the SendStickerRequest
 func (r *SendStickerRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)

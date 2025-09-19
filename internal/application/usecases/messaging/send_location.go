@@ -9,7 +9,6 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// SendLocationMessageCommand represents the command to send a location message
 type SendLocationMessageCommand struct {
 	SessionID string
 	ChatJID   string
@@ -19,7 +18,6 @@ type SendLocationMessageCommand struct {
 	Address   string
 }
 
-// Validate validates the send location message command
 func (c SendLocationMessageCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -48,7 +46,6 @@ func (c SendLocationMessageCommand) Validate() error {
 	return nil
 }
 
-// SendLocationMessageResult represents the result of sending a location message
 type SendLocationMessageResult struct {
 	SessionID string
 	ChatJID   string
@@ -58,14 +55,12 @@ type SendLocationMessageResult struct {
 	Sent      bool
 }
 
-// SendLocationMessageUseCase handles sending location messages via WhatsApp
 type SendLocationMessageUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewSendLocationMessageUseCase creates a new SendLocationMessageUseCase
 func NewSendLocationMessageUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -78,22 +73,18 @@ func NewSendLocationMessageUseCase(
 	}
 }
 
-// Handle executes the send location message use case
 func (uc *SendLocationMessageUseCase) Handle(ctx context.Context, cmd SendLocationMessageCommand) (*SendLocationMessageResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid send location message command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -101,7 +92,6 @@ func (uc *SendLocationMessageUseCase) Handle(ctx context.Context, cmd SendLocati
 		)
 	}
 
-	// 4. Check if session is authenticated
 	if !sessionEntity.IsAuthenticated() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_authenticated",
@@ -109,9 +99,6 @@ func (uc *SendLocationMessageUseCase) Handle(ctx context.Context, cmd SendLocati
 		)
 	}
 
-	// 5. Send location message via WhatsApp service
-	// Note: This would need to be added to the WhatsAppService interface
-	// For now, we'll use a generic approach
 	if err := uc.whatsappService.SendLocationMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Latitude, cmd.Longitude, cmd.Name, cmd.Address); err != nil {
 		uc.logger.Error(ctx, "Failed to send location message",
 			"sessionID", cmd.SessionID,
@@ -128,7 +115,6 @@ func (uc *SendLocationMessageUseCase) Handle(ctx context.Context, cmd SendLocati
 		"latitude", cmd.Latitude,
 		"longitude", cmd.Longitude)
 
-	// 6. Return result
 	return &SendLocationMessageResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,

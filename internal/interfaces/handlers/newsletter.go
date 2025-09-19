@@ -41,7 +41,6 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 		return
 	}
 
-	// Parse query parameters
 	count := 50
 	if countStr := c.Query("count"); countStr != "" {
 		if c, err := strconv.Atoi(countStr); err == nil && c > 0 {
@@ -50,7 +49,6 @@ func (h *NewsletterHandler) GetNewsletterMessageUpdates(c *gin.Context) {
 	}
 	before := c.Query("before")
 
-	// Get newsletter message updates (using count and before parameters)
 	_ = count  // TODO: implement pagination with count
 	_ = before // TODO: implement pagination with before
 	updates, err := h.wmeowService.GetNewsletterMessageUpdates(c.Request.Context(), sessionID, newsletterID)
@@ -325,7 +323,6 @@ func (h *NewsletterHandler) UploadNewsletterMedia(c *gin.Context) {
 		return
 	}
 
-	// Validate media type
 	validTypes := map[string]bool{
 		"image":    true,
 		"video":    true,
@@ -478,7 +475,6 @@ func (h *NewsletterHandler) CreateNewsletter(c *gin.Context) {
 		return
 	}
 
-	// Call service with individual parameters
 	resp, err := h.wmeowService.CreateNewsletter(c.Request.Context(), resolvedSessionID, req.Name, req.Description)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.CreateNewsletterResponse{
@@ -554,7 +550,6 @@ func (h *NewsletterHandler) GetNewsletter(c *gin.Context) {
 		SubscriberCount: info.Subscribers,
 		CreatedAt:       info.CreatedAt,
 		IsVerified:      info.IsVerified,
-		// Set default values for fields not available in wmeow.NewsletterInfo
 		Picture:     "",
 		Verified:    info.IsVerified,
 		UpdatedAt:   "",
@@ -765,7 +760,6 @@ func (h *NewsletterHandler) SendNewsletterMessage(c *gin.Context) {
 		return
 	}
 
-	// Message creation is handled by the service
 
 	err := h.wmeowService.SendNewsletterMessage(c.Request.Context(), sessionID, newsletterJID, req.Message)
 	if err != nil {
@@ -801,11 +795,9 @@ func (h *NewsletterHandler) GetNewsletterMessages(c *gin.Context) {
 		return
 	}
 
-	// Parse query parameters (not used in current implementation)
 	_ = c.Query("count")  // Ignore for now
 	_ = c.Query("before") // Ignore for now
 
-	// Call service - ignoring count and before for now
 	messages, err := h.wmeowService.GetNewsletterMessages(c.Request.Context(), sessionID, newsletterJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.StandardResponse{

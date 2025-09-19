@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Group request types
 type CreateGroupRequest struct {
 	Name         string   `json:"name" binding:"required" example:"My Group"`
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
@@ -100,13 +99,11 @@ type UpdateGroupRequestParticipantsRequest struct {
 	Participants []string `json:"participants" binding:"required" example:"[\"5511999999999\", \"5511888888888\"]"`
 }
 
-// Aliases for backward compatibility
 type GroupJoinApprovalReq = SetGroupJoinApprovalRequest
 type GroupMemberModeReq = SetGroupMemberAddModeRequest
 type GetGroupRequestsReq = GetGroupRequestParticipantsRequest
 type UpdateGroupRequestsReq = UpdateGroupRequestParticipantsRequest
 
-// Validation methods
 func (r *CreateGroupRequest) Validate() error {
 	if r.Name == "" {
 		return fmt.Errorf("group name is required")
@@ -277,7 +274,6 @@ func (r *UpdateGroupRequestParticipantsRequest) Validate() error {
 	return nil
 }
 
-// Group-related types used across the application
 
 type GroupInfo struct {
 	JID              string   `json:"jid"`
@@ -312,7 +308,6 @@ type InviteInfo struct {
 	IsValid    bool   `json:"isValid"`
 }
 
-// Group response structures
 type GroupResponse struct {
 	Success bool                `json:"success"`
 	Code    int                 `json:"code"`
@@ -337,7 +332,6 @@ type GroupErrorResponse struct {
 	Details string `json:"details,omitempty" example:"Group JID must end with @g.us"`
 }
 
-// Helper functions
 func NewGroupSuccessResponse(sessionID, action string, group *GroupInfo) *GroupResponse {
 	return &GroupResponse{
 		Success: true,

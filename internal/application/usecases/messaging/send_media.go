@@ -9,7 +9,6 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// MediaType represents the type of media being sent
 type MediaType string
 
 const (
@@ -20,7 +19,6 @@ const (
 	MediaTypeSticker  MediaType = "sticker"
 )
 
-// IsValid checks if the media type is valid
 func (mt MediaType) IsValid() bool {
 	switch mt {
 	case MediaTypeImage, MediaTypeVideo, MediaTypeAudio, MediaTypeDocument, MediaTypeSticker:
@@ -30,7 +28,6 @@ func (mt MediaType) IsValid() bool {
 	}
 }
 
-// SendMediaMessageCommand represents the command to send a media message
 type SendMediaMessageCommand struct {
 	SessionID string
 	ChatJID   string
@@ -41,7 +38,6 @@ type SendMediaMessageCommand struct {
 	Filename  string
 }
 
-// Validate validates the send media message command
 func (c SendMediaMessageCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -74,7 +70,6 @@ func (c SendMediaMessageCommand) Validate() error {
 	return nil
 }
 
-// SendMediaMessageResult represents the result of sending a media message
 type SendMediaMessageResult struct {
 	SessionID string
 	ChatJID   string
@@ -83,14 +78,12 @@ type SendMediaMessageResult struct {
 	Sent      bool
 }
 
-// SendMediaMessageUseCase handles sending media messages via WhatsApp
 type SendMediaMessageUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewSendMediaMessageUseCase creates a new SendMediaMessageUseCase
 func NewSendMediaMessageUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -103,22 +96,18 @@ func NewSendMediaMessageUseCase(
 	}
 }
 
-// Handle executes the send media message use case
 func (uc *SendMediaMessageUseCase) Handle(ctx context.Context, cmd SendMediaMessageCommand) (*SendMediaMessageResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid send media message command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -126,7 +115,6 @@ func (uc *SendMediaMessageUseCase) Handle(ctx context.Context, cmd SendMediaMess
 		)
 	}
 
-	// 4. Check if session is authenticated
 	if !sessionEntity.IsAuthenticated() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_authenticated",
@@ -134,7 +122,6 @@ func (uc *SendMediaMessageUseCase) Handle(ctx context.Context, cmd SendMediaMess
 		)
 	}
 
-	// 5. Prepare media message
 	mediaMessage := ports.MediaMessage{
 		Type:     string(cmd.MediaType),
 		Data:     cmd.MediaData,
@@ -143,7 +130,6 @@ func (uc *SendMediaMessageUseCase) Handle(ctx context.Context, cmd SendMediaMess
 		Filename: cmd.Filename,
 	}
 
-	// 6. Send media message via WhatsApp service
 	if err := uc.whatsappService.SendMediaMessage(ctx, cmd.SessionID, cmd.ChatJID, mediaMessage); err != nil {
 		uc.logger.Error(ctx, "Failed to send media message",
 			"sessionID", cmd.SessionID,
@@ -159,7 +145,6 @@ func (uc *SendMediaMessageUseCase) Handle(ctx context.Context, cmd SendMediaMess
 		"mediaType", cmd.MediaType,
 		"dataSize", len(cmd.MediaData))
 
-	// 7. Return result
 	return &SendMediaMessageResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,

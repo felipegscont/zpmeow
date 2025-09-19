@@ -10,7 +10,6 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// MuteChatCommand represents the command to mute/unmute a chat
 type MuteChatCommand struct {
 	SessionID string
 	ChatJID   string
@@ -18,7 +17,6 @@ type MuteChatCommand struct {
 	Duration  time.Duration // Duration to mute (0 for permanent)
 }
 
-// Validate validates the mute chat command
 func (c MuteChatCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -35,14 +33,12 @@ func (c MuteChatCommand) Validate() error {
 	return nil
 }
 
-// ArchiveChatCommand represents the command to archive/unarchive a chat
 type ArchiveChatCommand struct {
 	SessionID string
 	ChatJID   string
 	Archive   bool
 }
 
-// Validate validates the archive chat command
 func (c ArchiveChatCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -55,14 +51,12 @@ func (c ArchiveChatCommand) Validate() error {
 	return nil
 }
 
-// BlockChatCommand represents the command to block/unblock a chat
 type BlockChatCommand struct {
 	SessionID string
 	ChatJID   string
 	Block     bool
 }
 
-// Validate validates the block chat command
 func (c BlockChatCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -75,7 +69,6 @@ func (c BlockChatCommand) Validate() error {
 	return nil
 }
 
-// ChatManagementResult represents the result of chat management operations
 type ChatManagementResult struct {
 	SessionID string
 	ChatJID   string
@@ -83,14 +76,12 @@ type ChatManagementResult struct {
 	Success   bool
 }
 
-// MuteChatUseCase handles muting/unmuting chats
 type MuteChatUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewMuteChatUseCase creates a new MuteChatUseCase
 func NewMuteChatUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -103,22 +94,18 @@ func NewMuteChatUseCase(
 	}
 }
 
-// Handle executes the mute chat use case
 func (uc *MuteChatUseCase) Handle(ctx context.Context, cmd MuteChatCommand) (*ChatManagementResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid mute chat command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -126,7 +113,6 @@ func (uc *MuteChatUseCase) Handle(ctx context.Context, cmd MuteChatCommand) (*Ch
 		)
 	}
 
-	// 4. Mute/unmute chat via WhatsApp service
 	if err := uc.whatsappService.MuteChat(ctx, cmd.SessionID, cmd.ChatJID, cmd.Mute, cmd.Duration); err != nil {
 		uc.logger.Error(ctx, "Failed to mute/unmute chat",
 			"sessionID", cmd.SessionID,
@@ -146,7 +132,6 @@ func (uc *MuteChatUseCase) Handle(ctx context.Context, cmd MuteChatCommand) (*Ch
 		"chatJID", cmd.ChatJID,
 		"action", action)
 
-	// 5. Return result
 	return &ChatManagementResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,
@@ -155,14 +140,12 @@ func (uc *MuteChatUseCase) Handle(ctx context.Context, cmd MuteChatCommand) (*Ch
 	}, nil
 }
 
-// ArchiveChatUseCase handles archiving/unarchiving chats
 type ArchiveChatUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewArchiveChatUseCase creates a new ArchiveChatUseCase
 func NewArchiveChatUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -175,22 +158,18 @@ func NewArchiveChatUseCase(
 	}
 }
 
-// Handle executes the archive chat use case
 func (uc *ArchiveChatUseCase) Handle(ctx context.Context, cmd ArchiveChatCommand) (*ChatManagementResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid archive chat command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -198,7 +177,6 @@ func (uc *ArchiveChatUseCase) Handle(ctx context.Context, cmd ArchiveChatCommand
 		)
 	}
 
-	// 4. Archive/unarchive chat via WhatsApp service
 	if err := uc.whatsappService.ArchiveChat(ctx, cmd.SessionID, cmd.ChatJID, cmd.Archive); err != nil {
 		uc.logger.Error(ctx, "Failed to archive/unarchive chat",
 			"sessionID", cmd.SessionID,
@@ -218,7 +196,6 @@ func (uc *ArchiveChatUseCase) Handle(ctx context.Context, cmd ArchiveChatCommand
 		"chatJID", cmd.ChatJID,
 		"action", action)
 
-	// 5. Return result
 	return &ChatManagementResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,

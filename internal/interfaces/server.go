@@ -15,7 +15,6 @@ import (
 	"zpmeow/internal/interfaces/routes"
 )
 
-// ServerConfig contains configuration for the HTTP server
 type ServerConfig struct {
 	Port         string
 	ReadTimeout  time.Duration
@@ -23,7 +22,6 @@ type ServerConfig struct {
 	IdleTimeout  time.Duration
 }
 
-// DefaultServerConfig returns default server configuration
 func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		Port:         "8080",
@@ -33,7 +31,6 @@ func DefaultServerConfig() *ServerConfig {
 	}
 }
 
-// Server represents the HTTP server
 type Server struct {
 	config     *ServerConfig
 	router     *gin.Engine
@@ -41,7 +38,6 @@ type Server struct {
 	handlers   *routes.HandlerDependencies
 }
 
-// NewServer creates a new HTTP server with all dependencies
 func NewServer(
 	config *ServerConfig,
 	db *sqlx.DB,
@@ -50,7 +46,6 @@ func NewServer(
 	wmeowService wmeow.WameowService,
 	authMiddleware *middleware.AuthMiddleware,
 ) *Server {
-	// Create handlers
 	handlerDeps := &routes.HandlerDependencies{
 		HealthHandler:     handlers.NewHealthHandler(db),
 		SessionHandler:    handlers.NewSessionHandler(sessionApp, wmeowService),
@@ -63,13 +58,10 @@ func NewServer(
 		WebhookHandler:    handlers.NewWebhookHandler(sessionApp, webhookApp),
 	}
 
-	// Create router
 	router := gin.New()
 
-	// Setup routes
 	routes.SetupRoutes(router, handlerDeps, authMiddleware)
 
-	// Create HTTP server
 	httpServer := &http.Server{
 		Addr:         ":" + config.Port,
 		Handler:      router,
@@ -86,7 +78,6 @@ func NewServer(
 	}
 }
 
-// Start starts the HTTP server
 func (s *Server) Start() error {
 	fmt.Printf("🚀 Starting HTTP server on port %s\n", s.config.Port)
 
@@ -97,7 +88,6 @@ func (s *Server) Start() error {
 	return nil
 }
 
-// Stop gracefully stops the HTTP server
 func (s *Server) Stop(ctx context.Context) error {
 	fmt.Println("🛑 Stopping HTTP server...")
 
@@ -109,12 +99,10 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-// GetRouter returns the gin router (useful for testing)
 func (s *Server) GetRouter() *gin.Engine {
 	return s.router
 }
 
-// GetHandlers returns the handler dependencies (useful for testing)
 func (s *Server) GetHandlers() *routes.HandlerDependencies {
 	return s.handlers
 }

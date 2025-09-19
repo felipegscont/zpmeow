@@ -8,19 +8,16 @@ import (
 	"zpmeow/internal/domain/common"
 )
 
-// LoggingEventPublisher implements the EventPublisher interface by logging events
 type LoggingEventPublisher struct {
 	logger ports.Logger
 }
 
-// NewLoggingEventPublisher creates a new logging-based event publisher
 func NewLoggingEventPublisher(logger ports.Logger) *LoggingEventPublisher {
 	return &LoggingEventPublisher{
 		logger: logger,
 	}
 }
 
-// Publish publishes a domain event by logging it
 func (p *LoggingEventPublisher) Publish(ctx context.Context, event common.DomainEvent) error {
 	p.logger.Info(ctx, "Domain event published",
 		"eventID", event.EventID(),
@@ -31,7 +28,6 @@ func (p *LoggingEventPublisher) Publish(ctx context.Context, event common.Domain
 	return nil
 }
 
-// PublishBatch publishes multiple domain events by logging them
 func (p *LoggingEventPublisher) PublishBatch(ctx context.Context, events []common.DomainEvent) error {
 	if len(events) == 0 {
 		return nil

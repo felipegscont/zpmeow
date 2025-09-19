@@ -9,13 +9,11 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// JoinGroupCommand represents the command to join a group via invite link
 type JoinGroupCommand struct {
 	SessionID  string
 	InviteLink string
 }
 
-// Validate validates the join group command
 func (c JoinGroupCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -32,13 +30,11 @@ func (c JoinGroupCommand) Validate() error {
 	return nil
 }
 
-// LeaveGroupCommand represents the command to leave a group
 type LeaveGroupCommand struct {
 	SessionID string
 	GroupJID  string
 }
 
-// Validate validates the leave group command
 func (c LeaveGroupCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -51,7 +47,6 @@ func (c LeaveGroupCommand) Validate() error {
 	return nil
 }
 
-// GroupManagementResult represents the result of group management operations
 type GroupManagementResult struct {
 	SessionID string
 	GroupJID  string
@@ -60,14 +55,12 @@ type GroupManagementResult struct {
 	Message   string
 }
 
-// JoinGroupUseCase handles joining groups via invite links
 type JoinGroupUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewJoinGroupUseCase creates a new JoinGroupUseCase
 func NewJoinGroupUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -80,22 +73,18 @@ func NewJoinGroupUseCase(
 	}
 }
 
-// Handle executes the join group use case
 func (uc *JoinGroupUseCase) Handle(ctx context.Context, cmd JoinGroupCommand) (*GroupManagementResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid join group command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -103,7 +92,6 @@ func (uc *JoinGroupUseCase) Handle(ctx context.Context, cmd JoinGroupCommand) (*
 		)
 	}
 
-	// 4. Join group via WhatsApp service
 	if err := uc.whatsappService.JoinGroup(ctx, cmd.SessionID, cmd.InviteLink); err != nil {
 		uc.logger.Error(ctx, "Failed to join group",
 			"sessionID", cmd.SessionID,
@@ -116,7 +104,6 @@ func (uc *JoinGroupUseCase) Handle(ctx context.Context, cmd JoinGroupCommand) (*
 		"sessionID", cmd.SessionID,
 		"inviteLink", cmd.InviteLink)
 
-	// 5. Return result
 	return &GroupManagementResult{
 		SessionID: cmd.SessionID,
 		GroupJID:  "", // Group JID would be extracted from invite link
@@ -126,14 +113,12 @@ func (uc *JoinGroupUseCase) Handle(ctx context.Context, cmd JoinGroupCommand) (*
 	}, nil
 }
 
-// LeaveGroupUseCase handles leaving groups
 type LeaveGroupUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewLeaveGroupUseCase creates a new LeaveGroupUseCase
 func NewLeaveGroupUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -146,22 +131,18 @@ func NewLeaveGroupUseCase(
 	}
 }
 
-// Handle executes the leave group use case
 func (uc *LeaveGroupUseCase) Handle(ctx context.Context, cmd LeaveGroupCommand) (*GroupManagementResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid leave group command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -169,7 +150,6 @@ func (uc *LeaveGroupUseCase) Handle(ctx context.Context, cmd LeaveGroupCommand) 
 		)
 	}
 
-	// 4. Leave group via WhatsApp service
 	if err := uc.whatsappService.LeaveGroup(ctx, cmd.SessionID, cmd.GroupJID); err != nil {
 		uc.logger.Error(ctx, "Failed to leave group",
 			"sessionID", cmd.SessionID,
@@ -182,7 +162,6 @@ func (uc *LeaveGroupUseCase) Handle(ctx context.Context, cmd LeaveGroupCommand) 
 		"sessionID", cmd.SessionID,
 		"groupJID", cmd.GroupJID)
 
-	// 5. Return result
 	return &GroupManagementResult{
 		SessionID: cmd.SessionID,
 		GroupJID:  cmd.GroupJID,

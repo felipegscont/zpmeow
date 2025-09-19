@@ -10,16 +10,13 @@ import (
 	"zpmeow/internal/domain/session"
 )
 
-// GetSessionQuery represents the query to get a session
 type GetSessionQuery struct {
 	SessionID string
 	Name      string
 	ApiKey    string
 }
 
-// Validate validates the get session query
 func (q GetSessionQuery) Validate() error {
-	// At least one identifier must be provided
 	if strings.TrimSpace(q.SessionID) == "" &&
 		strings.TrimSpace(q.Name) == "" &&
 		strings.TrimSpace(q.ApiKey) == "" {
@@ -29,7 +26,6 @@ func (q GetSessionQuery) Validate() error {
 	return nil
 }
 
-// SessionView represents the view model for a session
 type SessionView struct {
 	SessionID          string
 	Name               string
@@ -46,13 +42,11 @@ type SessionView struct {
 	UpdatedAt          string
 }
 
-// GetSessionUseCase handles getting session information
 type GetSessionUseCase struct {
 	sessionRepo ports.SessionRepository
 	logger      ports.Logger
 }
 
-// NewGetSessionUseCase creates a new GetSessionUseCase
 func NewGetSessionUseCase(
 	sessionRepo ports.SessionRepository,
 	logger ports.Logger,
@@ -63,9 +57,7 @@ func NewGetSessionUseCase(
 	}
 }
 
-// Handle executes the get session use case
 func (uc *GetSessionUseCase) Handle(ctx context.Context, query GetSessionQuery) (*SessionView, error) {
-	// 1. Validate query
 	if err := query.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid get session query", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
@@ -74,7 +66,6 @@ func (uc *GetSessionUseCase) Handle(ctx context.Context, query GetSessionQuery) 
 	var sessionEntity *session.Session
 	var err error
 
-	// 2. Get session by the provided identifier
 	switch {
 	case query.SessionID != "":
 		sessionEntity, err = uc.sessionRepo.GetByID(ctx, query.SessionID)
@@ -98,7 +89,6 @@ func (uc *GetSessionUseCase) Handle(ctx context.Context, query GetSessionQuery) 
 		}
 	}
 
-	// 3. Convert domain entity to view model
 	view := &SessionView{
 		SessionID:          sessionEntity.SessionID().Value(),
 		Name:               sessionEntity.Name().Value(),
@@ -120,24 +110,18 @@ func (uc *GetSessionUseCase) Handle(ctx context.Context, query GetSessionQuery) 
 	return view, nil
 }
 
-// GetAllSessionsQuery represents the query to get all sessions
 type GetAllSessionsQuery struct {
-	// Future: Add filtering, pagination, sorting parameters
 }
 
-// Validate validates the get all sessions query
 func (q GetAllSessionsQuery) Validate() error {
-	// No validation needed for now
 	return nil
 }
 
-// GetAllSessionsUseCase handles getting all sessions
 type GetAllSessionsUseCase struct {
 	sessionRepo ports.SessionRepository
 	logger      ports.Logger
 }
 
-// NewGetAllSessionsUseCase creates a new GetAllSessionsUseCase
 func NewGetAllSessionsUseCase(
 	sessionRepo ports.SessionRepository,
 	logger ports.Logger,
@@ -148,22 +132,18 @@ func NewGetAllSessionsUseCase(
 	}
 }
 
-// Handle executes the get all sessions use case
 func (uc *GetAllSessionsUseCase) Handle(ctx context.Context, query GetAllSessionsQuery) ([]*SessionView, error) {
-	// 1. Validate query
 	if err := query.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid get all sessions query", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get all sessions from repository
 	sessions, err := uc.sessionRepo.GetAll(ctx)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get all sessions", "error", err)
 		return nil, fmt.Errorf("failed to get all sessions: %w", err)
 	}
 
-	// 3. Convert domain entities to view models
 	views := make([]*SessionView, len(sessions))
 	for i, sessionEntity := range sessions {
 		views[i] = &SessionView{

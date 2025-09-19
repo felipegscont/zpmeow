@@ -10,7 +10,6 @@ import (
 	ginswagger "github.com/swaggo/gin-swagger"
 )
 
-// HandlerDependencies contains all the handlers needed for route setup
 type HandlerDependencies struct {
 	HealthHandler     *handlers.HealthHandler
 	SessionHandler    *handlers.SessionHandler
@@ -41,13 +40,11 @@ func SetupRoutes(
 		c.Next()
 	})
 
-	// Health endpoints (public)
 	router.GET("/ping", handlers.HealthHandler.Ping)
 	router.GET("/health", handlers.HealthHandler.Health)
 	router.GET("/metrics", handlers.HealthHandler.Metrics)
 	router.POST("/metrics/reset", handlers.HealthHandler.ResetMetrics)
 
-	// Session management endpoints (global auth required)
 	sessionGroup := router.Group("/sessions")
 	sessionGroup.Use(authMiddleware.AuthenticateGlobal())
 	{
@@ -62,11 +59,9 @@ func SetupRoutes(
 		sessionGroup.PUT("/:id/webhook", handlers.SessionHandler.UpdateSessionWebhook)
 	}
 
-	// Session-specific API endpoints (session auth required)
 	sessionAPIGroup := router.Group("/session/:sessionId")
 	sessionAPIGroup.Use(authMiddleware.AuthenticateSession())
 	{
-		// Contact management
 		contacts := sessionAPIGroup.Group("/contacts")
 		contacts.POST("/check", handlers.ContactHandler.CheckUser)
 		contacts.POST("/info", handlers.ContactHandler.GetUserInfo)
@@ -74,7 +69,6 @@ func SetupRoutes(
 		contacts.GET("/list", handlers.ContactHandler.GetContacts)
 		contacts.POST("/sync", handlers.ContactHandler.GetContacts)
 
-		// Presence management
 		presence := sessionAPIGroup.Group("/presences")
 		presence.PUT("/set", handlers.ContactHandler.SetPresence)
 		presence.GET("/get", handlers.ContactHandler.GetUserInfo)
@@ -83,14 +77,12 @@ func SetupRoutes(
 		presence.POST("/typing", handlers.ChatHandler.SetPresence)
 		presence.POST("/recording", handlers.ChatHandler.SetPresence)
 
-		// Privacy settings
 		privacy := sessionAPIGroup.Group("/privacy")
 		privacy.PUT("/set", handlers.PrivacyHandler.SetAllPrivacySettings)
 		privacy.POST("/find", handlers.PrivacyHandler.FindPrivacySettings)
 		privacy.GET("/blocklist", handlers.PrivacyHandler.GetBlocklist)
 		privacy.PUT("/blocklist", handlers.PrivacyHandler.UpdateBlocklist)
 
-		// Message operations
 		message := sessionAPIGroup.Group("/message")
 		send := message.Group("/send")
 		send.POST("/text", handlers.MessageHandler.SendText)
@@ -111,7 +103,6 @@ func SetupRoutes(
 		message.POST("/edit", handlers.MessageHandler.EditMessage)
 		message.POST("/delete", handlers.MessageHandler.DeleteMessage)
 
-		// Chat operations
 		chat := sessionAPIGroup.Group("/chat")
 		chat.POST("/presence", handlers.ChatHandler.SetPresence)
 		chat.GET("/history", handlers.ChatHandler.GetChatHistory)
@@ -129,7 +120,6 @@ func SetupRoutes(
 		chat.POST("/archive", handlers.ChatHandler.ArchiveChat)
 		chat.POST("/disappearing-timer", handlers.ChatHandler.SetDisappearingTimer)
 
-		// Group management
 		group := sessionAPIGroup.Group("/group")
 		group.POST("/create", handlers.GroupHandler.CreateGroup)
 		group.GET("/list", handlers.GroupHandler.ListGroups)
@@ -159,14 +149,12 @@ func SetupRoutes(
 		requests.POST("/list", handlers.GroupHandler.GetGroupRequestParticipants)
 		requests.POST("/update", handlers.GroupHandler.UpdateGroupRequestParticipants)
 
-		// Community management
 		community := sessionAPIGroup.Group("/community")
 		community.POST("/link", handlers.CommunityHandler.LinkGroup)
 		community.POST("/unlink", handlers.CommunityHandler.UnlinkGroup)
 		community.POST("/subgroups", handlers.CommunityHandler.GetSubGroups)
 		community.POST("/participants", handlers.CommunityHandler.GetLinkedGroupsParticipants)
 
-		// Newsletter management
 		newsletter := sessionAPIGroup.Group("/newsletter")
 		newsletter.POST("", handlers.NewsletterHandler.CreateNewsletter)
 		newsletter.GET("/list", handlers.NewsletterHandler.ListNewsletters)
@@ -186,7 +174,6 @@ func SetupRoutes(
 		newsletter.POST("/upload", handlers.NewsletterHandler.UploadNewsletterMedia)
 		newsletter.GET("/invite/:inviteKey", handlers.NewsletterHandler.GetNewsletterByInvite)
 
-		// Webhook management
 		webhook := sessionAPIGroup.Group("/webhook")
 		webhook.POST("", handlers.WebhookHandler.SetWebhook)
 		webhook.GET("", handlers.WebhookHandler.GetWebhook)

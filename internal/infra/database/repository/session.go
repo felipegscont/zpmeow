@@ -25,16 +25,13 @@ func NewPostgresRepo(db *sqlx.DB) sessiondomain.Repository {
 	}
 }
 
-// CreateWithGeneratedID creates a session and returns the generated ID
 func (r *PostgresRepo) CreateWithGeneratedID(ctx context.Context, sessionEntity *sessiondomain.Session) (string, error) {
 	eventsJSON := []byte("[]")
 
-	// ✅ CORREÇÃO: Usar timestamps da entidade ou gerar apenas para persistência
 	now := time.Now()
 	createdAt := now
 	updatedAt := now
 
-	// Se a entidade já tem timestamps, usar os dela
 	if !sessionEntity.CreatedAt().Value().IsZero() {
 		createdAt = sessionEntity.CreatedAt().Value()
 	}
@@ -42,18 +39,14 @@ func (r *PostgresRepo) CreateWithGeneratedID(ctx context.Context, sessionEntity 
 		updatedAt = sessionEntity.UpdatedAt().Value()
 	}
 
-	// ✅ CORREÇÃO: Deixar o PostgreSQL gerar o UUID automaticamente
-	// Remover o ID da query e deixar o DEFAULT gen_random_uuid() funcionar
 	query := `
 		INSERT INTO sessions (name, device_jid, status, qr_code, proxy_url, webhook_url, webhook_events, connected, apikey, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id
 	`
 
-	// ✅ CORREÇÃO: Usar métodos corretos da entidade
 	isConnected := sessionEntity.Status() == sessiondomain.StatusConnected && sessionEntity.GetDeviceJIDString() != ""
 
-	// Generate API key if not provided
 	apiKey := sessionEntity.ApiKey().Value()
 	if apiKey == "" || apiKey == "temp-key" {
 		apiKey = r.generateAPIKey()
@@ -84,13 +77,11 @@ func (r *PostgresRepo) CreateWithGeneratedID(ctx context.Context, sessionEntity 
 	return generatedID, nil
 }
 
-// Create creates a session (compatibility method)
 func (r *PostgresRepo) Create(ctx context.Context, sessionEntity *sessiondomain.Session) error {
 	_, err := r.CreateWithGeneratedID(ctx, sessionEntity)
 	return err
 }
 
-// Exists checks if a session with the given name already exists
 func (r *PostgresRepo) Exists(ctx context.Context, name string) (bool, error) {
 	query := `SELECT EXISTS(SELECT 1 FROM sessions WHERE name = $1)`
 	var exists bool
@@ -162,7 +153,6 @@ func (r *PostgresRepo) GetAll(ctx context.Context) ([]*sessiondomain.Session, er
 }
 
 func (r *PostgresRepo) Update(ctx context.Context, session *sessiondomain.Session) error {
-	// ✅ CORREÇÃO: Não modificar a entidade de domínio!
 	eventsJSON := []byte("[]")
 	updatedAt := time.Now()
 
@@ -173,7 +163,6 @@ func (r *PostgresRepo) Update(ctx context.Context, session *sessiondomain.Sessio
 		WHERE id = $1
 	`
 
-	// ✅ CORREÇÃO: Usar métodos corretos da entidade
 	isConnected := session.Status() == sessiondomain.StatusConnected && session.GetDeviceJIDString() != ""
 
 	result, err := r.db.ExecContext(ctx, query,
@@ -392,7 +381,6 @@ func (r *PostgresRepo) ValidateDeviceUniqueness(ctx context.Context, sessionID, 
 
 func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain.Session, error) {
 
-	// status := sessiondomain.Status(model.Status) // não usado por enquanto
 
 	sessionID, err := sessiondomain.NewSessionID(model.ID)
 	if err != nil {
@@ -404,7 +392,6 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 		return nil, fmt.Errorf("failed to create session name: %w", err)
 	}
 
-	// Reconstruct proxy configuration
 	var proxyURL sessiondomain.ProxyConfiguration
 	if model.ProxyURL != "" {
 		proxy, err := sessiondomain.NewProxyConfiguration(model.ProxyURL)
@@ -414,7 +401,6 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 		proxyURL = proxy
 	}
 
-	// Reconstruct device JID
 	var DeviceJID sessiondomain.DeviceJID
 	if model.DeviceJID != "" {
 		jid, err := sessiondomain.NewDeviceJID(model.DeviceJID)
@@ -424,7 +410,6 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 		DeviceJID = jid
 	}
 
-	// Reconstruct QR code
 	var qrCode sessiondomain.QRCode
 	if model.QRCode != "" {
 		qr, err := sessiondomain.NewQRCode(model.QRCode)
@@ -434,7 +419,6 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 		qrCode = qr
 	}
 
-	// Reconstruct API key
 	var apiKey sessiondomain.ApiKey
 	if model.ApiKey != "" {
 		key, err := sessiondomain.NewApiKey(model.ApiKey)
@@ -444,7 +428,6 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 		apiKey = key
 	}
 
-	// Parse webhook events
 	var events []string
 	if model.Events != "" && model.Events != "[]" {
 		if err := json.Unmarshal([]byte(model.Events), &events); err != nil {
@@ -452,14 +435,11 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 		}
 	}
 
-	// Create session entity with basic information
 	sessionEntity, err := sessiondomain.NewSession(sessionID.Value(), sessionName.Value())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create session entity: %w", err)
 	}
 
-	// Reconstruct complete state
-	// Note: Status is set during NewSession, we need to update it if different
 	if model.Status != string(sessiondomain.StatusDisconnected) {
 		switch sessiondomain.Status(model.Status) {
 		case sessiondomain.StatusConnecting:
@@ -508,17 +488,12 @@ func (r *PostgresRepo) modelToDomain(model *models.SessionModel) (*sessiondomain
 		}
 	}
 
-	// Note: Webhook events are not stored in the domain entity directly
-	// They would be handled by the application layer
 	_ = events // Suppress unused variable warning
 
-	// Note: Timestamps are managed internally by the domain entity
-	// We don't set them directly from the database
 
 	return sessionEntity, nil
 }
 
-// generateAPIKey generates a new API key in the format: cPXeznTF44e1d8BQ57SJoGxtEyffdazE
 func (r *PostgresRepo) generateAPIKey() string {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const keyLength = 32

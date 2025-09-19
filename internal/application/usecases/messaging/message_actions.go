@@ -9,14 +9,12 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// MarkAsReadCommand represents the command to mark messages as read
 type MarkAsReadCommand struct {
 	SessionID string
 	ChatJID   string
 	MessageID string
 }
 
-// Validate validates the mark as read command
 func (c MarkAsReadCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -33,7 +31,6 @@ func (c MarkAsReadCommand) Validate() error {
 	return nil
 }
 
-// ReactToMessageCommand represents the command to react to a message
 type ReactToMessageCommand struct {
 	SessionID string
 	ChatJID   string
@@ -42,7 +39,6 @@ type ReactToMessageCommand struct {
 	Remove    bool
 }
 
-// Validate validates the react to message command
 func (c ReactToMessageCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -63,7 +59,6 @@ func (c ReactToMessageCommand) Validate() error {
 	return nil
 }
 
-// EditMessageCommand represents the command to edit a message
 type EditMessageCommand struct {
 	SessionID  string
 	ChatJID    string
@@ -71,7 +66,6 @@ type EditMessageCommand struct {
 	NewContent string
 }
 
-// Validate validates the edit message command
 func (c EditMessageCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -96,7 +90,6 @@ func (c EditMessageCommand) Validate() error {
 	return nil
 }
 
-// DeleteMessageCommand represents the command to delete a message
 type DeleteMessageCommand struct {
 	SessionID   string
 	ChatJID     string
@@ -104,7 +97,6 @@ type DeleteMessageCommand struct {
 	ForEveryone bool
 }
 
-// Validate validates the delete message command
 func (c DeleteMessageCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -121,7 +113,6 @@ func (c DeleteMessageCommand) Validate() error {
 	return nil
 }
 
-// MessageActionResult represents the result of message actions
 type MessageActionResult struct {
 	SessionID string
 	ChatJID   string
@@ -131,14 +122,12 @@ type MessageActionResult struct {
 	Message   string
 }
 
-// MarkAsReadUseCase handles marking messages as read
 type MarkAsReadUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewMarkAsReadUseCase creates a new MarkAsReadUseCase
 func NewMarkAsReadUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -151,22 +140,18 @@ func NewMarkAsReadUseCase(
 	}
 }
 
-// Handle executes the mark as read use case
 func (uc *MarkAsReadUseCase) Handle(ctx context.Context, cmd MarkAsReadCommand) (*MessageActionResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid mark as read command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -174,7 +159,6 @@ func (uc *MarkAsReadUseCase) Handle(ctx context.Context, cmd MarkAsReadCommand) 
 		)
 	}
 
-	// 4. Mark message as read via WhatsApp service
 	if err := uc.whatsappService.MarkAsRead(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID); err != nil {
 		uc.logger.Error(ctx, "Failed to mark message as read",
 			"sessionID", cmd.SessionID,
@@ -189,7 +173,6 @@ func (uc *MarkAsReadUseCase) Handle(ctx context.Context, cmd MarkAsReadCommand) 
 		"chatJID", cmd.ChatJID,
 		"messageID", cmd.MessageID)
 
-	// 5. Return result
 	return &MessageActionResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,
@@ -200,14 +183,12 @@ func (uc *MarkAsReadUseCase) Handle(ctx context.Context, cmd MarkAsReadCommand) 
 	}, nil
 }
 
-// ReactToMessageUseCase handles reacting to messages
 type ReactToMessageUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewReactToMessageUseCase creates a new ReactToMessageUseCase
 func NewReactToMessageUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -220,22 +201,18 @@ func NewReactToMessageUseCase(
 	}
 }
 
-// Handle executes the react to message use case
 func (uc *ReactToMessageUseCase) Handle(ctx context.Context, cmd ReactToMessageCommand) (*MessageActionResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid react to message command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -243,7 +220,6 @@ func (uc *ReactToMessageUseCase) Handle(ctx context.Context, cmd ReactToMessageC
 		)
 	}
 
-	// 4. React to message via WhatsApp service
 	if err := uc.whatsappService.ReactToMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID, cmd.Emoji, cmd.Remove); err != nil {
 		uc.logger.Error(ctx, "Failed to react to message",
 			"sessionID", cmd.SessionID,
@@ -265,7 +241,6 @@ func (uc *ReactToMessageUseCase) Handle(ctx context.Context, cmd ReactToMessageC
 		"messageID", cmd.MessageID,
 		"action", action)
 
-	// 5. Return result
 	return &MessageActionResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,
@@ -276,14 +251,12 @@ func (uc *ReactToMessageUseCase) Handle(ctx context.Context, cmd ReactToMessageC
 	}, nil
 }
 
-// EditMessageUseCase handles editing messages
 type EditMessageUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewEditMessageUseCase creates a new EditMessageUseCase
 func NewEditMessageUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -296,22 +269,18 @@ func NewEditMessageUseCase(
 	}
 }
 
-// Handle executes the edit message use case
 func (uc *EditMessageUseCase) Handle(ctx context.Context, cmd EditMessageCommand) (*MessageActionResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid edit message command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -319,7 +288,6 @@ func (uc *EditMessageUseCase) Handle(ctx context.Context, cmd EditMessageCommand
 		)
 	}
 
-	// 4. Edit message via WhatsApp service
 	if err := uc.whatsappService.EditMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID, cmd.NewContent); err != nil {
 		uc.logger.Error(ctx, "Failed to edit message",
 			"sessionID", cmd.SessionID,
@@ -334,7 +302,6 @@ func (uc *EditMessageUseCase) Handle(ctx context.Context, cmd EditMessageCommand
 		"chatJID", cmd.ChatJID,
 		"messageID", cmd.MessageID)
 
-	// 5. Return result
 	return &MessageActionResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,
@@ -345,14 +312,12 @@ func (uc *EditMessageUseCase) Handle(ctx context.Context, cmd EditMessageCommand
 	}, nil
 }
 
-// DeleteMessageUseCase handles deleting messages
 type DeleteMessageUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewDeleteMessageUseCase creates a new DeleteMessageUseCase
 func NewDeleteMessageUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -365,22 +330,18 @@ func NewDeleteMessageUseCase(
 	}
 }
 
-// Handle executes the delete message use case
 func (uc *DeleteMessageUseCase) Handle(ctx context.Context, cmd DeleteMessageCommand) (*MessageActionResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid delete message command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -388,7 +349,6 @@ func (uc *DeleteMessageUseCase) Handle(ctx context.Context, cmd DeleteMessageCom
 		)
 	}
 
-	// 4. Delete message via WhatsApp service
 	if err := uc.whatsappService.DeleteMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID, cmd.ForEveryone); err != nil {
 		uc.logger.Error(ctx, "Failed to delete message",
 			"sessionID", cmd.SessionID,
@@ -410,7 +370,6 @@ func (uc *DeleteMessageUseCase) Handle(ctx context.Context, cmd DeleteMessageCom
 		"messageID", cmd.MessageID,
 		"action", action)
 
-	// 5. Return result
 	return &MessageActionResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,

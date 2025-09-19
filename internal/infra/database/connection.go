@@ -21,13 +21,11 @@ func Connect(cfg *config.Config) (*sqlx.DB, error) {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	// Optimize connection pool settings
 	db.SetMaxOpenConns(dbConfig.GetMaxOpenConns())
 	db.SetMaxIdleConns(dbConfig.GetMaxIdleConns())
 	db.SetConnMaxLifetime(dbConfig.GetConnMaxLifetime())
 	db.SetConnMaxIdleTime(5 * time.Minute) // Close idle connections after 5 minutes
 
-	// Test connection with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -38,7 +36,6 @@ func Connect(cfg *config.Config) (*sqlx.DB, error) {
 	return db, nil
 }
 
-// HealthCheck performs a health check on the database
 func HealthCheck(db *sqlx.DB) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -9,14 +9,12 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// CreateNewsletterCommand represents the command to create a newsletter
 type CreateNewsletterCommand struct {
 	SessionID   string
 	Name        string
 	Description string
 }
 
-// Validate validates the create newsletter command
 func (c CreateNewsletterCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -37,13 +35,11 @@ func (c CreateNewsletterCommand) Validate() error {
 	return nil
 }
 
-// SubscribeNewsletterCommand represents the command to subscribe to a newsletter
 type SubscribeNewsletterCommand struct {
 	SessionID     string
 	NewsletterJID string
 }
 
-// Validate validates the subscribe newsletter command
 func (c SubscribeNewsletterCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -56,13 +52,11 @@ func (c SubscribeNewsletterCommand) Validate() error {
 	return nil
 }
 
-// UnsubscribeNewsletterCommand represents the command to unsubscribe from a newsletter
 type UnsubscribeNewsletterCommand struct {
 	SessionID     string
 	NewsletterJID string
 }
 
-// Validate validates the unsubscribe newsletter command
 func (c UnsubscribeNewsletterCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -75,13 +69,11 @@ func (c UnsubscribeNewsletterCommand) Validate() error {
 	return nil
 }
 
-// GetNewsletterInfoQuery represents the query to get newsletter information
 type GetNewsletterInfoQuery struct {
 	SessionID     string
 	NewsletterJID string
 }
 
-// Validate validates the get newsletter info query
 func (q GetNewsletterInfoQuery) Validate() error {
 	if strings.TrimSpace(q.SessionID) == "" {
 		return common.NewValidationError("sessionID", q.SessionID, "session ID is required")
@@ -94,7 +86,6 @@ func (q GetNewsletterInfoQuery) Validate() error {
 	return nil
 }
 
-// NewsletterView represents a newsletter view model
 type NewsletterView struct {
 	JID             string
 	Name            string
@@ -105,7 +96,6 @@ type NewsletterView struct {
 	UpdatedAt       string
 }
 
-// NewsletterResult represents the result of newsletter operations
 type NewsletterResult struct {
 	SessionID     string
 	NewsletterJID string
@@ -115,14 +105,12 @@ type NewsletterResult struct {
 	Newsletter    *NewsletterView
 }
 
-// CreateNewsletterUseCase handles creating newsletters
 type CreateNewsletterUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewCreateNewsletterUseCase creates a new CreateNewsletterUseCase
 func NewCreateNewsletterUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -135,22 +123,18 @@ func NewCreateNewsletterUseCase(
 	}
 }
 
-// Handle executes the create newsletter use case
 func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewsletterCommand) (*NewsletterResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid create newsletter command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -158,7 +142,6 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 		)
 	}
 
-	// 4. Create newsletter via WhatsApp service
 	newsletterJID, err := uc.whatsappService.CreateNewsletter(ctx, cmd.SessionID, cmd.Name, cmd.Description)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to create newsletter",
@@ -168,14 +151,12 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 		return nil, fmt.Errorf("failed to create newsletter: %w", err)
 	}
 
-	// 5. Get newsletter info to return complete data
 	newsletterInfo, err := uc.whatsappService.GetNewsletterInfo(ctx, cmd.SessionID, newsletterJID)
 	if err != nil {
 		uc.logger.Warn(ctx, "Failed to get newsletter info after creation",
 			"sessionID", cmd.SessionID,
 			"newsletterJID", newsletterJID,
 			"error", err)
-		// Don't fail the operation, just return basic info
 		newsletterInfo = &ports.NewsletterInfo{
 			JID:         newsletterJID,
 			Name:        cmd.Name,
@@ -183,7 +164,6 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 		}
 	}
 
-	// 6. Convert to view model
 	newsletterView := &NewsletterView{
 		JID:             newsletterInfo.JID,
 		Name:            newsletterInfo.Name,
@@ -199,7 +179,6 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 		"newsletterJID", newsletterJID,
 		"name", cmd.Name)
 
-	// 7. Return result
 	return &NewsletterResult{
 		SessionID:     cmd.SessionID,
 		NewsletterJID: newsletterJID,
@@ -210,14 +189,12 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 	}, nil
 }
 
-// SubscribeNewsletterUseCase handles subscribing to newsletters
 type SubscribeNewsletterUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewSubscribeNewsletterUseCase creates a new SubscribeNewsletterUseCase
 func NewSubscribeNewsletterUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -230,22 +207,18 @@ func NewSubscribeNewsletterUseCase(
 	}
 }
 
-// Handle executes the subscribe newsletter use case
 func (uc *SubscribeNewsletterUseCase) Handle(ctx context.Context, cmd SubscribeNewsletterCommand) (*NewsletterResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid subscribe newsletter command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -253,7 +226,6 @@ func (uc *SubscribeNewsletterUseCase) Handle(ctx context.Context, cmd SubscribeN
 		)
 	}
 
-	// 4. Subscribe to newsletter via WhatsApp service
 	if err := uc.whatsappService.SubscribeNewsletter(ctx, cmd.SessionID, cmd.NewsletterJID); err != nil {
 		uc.logger.Error(ctx, "Failed to subscribe to newsletter",
 			"sessionID", cmd.SessionID,
@@ -266,7 +238,6 @@ func (uc *SubscribeNewsletterUseCase) Handle(ctx context.Context, cmd SubscribeN
 		"sessionID", cmd.SessionID,
 		"newsletterJID", cmd.NewsletterJID)
 
-	// 5. Return result
 	return &NewsletterResult{
 		SessionID:     cmd.SessionID,
 		NewsletterJID: cmd.NewsletterJID,

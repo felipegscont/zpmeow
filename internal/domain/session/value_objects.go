@@ -7,12 +7,10 @@ import (
 	"zpmeow/internal/domain/common"
 )
 
-// SessionID represents a unique session identifier
 type SessionID struct {
 	common.ID
 }
 
-// NewSessionID creates a new session ID
 func NewSessionID(value string) (SessionID, error) {
 	id, err := common.NewID(value)
 	if err != nil {
@@ -21,17 +19,14 @@ func NewSessionID(value string) (SessionID, error) {
 	return SessionID{ID: id}, nil
 }
 
-// GenerateSessionID creates a new random session ID
 func GenerateSessionID() SessionID {
 	return SessionID{ID: common.GenerateID()}
 }
 
-// SessionName represents a session name with domain-specific validation
 type SessionName struct {
 	common.Name
 }
 
-// NewSessionName creates a new session name with validation
 func NewSessionName(value string) (SessionName, error) {
 	name, err := common.NewName(value, 3, 100)
 	if err != nil {
@@ -40,12 +35,10 @@ func NewSessionName(value string) (SessionName, error) {
 	return SessionName{Name: name}, nil
 }
 
-// ApiKey represents an API key for session authentication
 type ApiKey struct {
 	value string
 }
 
-// NewApiKey creates a new API key with validation
 func NewApiKey(value string) (ApiKey, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -64,12 +57,10 @@ func NewApiKey(value string) (ApiKey, error) {
 	return ApiKey{value: trimmed}, nil
 }
 
-// Value returns the API key value
 func (a ApiKey) Value() string {
 	return a.value
 }
 
-// String returns a masked representation for logging
 func (a ApiKey) String() string {
 	if len(a.value) <= 8 {
 		return "****"
@@ -77,17 +68,14 @@ func (a ApiKey) String() string {
 	return a.value[:4] + "****" + a.value[len(a.value)-4:]
 }
 
-// IsEmpty checks if API key is empty
 func (a ApiKey) IsEmpty() bool {
 	return a.value == ""
 }
 
-// DeviceJID represents a WhatsApp JID (Jabber ID)
 type DeviceJID struct {
 	value string
 }
 
-// NewDeviceJID creates a new WhatsApp JID with validation
 func NewDeviceJID(value string) (DeviceJID, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -107,27 +95,22 @@ func NewDeviceJID(value string) (DeviceJID, error) {
 	return DeviceJID{value: trimmed}, nil
 }
 
-// Value returns the JID value
 func (w DeviceJID) Value() string {
 	return w.value
 }
 
-// String returns the string representation
 func (w DeviceJID) String() string {
 	return w.value
 }
 
-// IsEmpty checks if JID is empty
 func (w DeviceJID) IsEmpty() bool {
 	return w.value == ""
 }
 
-// QRCode represents a QR code for session pairing
 type QRCode struct {
 	value string
 }
 
-// NewQRCode creates a new QR code
 func NewQRCode(value string) (QRCode, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -135,7 +118,6 @@ func NewQRCode(value string) (QRCode, error) {
 		return QRCode{}, nil // Empty QR code is allowed
 	}
 
-	// Basic validation - QR codes should be reasonable length
 	if len(trimmed) > 10000 {
 		return QRCode{}, fmt.Errorf("QR code too long")
 	}
@@ -143,32 +125,26 @@ func NewQRCode(value string) (QRCode, error) {
 	return QRCode{value: trimmed}, nil
 }
 
-// Value returns the QR code value
 func (q QRCode) Value() string {
 	return q.value
 }
 
-// String returns the string representation
 func (q QRCode) String() string {
 	return q.value
 }
 
-// IsEmpty checks if QR code is empty
 func (q QRCode) IsEmpty() bool {
 	return q.value == ""
 }
 
-// IsDataURL checks if QR code is a data URL
 func (q QRCode) IsDataURL() bool {
 	return strings.HasPrefix(q.value, "data:")
 }
 
-// ProxyConfiguration represents a proxy configuration for the session
 type ProxyConfiguration struct {
 	value string
 }
 
-// NewProxyConfiguration creates a new proxy configuration with domain validation
 func NewProxyConfiguration(value string) (ProxyConfiguration, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -176,7 +152,6 @@ func NewProxyConfiguration(value string) (ProxyConfiguration, error) {
 		return ProxyConfiguration{}, nil // Empty proxy is allowed (no proxy)
 	}
 
-	// Domain validation - basic format checks without external dependencies
 	if len(trimmed) < 7 { // Minimum: "a://b:1"
 		return ProxyConfiguration{}, fmt.Errorf("proxy configuration too short")
 	}
@@ -185,7 +160,6 @@ func NewProxyConfiguration(value string) (ProxyConfiguration, error) {
 		return ProxyConfiguration{}, fmt.Errorf("proxy configuration too long")
 	}
 
-	// Basic scheme validation without net/url dependency
 	if !strings.Contains(trimmed, "://") {
 		return ProxyConfiguration{}, fmt.Errorf("proxy configuration must contain scheme (://)")
 	}
@@ -207,22 +181,18 @@ func NewProxyConfiguration(value string) (ProxyConfiguration, error) {
 	return ProxyConfiguration{value: trimmed}, nil
 }
 
-// Value returns the proxy configuration value
 func (p ProxyConfiguration) Value() string {
 	return p.value
 }
 
-// String returns the string representation
 func (p ProxyConfiguration) String() string {
 	return p.value
 }
 
-// IsEmpty checks if proxy configuration is empty
 func (p ProxyConfiguration) IsEmpty() bool {
 	return p.value == ""
 }
 
-// Scheme returns the proxy scheme (http, https, socks5)
 func (p ProxyConfiguration) Scheme() string {
 	if p.value == "" {
 		return ""
@@ -234,12 +204,10 @@ func (p ProxyConfiguration) Scheme() string {
 	return strings.ToLower(parts[0])
 }
 
-// WebhookEndpoint represents a webhook endpoint configuration
 type WebhookEndpoint struct {
 	value string
 }
 
-// NewWebhookEndpoint creates a new webhook endpoint with domain validation
 func NewWebhookEndpoint(value string) (WebhookEndpoint, error) {
 	trimmed := strings.TrimSpace(value)
 
@@ -247,7 +215,6 @@ func NewWebhookEndpoint(value string) (WebhookEndpoint, error) {
 		return WebhookEndpoint{}, nil // Empty webhook endpoint is allowed
 	}
 
-	// Domain validation without external dependencies
 	if len(trimmed) < 10 { // Minimum: "http://a.b"
 		return WebhookEndpoint{}, fmt.Errorf("webhook endpoint too short")
 	}
@@ -256,7 +223,6 @@ func NewWebhookEndpoint(value string) (WebhookEndpoint, error) {
 		return WebhookEndpoint{}, fmt.Errorf("webhook endpoint too long")
 	}
 
-	// Basic scheme validation
 	if !strings.Contains(trimmed, "://") {
 		return WebhookEndpoint{}, fmt.Errorf("webhook endpoint must contain scheme (://)")
 	}
@@ -278,22 +244,18 @@ func NewWebhookEndpoint(value string) (WebhookEndpoint, error) {
 	return WebhookEndpoint{value: trimmed}, nil
 }
 
-// Value returns the webhook endpoint value
 func (w WebhookEndpoint) Value() string {
 	return w.value
 }
 
-// String returns the string representation
 func (w WebhookEndpoint) String() string {
 	return w.value
 }
 
-// IsEmpty checks if webhook endpoint is empty
 func (w WebhookEndpoint) IsEmpty() bool {
 	return w.value == ""
 }
 
-// IsSecure checks if the webhook uses HTTPS
 func (w WebhookEndpoint) IsSecure() bool {
 	return strings.HasPrefix(strings.ToLower(w.value), "https://")
 }

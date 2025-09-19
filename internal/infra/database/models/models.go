@@ -4,8 +4,6 @@ import (
 	"time"
 )
 
-// SessionModel represents the session table structure in PostgreSQL
-// This is a pure data model for persistence, no business logic
 type SessionModel struct {
 	ID         string    `db:"id" json:"id"`
 	Name       string    `db:"name" json:"name"`
@@ -21,12 +19,10 @@ type SessionModel struct {
 	UpdatedAt  time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName returns the table name for this model
 func (SessionModel) TableName() string {
 	return "sessions"
 }
 
-// MessageModel represents the message table structure in PostgreSQL
 type MessageModel struct {
 	ID        string    `db:"id" json:"id"`
 	SessionID string    `db:"session_id" json:"session_id"`
@@ -43,12 +39,10 @@ type MessageModel struct {
 	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName returns the table name for this model
 func (MessageModel) TableName() string {
 	return "messages"
 }
 
-// ContactModel represents the contact table structure in PostgreSQL
 type ContactModel struct {
 	ID           string    `db:"id" json:"id"`
 	SessionID    string    `db:"session_id" json:"session_id"`
@@ -70,12 +64,10 @@ type ContactModel struct {
 	UpdatedAt    time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName returns the table name for this model
 func (ContactModel) TableName() string {
 	return "contacts"
 }
 
-// GroupModel represents the group table structure in PostgreSQL
 type GroupModel struct {
 	ID           string    `db:"id" json:"id"`
 	SessionID    string    `db:"session_id" json:"session_id"`
@@ -91,12 +83,10 @@ type GroupModel struct {
 	UpdatedAt    time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName returns the table name for this model
 func (GroupModel) TableName() string {
 	return "groups"
 }
 
-// ChatModel represents the chat table structure in PostgreSQL
 type ChatModel struct {
 	ID            string    `db:"id" json:"id"`
 	SessionID     string    `db:"session_id" json:"session_id"`
@@ -113,12 +103,10 @@ type ChatModel struct {
 	UpdatedAt     time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName returns the table name for this model
 func (ChatModel) TableName() string {
 	return "chats"
 }
 
-// NewsletterModel represents the newsletter table structure in PostgreSQL
 type NewsletterModel struct {
 	ID              string    `db:"id" json:"id"`
 	SessionID       string    `db:"session_id" json:"session_id"`
@@ -131,12 +119,10 @@ type NewsletterModel struct {
 	UpdatedAt       time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName returns the table name for this model
 func (NewsletterModel) TableName() string {
 	return "newsletters"
 }
 
-// WebhookLogModel represents the webhook_logs table structure in PostgreSQL
 type WebhookLogModel struct {
 	ID           string    `db:"id" json:"id"`
 	SessionID    string    `db:"session_id" json:"session_id"`
@@ -152,7 +138,6 @@ type WebhookLogModel struct {
 	UpdatedAt    time.Time `db:"updated_at" json:"updated_at"`
 }
 
-// TableName returns the table name for this model
 func (WebhookLogModel) TableName() string {
 	return "webhook_logs"
 }

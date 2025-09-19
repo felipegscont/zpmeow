@@ -9,14 +9,12 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// SendTextMessageCommand represents the command to send a text message
 type SendTextMessageCommand struct {
 	SessionID string
 	ChatJID   string
 	Message   string
 }
 
-// Validate validates the send text message command
 func (c SendTextMessageCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -37,7 +35,6 @@ func (c SendTextMessageCommand) Validate() error {
 	return nil
 }
 
-// SendTextMessageResult represents the result of sending a text message
 type SendTextMessageResult struct {
 	SessionID string
 	ChatJID   string
@@ -45,14 +42,12 @@ type SendTextMessageResult struct {
 	Sent      bool
 }
 
-// SendTextMessageUseCase handles sending text messages via WhatsApp
 type SendTextMessageUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewSendTextMessageUseCase creates a new SendTextMessageUseCase
 func NewSendTextMessageUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -65,22 +60,18 @@ func NewSendTextMessageUseCase(
 	}
 }
 
-// Handle executes the send text message use case
 func (uc *SendTextMessageUseCase) Handle(ctx context.Context, cmd SendTextMessageCommand) (*SendTextMessageResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid send text message command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -88,7 +79,6 @@ func (uc *SendTextMessageUseCase) Handle(ctx context.Context, cmd SendTextMessag
 		)
 	}
 
-	// 4. Check if session is authenticated
 	if !sessionEntity.IsAuthenticated() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_authenticated",
@@ -96,7 +86,6 @@ func (uc *SendTextMessageUseCase) Handle(ctx context.Context, cmd SendTextMessag
 		)
 	}
 
-	// 5. Send message via WhatsApp service
 	if err := uc.whatsappService.SendTextMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Message); err != nil {
 		uc.logger.Error(ctx, "Failed to send text message",
 			"sessionID", cmd.SessionID,
@@ -110,9 +99,6 @@ func (uc *SendTextMessageUseCase) Handle(ctx context.Context, cmd SendTextMessag
 		"chatJID", cmd.ChatJID,
 		"messageLength", len(cmd.Message))
 
-	// 6. Return result
-	// Note: MessageID would typically be returned by the WhatsApp service
-	// For now, we'll generate a placeholder or leave it empty
 	return &SendTextMessageResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,

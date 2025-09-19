@@ -148,7 +148,6 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	response := dto.NewTextResponse(true, http.StatusOK, req.Phone, messageID, req.Body, true)
 	c.JSON(http.StatusOK, response)
@@ -222,7 +221,6 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use media data directly as bytes
 	var sendResp *whatsmeow.SendResponse
 
 	switch req.MediaType {
@@ -257,7 +255,6 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 
 	var response *dto.MessageResponse
@@ -324,7 +321,6 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Mark all messages as read in one call
 	if err := h.wmeowService.MarkAsRead(ctx, sessionID, req.Phone, req.MessageIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageActionErrorResponse(
 			http.StatusInternalServerError,
@@ -460,7 +456,6 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Delete for everyone by default
 	err := h.wmeowService.DeleteMessage(ctx, sessionID, req.Phone, req.MessageID, true)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageActionErrorResponse(
@@ -545,7 +540,6 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	response := dto.NewMessageActionSuccessResponse(req.Phone, messageID, "edit")
 	c.JSON(http.StatusOK, response)
@@ -619,7 +613,6 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	messageResponse := dto.NewLocationResponse(true, http.StatusOK, req.Phone, messageID, req.Latitude, req.Longitude, req.Name, "", true)
 	c.JSON(http.StatusOK, messageResponse)
@@ -694,7 +687,6 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 	}
 
 	vcard := "BEGIN:VCARD\nVERSION:3.0\nFN:" + req.ContactName + "\nTEL:" + req.ContactPhone + "\nEND:VCARD"
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	messageResponse := dto.NewContactResponse(true, http.StatusOK, req.Phone, messageID, req.ContactName, vcard, true)
 	c.JSON(http.StatusOK, messageResponse)
@@ -768,7 +760,6 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use image data directly as bytes
 	sendResp, err := h.wmeowService.SendImageMessage(ctx, sessionID, req.Phone, imageData, req.Caption, "image/jpeg")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
@@ -780,7 +771,6 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	messageResponse := dto.NewImageResponse(true, http.StatusOK, req.Phone, messageID, req.Image, req.Caption, true)
 	c.JSON(http.StatusOK, messageResponse)
@@ -854,7 +844,6 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use audio data directly as bytes
 	sendResp, err := h.wmeowService.SendAudioMessage(ctx, sessionID, req.Phone, audioData, "audio/mpeg")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
@@ -866,7 +855,6 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	messageResponse := dto.NewAudioResponse(true, http.StatusOK, req.Phone, messageID, req.Audio, req.PTT, true)
 	c.JSON(http.StatusOK, messageResponse)
@@ -949,7 +937,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use document data directly as bytes
 	var sendResp *whatsmeow.SendResponse
 	sendResp, err = h.wmeowService.SendDocumentMessage(ctx, sessionID, req.Phone, documentData, filename, "", "application/octet-stream")
 	if err != nil {
@@ -962,7 +949,6 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	messageResponse := dto.NewDocumentResponse(true, http.StatusOK, req.Phone, messageID, req.Document, filename, "application/octet-stream", true)
 	c.JSON(http.StatusOK, messageResponse)
@@ -1036,7 +1022,6 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use video data directly as bytes
 	sendResp, err := h.wmeowService.SendVideoMessage(ctx, sessionID, req.Phone, videoData, req.Caption, "video/mp4")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
@@ -1048,7 +1033,6 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	messageResponse := dto.NewVideoResponse(true, http.StatusOK, req.Phone, messageID, req.Video, req.Caption, req.GifPlayback, true)
 	c.JSON(http.StatusOK, messageResponse)
@@ -1122,7 +1106,6 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use sticker data directly as bytes
 	sendResp, err := h.wmeowService.SendStickerMessage(ctx, sessionID, req.Phone, stickerData, "image/webp")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
@@ -1134,7 +1117,6 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 		return
 	}
 
-	// Use the actual message ID from the response
 	messageID := string(sendResp.ID)
 	messageResponse := dto.NewStickerResponse(true, http.StatusOK, req.Phone, messageID, req.Sticker, true)
 	c.JSON(http.StatusOK, messageResponse)

@@ -9,7 +9,6 @@ import (
 	"go.mau.fi/whatsmeow/types/events"
 )
 
-// EventProcessor - Simplified event handling with map-based handlers
 type EventProcessor struct {
 	sessionID   string
 	webhookURL  string
@@ -17,28 +16,22 @@ type EventProcessor struct {
 	logger      logging.Logger
 }
 
-// Map of handlers organized by event category
 var eventHandlers = map[string]func(*EventProcessor, interface{}){
-	// Message events
 	"*events.Message": (*EventProcessor).handleMessage,
 	"*events.Receipt": (*EventProcessor).handleReceipt,
 
-	// Connection events
 	"*events.Connected":    (*EventProcessor).handleConnected,
 	"*events.Disconnected": (*EventProcessor).handleDisconnected,
 	"*events.LoggedOut":    (*EventProcessor).handleLoggedOut,
 
-	// Authentication events
 	"*events.QR":          (*EventProcessor).handleQR,
 	"*events.PairSuccess": (*EventProcessor).handlePairSuccess,
 	"*events.PairError":   (*EventProcessor).handlePairError,
 
-	// Presence events
 	"*events.Presence":     (*EventProcessor).handlePresence,
 	"*events.ChatPresence": (*EventProcessor).handleChatPresence,
 }
 
-// NewEventProcessor creates a new simplified event processor
 func NewEventProcessor(sessionID, webhookURL string, sessionRepo session.Repository) *EventProcessor {
 	return &EventProcessor{
 		sessionID:   sessionID,
@@ -48,11 +41,9 @@ func NewEventProcessor(sessionID, webhookURL string, sessionRepo session.Reposit
 	}
 }
 
-// HandleEvent processes events using map-based handlers
 func (ep *EventProcessor) HandleEvent(evt interface{}) {
 	eventType := fmt.Sprintf("%T", evt)
 
-	// Log all events in DEBUG for monitoring
 	ep.logger.Debugf("📨 Event received: %s", eventType)
 	ep.logger.Debugf("📄 Event raw: %+v", evt)
 
@@ -63,9 +54,7 @@ func (ep *EventProcessor) HandleEvent(evt interface{}) {
 	}
 }
 
-// Event category helpers for better organization (removed unused methods)
 
-// processConnectionEvents - Common processing for connection events
 func (ep *EventProcessor) processConnectionEvents(eventType, status string) {
 	ep.logger.Infof("Session %s %s", ep.sessionID, status)
 	data := map[string]interface{}{
@@ -76,14 +65,12 @@ func (ep *EventProcessor) processConnectionEvents(eventType, status string) {
 	sendWebhook(ep.webhookURL, data)
 }
 
-// processAuthEvents - Common processing for authentication events
 func (ep *EventProcessor) processAuthEvents(eventType string, eventData interface{}) {
 	data := map[string]interface{}{
 		"sessionId": ep.sessionID,
 		"event":     eventType,
 	}
 
-	// Add specific data based on event type
 	switch eventType {
 	case "qr":
 		if qr, ok := eventData.(*events.QR); ok && len(qr.Codes) > 0 {
@@ -102,7 +89,6 @@ func (ep *EventProcessor) processAuthEvents(eventType string, eventData interfac
 	sendWebhook(ep.webhookURL, data)
 }
 
-// EventProcessor handler methods - small and focused
 func (ep *EventProcessor) handleMessage(evt interface{}) {
 	msg := evt.(*events.Message)
 	ep.logger.Infof("Message received from %s in session %s", msg.Info.Sender, ep.sessionID)
@@ -180,14 +166,11 @@ func (ep *EventProcessor) handleChatPresence(evt interface{}) {
 	sendWebhook(ep.webhookURL, data)
 }
 
-// Helper functions shared across handlers (DRY principle)
 func sendWebhook(url string, _ interface{}) error {
 	if url == "" {
 		return nil // No webhook configured
 	}
 
-	// Simple webhook implementation
-	// In a real implementation, you'd want proper HTTP client with retries
 	return nil
 }
 

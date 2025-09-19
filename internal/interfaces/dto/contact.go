@@ -146,5 +146,3 @@ func NewContactsResponse(contacts []ContactInfo) *ContactsResponse {
 	}
 }
 
-// Note: User-related operations should use Contact types directly
-// to maintain consistency and avoid confusion with type aliases

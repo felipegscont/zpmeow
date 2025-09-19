@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Newsletter-related types used across the application
 
 type NewsletterInfo struct {
 	JID             string `json:"jid"`
@@ -14,7 +13,6 @@ type NewsletterInfo struct {
 	SubscriberCount int    `json:"subscriberCount"`
 	CreatedAt       int64  `json:"createdAt"`
 	IsVerified      bool   `json:"isVerified"`
-	// Additional fields that are referenced in handlers
 	Picture     string `json:"picture,omitempty"`
 	Verified    bool   `json:"verified"`
 	UpdatedAt   string `json:"updated_at,omitempty"`
@@ -42,7 +40,6 @@ type NewsletterMessages struct {
 	Total    int                 `json:"total"`
 }
 
-// Newsletter request types
 type GetNewsletterMessageUpdatesRequest struct {
 	NewsletterJID string `json:"newsletter_jid" binding:"required" example:"120363025246125486@newsletter"`
 }
@@ -64,7 +61,6 @@ type ToggleMuteRequest struct {
 	Mute          bool   `json:"mute" example:"true"`
 }
 
-// Additional newsletter request types referenced in handlers
 
 type CreateNewsletterRequest struct {
 	Name        string `json:"name" binding:"required" example:"My Newsletter"`
@@ -91,7 +87,6 @@ type UploadNewsletterMediaRequest struct {
 	Filename  string `json:"filename,omitempty" example:"image.jpg"`
 }
 
-// Newsletter response types
 type NewsletterResponse struct {
 	Success bool           `json:"success"`
 	Code    int            `json:"code"`
@@ -99,7 +94,6 @@ type NewsletterResponse struct {
 	Error   *ErrorInfo     `json:"error,omitempty"`
 }
 
-// Additional newsletter response types
 type NewsletterInfoResponse struct {
 	Success bool           `json:"success"`
 	Code    int            `json:"code"`
@@ -155,7 +149,6 @@ type SendNewsletterMessageData struct {
 	Timestamp     time.Time `json:"timestamp"`
 }
 
-// Validation methods
 func (r *GetNewsletterMessageUpdatesRequest) Validate() error {
 	if r.NewsletterJID == "" {
 		return fmt.Errorf("newsletter JID is required")
@@ -196,7 +189,6 @@ func (r *ToggleMuteRequest) Validate() error {
 	return nil
 }
 
-// Response constructors
 func NewNewsletterSuccessResponse(sessionID, action string, updates []interface{}) *NewsletterResponse {
 	return &NewsletterResponse{
 		Success: true,

@@ -5,7 +5,6 @@ import (
 	"zpmeow/internal/infra/validation"
 )
 
-// SessionInfo represents session information
 type SessionInfo struct {
 	ID         string    `json:"id" example:"default"`
 	Name       string    `json:"name" example:"default"`
@@ -19,14 +18,11 @@ type SessionInfo struct {
 	UpdatedAt  time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
-// NewValidator creates a new validator instance
 func NewValidator() *validation.Validator {
 	return validation.NewValidator()
 }
 
-// Session-related request types
 
-// CreateSessionRequest represents a request to create a new session
 type CreateSessionRequest struct {
 	Name       string `json:"name" validate:"required,min=1,max=50" binding:"required" example:"default"`
 	WebhookURL string `json:"webhook_url,omitempty" validate:"omitempty,webhook_url" example:"https://webhook.example.com/whatsapp"`
@@ -34,26 +30,21 @@ type CreateSessionRequest struct {
 	ProxyURL   string `json:"proxy_url,omitempty" validate:"omitempty,url" example:"http://proxy.example.com:8080"`
 }
 
-// Validate validates the CreateSessionRequest
 func (r *CreateSessionRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
 }
 
-// PairPhoneRequest represents a request to pair a phone number
 type PairPhoneRequest struct {
 	Phone string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
 }
 
-// Validate validates the PairPhoneRequest
 func (r *PairPhoneRequest) Validate() error {
 	validator := NewValidator()
 	return validator.Validate(r)
 }
 
-// Session-related response types
 
-// SessionResponse represents a generic session response
 type SessionResponse struct {
 	Success   bool        `json:"success"`
 	Code      int         `json:"code"`
@@ -62,7 +53,6 @@ type SessionResponse struct {
 	Timestamp time.Time   `json:"timestamp"`
 }
 
-// SessionData represents session response data
 type SessionData struct {
 	SessionID string        `json:"session_id" example:"session_123"`
 	Action    string        `json:"action" example:"create"`
@@ -73,7 +63,6 @@ type SessionData struct {
 	QRCode    string        `json:"qr_code,omitempty"`
 }
 
-// CreateSessionResponse represents a response to session creation
 type CreateSessionResponse struct {
 	Success   bool              `json:"success"`
 	Code      int               `json:"code"`
@@ -82,7 +71,6 @@ type CreateSessionResponse struct {
 	Timestamp time.Time         `json:"timestamp"`
 }
 
-// SessionCreateData represents session creation response data
 type SessionCreateData struct {
 	Action    string       `json:"action" example:"create"`
 	Status    string       `json:"status" example:"success"`
@@ -90,7 +78,6 @@ type SessionCreateData struct {
 	Session   *SessionInfo `json:"session"`
 }
 
-// ConnectSessionResponse represents a response to session connection
 type ConnectSessionResponse struct {
 	Success   bool               `json:"success"`
 	Code      int                `json:"code"`
@@ -99,7 +86,6 @@ type ConnectSessionResponse struct {
 	Timestamp time.Time          `json:"timestamp"`
 }
 
-// SessionConnectData represents session connection response data
 type SessionConnectData struct {
 	SessionID  string                 `json:"session_id" example:"session_123"`
 	Action     string                 `json:"action" example:"connect"`
@@ -110,14 +96,12 @@ type SessionConnectData struct {
 	QRCode     string                 `json:"qr_code,omitempty"`
 }
 
-// SessionConnectionInfo represents session connection information
 type SessionConnectionInfo struct {
 	QRCode      string `json:"qr_code,omitempty"`
 	Connected   bool   `json:"connected"`
 	IsConnected bool   `json:"is_connected"`
 }
 
-// PairPhoneResponse represents a response to phone pairing
 type PairPhoneResponse struct {
 	Success   bool                  `json:"success"`
 	Code      int                   `json:"code"`
@@ -126,7 +110,6 @@ type PairPhoneResponse struct {
 	Timestamp time.Time             `json:"timestamp"`
 }
 
-// PairPhoneResponseData represents phone pairing response data
 type PairPhoneResponseData struct {
 	SessionID string    `json:"session_id" example:"session_123"`
 	Action    string    `json:"action" example:"pair"`
@@ -136,7 +119,6 @@ type PairPhoneResponseData struct {
 	Code      string    `json:"code,omitempty" example:"123456"`
 }
 
-// SessionStatusResponse represents a response to session status request
 type SessionStatusResponse struct {
 	Success   bool                      `json:"success"`
 	Code      int                       `json:"code"`
@@ -145,7 +127,6 @@ type SessionStatusResponse struct {
 	Timestamp time.Time                 `json:"timestamp"`
 }
 
-// SessionStatusResponseData represents session status response data
 type SessionStatusResponseData struct {
 	SessionID     string    `json:"session_id" example:"session_123"`
 	Action        string    `json:"action" example:"status"`
@@ -160,7 +141,6 @@ type SessionStatusResponseData struct {
 	UpdatedAt     time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
-// SessionErrorResponse represents an error response for session operations
 type SessionErrorResponse struct {
 	Success   bool       `json:"success"`
 	Code      int        `json:"code"`
@@ -168,7 +148,6 @@ type SessionErrorResponse struct {
 	Timestamp time.Time  `json:"timestamp"`
 }
 
-// SessionListResponse represents a response containing multiple sessions
 type SessionListResponse struct {
 	Success   bool        `json:"success"`
 	Code      int         `json:"code"`
@@ -177,9 +156,7 @@ type SessionListResponse struct {
 	Timestamp time.Time   `json:"timestamp"`
 }
 
-// Response constructors
 
-// NewSessionSuccessResponse creates a standardized success response for session operations
 func NewSessionSuccessResponse(sessionID, action string, data interface{}) *SessionResponse {
 	response := &SessionResponse{
 		Success: true,
@@ -205,7 +182,6 @@ func NewSessionSuccessResponse(sessionID, action string, data interface{}) *Sess
 	return response
 }
 
-// NewSessionErrorResponse creates a standardized error response for session operations
 func NewSessionErrorResponse(code int, errorCode, message, details string) *SessionResponse {
 	return &SessionResponse{
 		Success: false,
@@ -223,7 +199,6 @@ func NewSessionErrorResponse(code int, errorCode, message, details string) *Sess
 	}
 }
 
-// NewCreateSessionSuccessResponse creates a success response for session creation
 func NewCreateSessionSuccessResponse(sessionInfo *SessionInfo) *CreateSessionResponse {
 	return &CreateSessionResponse{
 		Success: true,
@@ -238,7 +213,6 @@ func NewCreateSessionSuccessResponse(sessionInfo *SessionInfo) *CreateSessionRes
 	}
 }
 
-// NewConnectSessionSuccessResponse creates a success response for session connection
 func NewConnectSessionSuccessResponse(sessionInfo *SessionInfo, connectionInfo *SessionConnectionInfo, qrCode string) *ConnectSessionResponse {
 	return &ConnectSessionResponse{
 		Success: true,
@@ -256,7 +230,6 @@ func NewConnectSessionSuccessResponse(sessionInfo *SessionInfo, connectionInfo *
 	}
 }
 
-// NewPairPhoneSuccessResponse creates a success response for phone pairing
 func NewPairPhoneSuccessResponse(sessionID, phone, code string) *PairPhoneResponse {
 	return &PairPhoneResponse{
 		Success: true,
@@ -273,7 +246,6 @@ func NewPairPhoneSuccessResponse(sessionID, phone, code string) *PairPhoneRespon
 	}
 }
 
-// NewSessionStatusSuccessResponse creates a success response for session status
 func NewSessionStatusSuccessResponse(data SessionStatusResponseData) *SessionStatusResponse {
 	return &SessionStatusResponse{
 		Success:   true,

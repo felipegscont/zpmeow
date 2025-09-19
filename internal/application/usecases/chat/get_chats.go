@@ -9,14 +9,12 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// GetChatsQuery represents the query to get chats
 type GetChatsQuery struct {
 	SessionID string
 	Limit     int
 	Offset    int
 }
 
-// Validate validates the get chats query
 func (q GetChatsQuery) Validate() error {
 	if strings.TrimSpace(q.SessionID) == "" {
 		return common.NewValidationError("sessionID", q.SessionID, "session ID is required")
@@ -37,7 +35,6 @@ func (q GetChatsQuery) Validate() error {
 	return nil
 }
 
-// ChatView represents a chat view model
 type ChatView struct {
 	JID           string
 	Name          string
@@ -50,7 +47,6 @@ type ChatView struct {
 	IsBlocked     bool
 }
 
-// GetChatsResult represents the result of getting chats
 type GetChatsResult struct {
 	SessionID string
 	Chats     []ChatView
@@ -59,14 +55,12 @@ type GetChatsResult struct {
 	Offset    int
 }
 
-// GetChatsUseCase handles getting chats for a session
 type GetChatsUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewGetChatsUseCase creates a new GetChatsUseCase
 func NewGetChatsUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -79,22 +73,18 @@ func NewGetChatsUseCase(
 	}
 }
 
-// Handle executes the get chats use case
 func (uc *GetChatsUseCase) Handle(ctx context.Context, query GetChatsQuery) (*GetChatsResult, error) {
-	// 1. Validate query
 	if err := query.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid get chats query", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, query.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", query.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -102,7 +92,6 @@ func (uc *GetChatsUseCase) Handle(ctx context.Context, query GetChatsQuery) (*Ge
 		)
 	}
 
-	// 4. Get chats via WhatsApp service
 	chats, err := uc.whatsappService.GetChats(ctx, query.SessionID, query.Limit, query.Offset)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get chats",
@@ -111,7 +100,6 @@ func (uc *GetChatsUseCase) Handle(ctx context.Context, query GetChatsQuery) (*Ge
 		return nil, fmt.Errorf("failed to get chats: %w", err)
 	}
 
-	// 5. Convert to view models
 	chatViews := make([]ChatView, len(chats))
 	for i, chat := range chats {
 		chatViews[i] = ChatView{
@@ -131,7 +119,6 @@ func (uc *GetChatsUseCase) Handle(ctx context.Context, query GetChatsQuery) (*Ge
 		"sessionID", query.SessionID,
 		"count", len(chatViews))
 
-	// 6. Return result
 	return &GetChatsResult{
 		SessionID: query.SessionID,
 		Chats:     chatViews,

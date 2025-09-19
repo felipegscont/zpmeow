@@ -22,7 +22,6 @@ func NewHealthHandler(db *sqlx.DB) *HealthHandler {
 	}
 }
 
-// HealthData represents health check response data
 type HealthData struct {
 	Status       string            `json:"status" example:"ok"`
 	Message      string            `json:"message" example:"Service is healthy"`
@@ -32,7 +31,6 @@ type HealthData struct {
 	Dependencies map[string]string `json:"dependencies,omitempty"`
 }
 
-// HealthStandardResponse is an alias for the standardized response
 type HealthStandardResponse = dto.StandardResponse
 
 func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, version string, dependencies map[string]string) {
@@ -50,7 +48,6 @@ func (h *HealthHandler) sendSuccessResponse(c *gin.Context, status, message, ver
 func (h *HealthHandler) checkDependencies() map[string]string {
 	dependencies := make(map[string]string)
 
-	// Check database
 	if h.db != nil {
 		if err := database.HealthCheck(h.db); err != nil {
 			dependencies["database"] = "unhealthy: " + err.Error()
@@ -77,7 +74,6 @@ func (h *HealthHandler) Health(c *gin.Context) {
 
 	dependencies := h.checkDependencies()
 
-	// Check if any dependency is unhealthy
 	allHealthy := true
 	for _, status := range dependencies {
 		if status != "healthy" {
@@ -119,7 +115,6 @@ func (h *HealthHandler) Ping(c *gin.Context) {
 func (h *HealthHandler) Metrics(c *gin.Context) {
 	h.logger.Infof("Metrics requested")
 
-	// TODO: Implement metrics collection
 	metrics := map[string]interface{}{
 		"status":    "metrics not implemented yet",
 		"timestamp": time.Now().Unix(),
@@ -139,7 +134,6 @@ func (h *HealthHandler) Metrics(c *gin.Context) {
 func (h *HealthHandler) ResetMetrics(c *gin.Context) {
 	h.logger.Infof("Metrics reset requested")
 
-	// TODO: Implement metrics reset
 	h.sendSuccessResponse(c, "ok", "Metrics reset not implemented yet", "", nil)
 
 	h.logger.Infof("Metrics reset completed successfully")

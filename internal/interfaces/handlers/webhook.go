@@ -81,7 +81,6 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 	}
 
 	validEvents := make([]string, 0)
-	// Get valid events from webhook app
 	allValidEvents, err := h.webhookApp.ListEvents(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.WebhookResponse{
@@ -95,7 +94,6 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 		return
 	}
 
-	// Validate each event
 	for _, event := range req.Events {
 		if h.isValidEvent(event, allValidEvents) {
 			validEvents = append(validEvents, event)
@@ -229,7 +227,6 @@ func (h *WebhookHandler) GetWebhook(c *gin.Context) {
 // @Security		ApiKeyAuth
 // @Router			/session/{sessionId}/webhooks/events [get]
 func (h *WebhookHandler) ListEvents(c *gin.Context) {
-	// Get supported events from webhook app
 	events, err := h.webhookApp.ListEvents(c.Request.Context())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -249,9 +246,7 @@ func (h *WebhookHandler) ListEvents(c *gin.Context) {
 	})
 }
 
-// Helper functions
 
-// isValidEvent checks if an event is in the list of valid events
 func (h *WebhookHandler) isValidEvent(event string, validEvents []string) bool {
 	for _, validEvent := range validEvents {
 		if event == validEvent {

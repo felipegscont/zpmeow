@@ -9,7 +9,6 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// ManageParticipantsCommand represents the command to add/remove participants
 type ManageParticipantsCommand struct {
 	SessionID    string
 	GroupJID     string
@@ -17,7 +16,6 @@ type ManageParticipantsCommand struct {
 	Action       string // "add" or "remove"
 }
 
-// Validate validates the manage participants command
 func (c ManageParticipantsCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -39,7 +37,6 @@ func (c ManageParticipantsCommand) Validate() error {
 		return common.NewValidationError("action", c.Action, "action must be 'add' or 'remove'")
 	}
 
-	// Validate participant JIDs
 	for i, participant := range c.Participants {
 		if strings.TrimSpace(participant) == "" {
 			return common.NewValidationError("participants", participant, fmt.Sprintf("participant %d cannot be empty", i))
@@ -49,7 +46,6 @@ func (c ManageParticipantsCommand) Validate() error {
 	return nil
 }
 
-// ManageParticipantsResult represents the result of managing participants
 type ManageParticipantsResult struct {
 	SessionID          string
 	GroupJID           string
@@ -61,14 +57,12 @@ type ManageParticipantsResult struct {
 	Message            string
 }
 
-// ManageParticipantsUseCase handles adding/removing participants from groups
 type ManageParticipantsUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewManageParticipantsUseCase creates a new ManageParticipantsUseCase
 func NewManageParticipantsUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -81,22 +75,18 @@ func NewManageParticipantsUseCase(
 	}
 }
 
-// Handle executes the manage participants use case
 func (uc *ManageParticipantsUseCase) Handle(ctx context.Context, cmd ManageParticipantsCommand) (*ManageParticipantsResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid manage participants command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -104,7 +94,6 @@ func (uc *ManageParticipantsUseCase) Handle(ctx context.Context, cmd ManageParti
 		)
 	}
 
-	// 4. Check if session is authenticated
 	if !sessionEntity.IsAuthenticated() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_authenticated",
@@ -115,7 +104,6 @@ func (uc *ManageParticipantsUseCase) Handle(ctx context.Context, cmd ManageParti
 	var failedParticipants []string
 	successfulCount := 0
 
-	// 5. Execute action via WhatsApp service
 	if cmd.Action == "add" {
 		err = uc.whatsappService.AddParticipants(ctx, cmd.SessionID, cmd.GroupJID, cmd.Participants)
 	} else {
@@ -130,12 +118,9 @@ func (uc *ManageParticipantsUseCase) Handle(ctx context.Context, cmd ManageParti
 			"participantCount", len(cmd.Participants),
 			"error", err)
 
-		// In a real implementation, we might get partial success information
-		// For now, we'll treat it as complete failure
 		failedParticipants = cmd.Participants
 		successfulCount = 0
 	} else {
-		// Success case
 		successfulCount = len(cmd.Participants)
 		failedParticipants = []string{}
 	}
@@ -154,7 +139,6 @@ func (uc *ManageParticipantsUseCase) Handle(ctx context.Context, cmd ManageParti
 		"successful", successfulCount,
 		"failed", len(failedParticipants))
 
-	// 6. Return result
 	return &ManageParticipantsResult{
 		SessionID:          cmd.SessionID,
 		GroupJID:           cmd.GroupJID,
@@ -167,13 +151,11 @@ func (uc *ManageParticipantsUseCase) Handle(ctx context.Context, cmd ManageParti
 	}, nil
 }
 
-// GetInviteLinkCommand represents the command to get group invite link
 type GetInviteLinkCommand struct {
 	SessionID string
 	GroupJID  string
 }
 
-// Validate validates the get invite link command
 func (c GetInviteLinkCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -186,7 +168,6 @@ func (c GetInviteLinkCommand) Validate() error {
 	return nil
 }
 
-// GetInviteLinkResult represents the result of getting invite link
 type GetInviteLinkResult struct {
 	SessionID  string
 	GroupJID   string
@@ -194,14 +175,12 @@ type GetInviteLinkResult struct {
 	Success    bool
 }
 
-// GetInviteLinkUseCase handles getting group invite links
 type GetInviteLinkUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewGetInviteLinkUseCase creates a new GetInviteLinkUseCase
 func NewGetInviteLinkUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -214,22 +193,18 @@ func NewGetInviteLinkUseCase(
 	}
 }
 
-// Handle executes the get invite link use case
 func (uc *GetInviteLinkUseCase) Handle(ctx context.Context, cmd GetInviteLinkCommand) (*GetInviteLinkResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid get invite link command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -237,7 +212,6 @@ func (uc *GetInviteLinkUseCase) Handle(ctx context.Context, cmd GetInviteLinkCom
 		)
 	}
 
-	// 4. Get invite link via WhatsApp service
 	inviteLink, err := uc.whatsappService.GetGroupInviteLink(ctx, cmd.SessionID, cmd.GroupJID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get group invite link",
@@ -251,7 +225,6 @@ func (uc *GetInviteLinkUseCase) Handle(ctx context.Context, cmd GetInviteLinkCom
 		"sessionID", cmd.SessionID,
 		"groupJID", cmd.GroupJID)
 
-	// 5. Return result
 	return &GetInviteLinkResult{
 		SessionID:  cmd.SessionID,
 		GroupJID:   cmd.GroupJID,

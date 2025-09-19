@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// LogLevel represents the log level for HTTP requests
 type LogLevel int
 
 const (
@@ -17,7 +16,6 @@ const (
 	LogLevelError
 )
 
-// HTTPLogEntry represents an HTTP request log entry
 type HTTPLogEntry struct {
 	Method    string   `json:"method"`
 	Path      string   `json:"path"`

@@ -9,10 +9,8 @@ import (
 	"zpmeow/internal/application/ports"
 )
 
-// ContactInfo represents contact information to be sent
 type ContactInfo = ports.ContactInfo
 
-// validateContactInfo validates the contact info
 func validateContactInfo(ci ContactInfo) error {
 	if strings.TrimSpace(ci.Name) == "" {
 		return common.NewValidationError("name", ci.Name, "contact name is required")
@@ -37,14 +35,12 @@ func validateContactInfo(ci ContactInfo) error {
 	return nil
 }
 
-// SendContactMessageCommand represents the command to send a contact message
 type SendContactMessageCommand struct {
 	SessionID string
 	ChatJID   string
 	Contacts  []ContactInfo
 }
 
-// Validate validates the send contact message command
 func (c SendContactMessageCommand) Validate() error {
 	if strings.TrimSpace(c.SessionID) == "" {
 		return common.NewValidationError("sessionID", c.SessionID, "session ID is required")
@@ -71,7 +67,6 @@ func (c SendContactMessageCommand) Validate() error {
 	return nil
 }
 
-// SendContactMessageResult represents the result of sending a contact message
 type SendContactMessageResult struct {
 	SessionID    string
 	ChatJID      string
@@ -80,14 +75,12 @@ type SendContactMessageResult struct {
 	Sent         bool
 }
 
-// SendContactMessageUseCase handles sending contact messages via WhatsApp
 type SendContactMessageUseCase struct {
 	sessionRepo     ports.SessionRepository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
-// NewSendContactMessageUseCase creates a new SendContactMessageUseCase
 func NewSendContactMessageUseCase(
 	sessionRepo ports.SessionRepository,
 	whatsappService ports.WhatsAppService,
@@ -100,22 +93,18 @@ func NewSendContactMessageUseCase(
 	}
 }
 
-// Handle executes the send contact message use case
 func (uc *SendContactMessageUseCase) Handle(ctx context.Context, cmd SendContactMessageCommand) (*SendContactMessageResult, error) {
-	// 1. Validate command
 	if err := cmd.Validate(); err != nil {
 		uc.logger.Warn(ctx, "Invalid send contact message command", "error", err)
 		return nil, fmt.Errorf("validation failed: %w", err)
 	}
 
-	// 2. Get session from repository
 	sessionEntity, err := uc.sessionRepo.GetByID(ctx, cmd.SessionID)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get session", "sessionID", cmd.SessionID, "error", err)
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	// 3. Check if session is connected (business rule)
 	if !sessionEntity.IsConnected() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_connected",
@@ -123,7 +112,6 @@ func (uc *SendContactMessageUseCase) Handle(ctx context.Context, cmd SendContact
 		)
 	}
 
-	// 4. Check if session is authenticated
 	if !sessionEntity.IsAuthenticated() {
 		return nil, common.NewBusinessRuleError(
 			"session_not_authenticated",
@@ -131,8 +119,6 @@ func (uc *SendContactMessageUseCase) Handle(ctx context.Context, cmd SendContact
 		)
 	}
 
-	// 5. Send contact message via WhatsApp service
-	// Note: This would need to be added to the WhatsAppService interface
 	if err := uc.whatsappService.SendContactMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Contacts); err != nil {
 		uc.logger.Error(ctx, "Failed to send contact message",
 			"sessionID", cmd.SessionID,
@@ -147,7 +133,6 @@ func (uc *SendContactMessageUseCase) Handle(ctx context.Context, cmd SendContact
 		"chatJID", cmd.ChatJID,
 		"contactCount", len(cmd.Contacts))
 
-	// 6. Return result
 	return &SendContactMessageResult{
 		SessionID:    cmd.SessionID,
 		ChatJID:      cmd.ChatJID,

@@ -5,32 +5,26 @@ import (
 	"strings"
 )
 
-// TimeProvider abstracts time operations for domain purity
 type TimeProvider interface {
 	Now() Timestamp
 }
 
-// defaultTimeProvider uses system time
 type systemTimeProvider struct{}
 
 func (p *systemTimeProvider) Now() Timestamp {
 	return Now()
 }
 
-// Default time provider
 var defaultTimeProvider TimeProvider = &systemTimeProvider{}
 
-// SetTimeProvider allows injection of time provider (useful for testing)
 func SetTimeProvider(provider TimeProvider) {
 	defaultTimeProvider = provider
 }
 
-// GetCurrentTime returns current time using the configured provider
 func GetCurrentTime() Timestamp {
 	return defaultTimeProvider.Now()
 }
 
-// URLValidator abstracts URL validation for domain purity
 type URLValidator interface {
 	ValidateURL(url string) error
 	ValidateScheme(url string, allowedSchemes []string) error
@@ -38,7 +32,6 @@ type URLValidator interface {
 	HasHost(url string) bool
 }
 
-// basicURLValidator provides basic URL validation without external dependencies
 type basicURLValidator struct{}
 
 func (v *basicURLValidator) ValidateURL(url string) error {
@@ -84,15 +77,12 @@ func (v *basicURLValidator) HasHost(url string) bool {
 	return parts[1] != ""
 }
 
-// Default URL validator
 var defaultURLValidator URLValidator = &basicURLValidator{}
 
-// SetURLValidator allows injection of URL validator
 func SetURLValidator(validator URLValidator) {
 	defaultURLValidator = validator
 }
 
-// GetURLValidator returns the configured URL validator
 func GetURLValidator() URLValidator {
 	return defaultURLValidator
 }

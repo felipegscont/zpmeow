@@ -75,20 +75,15 @@ func main() {
 		log.Fatalf("Failed to create whatsmeow container: %v", err)
 	}
 
-	// Create session repository
 	sessionRepo := repository.NewPostgresRepo(db)
 
-	// Create webhook service
 	_ = webhooks.NewService()
 
-	// Create WhatsApp service (infrastructure implementation)
 	waLogger := logging.GetWALogger("WhatsApp")
 	wmeowService := wmeow.NewMeowService(container, waLogger, sessionRepo)
 
-	// Create domain service
 	domainService := session.NewService()
 
-	// Create application services with proper dependencies
 	appSessionService := application.NewSessionApp(sessionRepo, domainService)
 	webhookAppService := application.NewWebhookApp(sessionRepo)
 
@@ -96,10 +91,8 @@ func main() {
 
 	log.Info("Session service initialized")
 
-	// Create authentication middleware
 	authMiddleware := middleware.NewAuthMiddleware(cfg, sessionRepo, log)
 
-	// Use application service in handlers
 	sessionHandler := handlers.NewSessionHandler(appSessionService, wmeowService)
 	healthHandler := handlers.NewHealthHandler(db)
 	messageHandler := handlers.NewMessageHandler(appSessionService, wmeowService)
@@ -113,32 +106,12 @@ func main() {
 
 	gin.SetMode(cfg.GetServer().GetMode())
 
-	// Create Gin router with custom middleware (no default logging)
 	ginRouter := gin.New()
 
-	// TODO: Implement middleware
-	// Add security and performance middlewares
-	// ginRouter.Use(middleware.SecurityHeadersMiddleware())
-	// ginRouter.Use(middleware.ContentSecurityMiddleware())
-	// ginRouter.Use(middleware.RequestIDMiddleware())
-	// ginRouter.Use(middleware.RecoveryMiddleware())
-	// ginRouter.Use(middleware.TimeoutMiddleware(25 * time.Second)) // Slightly less than server timeout
-	// ginRouter.Use(middleware.RateLimitMiddleware(100))            // 100 requests per minute per IP
-	// ginRouter.Use(middleware.RequestValidationMiddleware())
-	// ginRouter.Use(middleware.APIVersionMiddleware())
-	// ginRouter.Use(middleware.MetricsMiddleware())
-	// ginRouter.Use(middleware.PerformanceMiddleware())
-	// ginRouter.Use(middleware.RequestSizeMiddleware(10 * 1024 * 1024)) // 10MB limit
-	// ginRouter.Use(middleware.CacheControlMiddleware())
-	// ginRouter.Use(middleware.CircuitBreakerMiddleware(10, 5*time.Minute)) // 10 errors in 5 minutes
-	// ginRouter.Use(middleware.SlowRequestMiddleware(2 * time.Second))      // Log requests > 2s
-	// ginRouter.Use(middleware.AuditMiddleware())                           // Audit important actions
 
-	// Add custom logging middleware only for errors and important requests
 	ginRouter.Use(gin.LoggerWithConfig(gin.LoggerConfig{
 		SkipPaths: []string{"/ping", "/health"}, // Skip health check logs
 		Formatter: func(param gin.LogFormatterParams) string {
-			// Only log non-2xx responses and important endpoints
 			if param.StatusCode >= 400 ||
 				(param.Path != "/ping" && param.Path != "/health") {
 				return fmt.Sprintf("%s - %s %s %d %s\n",
@@ -153,10 +126,8 @@ func main() {
 		},
 	}))
 
-	// Add CORS middleware with configuration
 	ginRouter.Use(middleware.CORS(cfg.GetCORS()))
 
-	// Setup routes with handler dependencies
 	handlerDeps := &routes.HandlerDependencies{
 		HealthHandler:     healthHandler,
 		SessionHandler:    sessionHandler,
@@ -172,7 +143,6 @@ func main() {
 
 	routes.SetupRoutes(ginRouter, handlerDeps, authMiddleware)
 
-	// Create HTTP server with timeouts
 	addr := fmt.Sprintf(":%s", cfg.GetServer().GetPort())
 	srv := &http.Server{
 		Addr:         addr,
@@ -182,7 +152,6 @@ func main() {
 		IdleTimeout:  120 * time.Second,
 	}
 
-	// Start server in a goroutine
 	go func() {
 		log.Infof("Server listening on %s", addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -190,17 +159,14 @@ func main() {
 		}
 	}()
 
-	// Wait for interrupt signal to gracefully shutdown the server
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 	log.Info("Shutting down server...")
 
-	// Create a context with timeout for shutdown
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Shutdown server gracefully
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Errorf("Server forced to shutdown: %v", err)
 	}

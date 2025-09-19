@@ -206,7 +206,6 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 
 	h.logOperation("Creating session", "name: "+req.Name)
 
-	// Convert DTO to application request
 	appReq := application.CreateSessionRequest{
 		Name: req.Name,
 	}

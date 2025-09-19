@@ -6,15 +6,12 @@ import (
 	"strings"
 )
 
-// Validator provides validation capabilities
 type Validator struct{}
 
-// NewValidator creates a new validator
 func NewValidator() *Validator {
 	return &Validator{}
 }
 
-// ValidateSessionName validates a session name
 func (v *Validator) ValidateSessionName(name string) error {
 	if strings.TrimSpace(name) == "" {
 		return fmt.Errorf("session name cannot be empty")
@@ -28,7 +25,6 @@ func (v *Validator) ValidateSessionName(name string) error {
 		return fmt.Errorf("session name cannot exceed 50 characters")
 	}
 
-	// Only allow alphanumeric, dash, underscore
 	matched, _ := regexp.MatchString(`^[a-zA-Z0-9_-]+$`, name)
 	if !matched {
 		return fmt.Errorf("session name can only contain letters, numbers, dash and underscore")
@@ -37,20 +33,17 @@ func (v *Validator) ValidateSessionName(name string) error {
 	return nil
 }
 
-// ValidatePhoneNumber validates a phone number
 func (v *Validator) ValidatePhoneNumber(phone string) error {
 	if strings.TrimSpace(phone) == "" {
 		return fmt.Errorf("phone number cannot be empty")
 	}
 
-	// Remove common formatting
 	cleaned := strings.ReplaceAll(phone, " ", "")
 	cleaned = strings.ReplaceAll(cleaned, "-", "")
 	cleaned = strings.ReplaceAll(cleaned, "(", "")
 	cleaned = strings.ReplaceAll(cleaned, ")", "")
 	cleaned = strings.ReplaceAll(cleaned, "+", "")
 
-	// Check if it's all digits
 	matched, _ := regexp.MatchString(`^\d+$`, cleaned)
 	if !matched {
 		return fmt.Errorf("phone number must contain only digits")
@@ -63,7 +56,6 @@ func (v *Validator) ValidatePhoneNumber(phone string) error {
 	return nil
 }
 
-// ValidateJID validates a WhatsApp JID
 func (v *Validator) ValidateJID(jid string) error {
 	if strings.TrimSpace(jid) == "" {
 		return fmt.Errorf("JID cannot be empty")
@@ -85,7 +77,6 @@ func (v *Validator) ValidateJID(jid string) error {
 	return nil
 }
 
-// ValidateURL validates a URL
 func (v *Validator) ValidateURL(url string) error {
 	if strings.TrimSpace(url) == "" {
 		return fmt.Errorf("URL cannot be empty")
@@ -98,7 +89,6 @@ func (v *Validator) ValidateURL(url string) error {
 	return nil
 }
 
-// ValidateRequired validates that a field is not empty
 func (v *Validator) ValidateRequired(value, fieldName string) error {
 	if strings.TrimSpace(value) == "" {
 		return fmt.Errorf("%s is required", fieldName)
@@ -106,12 +96,6 @@ func (v *Validator) ValidateRequired(value, fieldName string) error {
 	return nil
 }
 
-// Validate is a generic validation method that can be used with structs
-// For now, it returns nil as the specific validation logic should be implemented
-// in the individual validation methods above
 func (v *Validator) Validate(data interface{}) error {
-	// This is a placeholder implementation
-	// In a real application, you might use reflection or a validation library
-	// For now, we'll return nil to satisfy the interface
 	return nil
 }

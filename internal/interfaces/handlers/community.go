@@ -238,7 +238,6 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 		return
 	}
 
-	// subGroups is already a string slice (JIDs)
 	subGroupJIDs := subGroups
 
 	response := dto.NewCommunitySubGroupsResponse(sessionID, req.CommunityJID, subGroupJIDs)
@@ -313,7 +312,6 @@ func (h *CommunityHandler) GetLinkedGroupsParticipants(c *gin.Context) {
 		return
 	}
 
-	// participants is already a string slice (JIDs)
 	participantJIDs := participants
 
 	response := dto.NewCommunityParticipantsResponse(sessionID, req.CommunityJID, participantJIDs)

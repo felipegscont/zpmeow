@@ -11,18 +11,15 @@ import (
 	"zpmeow/internal/interfaces/dto"
 )
 
-// Handler interface for route registration
 type Handler interface {
 	RegisterRoutes(router *gin.Engine)
 }
 
-// BaseHandler provides common functionality for all handlers
 type BaseHandler struct {
 	logger    logging.Logger
 	validator *validation.Validator
 }
 
-// NewBaseHandler creates a new base handler
 func NewBaseHandler(moduleName string) *BaseHandler {
 	return &BaseHandler{
 		logger:    logging.GetLogger().Sub(moduleName),
@@ -30,18 +27,14 @@ func NewBaseHandler(moduleName string) *BaseHandler {
 	}
 }
 
-// ValidateRequest validates a request DTO
 func (h *BaseHandler) ValidateRequest(req interface{}) error {
-	// Check if the request has a Validate method
 	if validator, ok := req.(interface{ Validate() error }); ok {
 		return validator.Validate()
 	}
 
-	// Fallback to struct validation
 	return h.validator.Validate(req)
 }
 
-// BindAndValidate binds JSON request and validates it
 func (h *BaseHandler) BindAndValidate(c *gin.Context, req interface{}) error {
 	if err := c.ShouldBindJSON(req); err != nil {
 		return fmt.Errorf("invalid JSON: %w", err)
@@ -50,24 +43,20 @@ func (h *BaseHandler) BindAndValidate(c *gin.Context, req interface{}) error {
 	return h.ValidateRequest(req)
 }
 
-// HTTPHandler is deprecated - use BaseHandler instead
 type HTTPHandler struct {
 	*BaseHandler
 }
 
-// SendSuccessResponse sends a standardized success response
 func (h *BaseHandler) SendSuccessResponse(c *gin.Context, statusCode int, data interface{}) {
 	response := dto.NewSuccessResponse(statusCode, data)
 	c.JSON(statusCode, response)
 }
 
-// SendActionResponse sends a response for action-based operations
 func (h *BaseHandler) SendActionResponse(c *gin.Context, statusCode int, action string, data interface{}) {
 	response := dto.NewActionResponse(statusCode, action, data)
 	c.JSON(statusCode, response)
 }
 
-// SendErrorResponse sends a standardized error response
 func (h *BaseHandler) SendErrorResponse(c *gin.Context, statusCode int, errorCode, message string, err error) {
 	details := ""
 	if err != nil {
@@ -77,17 +66,14 @@ func (h *BaseHandler) SendErrorResponse(c *gin.Context, statusCode int, errorCod
 	c.JSON(statusCode, response)
 }
 
-// Legacy method for backward compatibility
 func (h *HTTPHandler) SendSuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
 	h.BaseHandler.SendSuccessResponse(c, statusCode, data)
 }
 
-// Legacy method for backward compatibility
 func (h *HTTPHandler) SendErrorResponse(c *gin.Context, statusCode int, message string, err error) {
 	h.BaseHandler.SendErrorResponse(c, statusCode, dto.ErrorCodeInternalError, message, err)
 }
 
-// Standardized error response methods using BaseHandler
 func (h *BaseHandler) SendValidationErrorResponse(c *gin.Context, err error) {
 	h.SendErrorResponse(c, dto.StatusBadRequest, dto.ErrorCodeValidationFailed, "Validation error", err)
 }
@@ -112,7 +98,6 @@ func (h *BaseHandler) SendConflictResponse(c *gin.Context, message string, err e
 	h.SendErrorResponse(c, dto.StatusConflict, dto.ErrorCodeConflict, message, err)
 }
 
-// Legacy methods for backward compatibility
 func (h *HTTPHandler) SendValidationErrorResponse(c *gin.Context, err error) {
 	h.BaseHandler.SendValidationErrorResponse(c, err)
 }
@@ -137,7 +122,6 @@ func (h *HTTPHandler) SendConflictResponse(c *gin.Context, message string, err e
 	h.BaseHandler.SendConflictResponse(c, message, err)
 }
 
-// Utility methods for BaseHandler
 func (h *BaseHandler) GetSessionIDFromPath(c *gin.Context) string {
 	return c.Param("sessionId")
 }
@@ -162,7 +146,6 @@ func (h *BaseHandler) GetQueryParamInt(c *gin.Context, key string, defaultValue 
 	return defaultValue
 }
 
-// Legacy methods for backward compatibility
 func (h *HTTPHandler) GetSessionIDFromPath(c *gin.Context) string {
 	return h.BaseHandler.GetSessionIDFromPath(c)
 }
@@ -175,7 +158,6 @@ func (h *HTTPHandler) GetQueryParamInt(c *gin.Context, key string, defaultValue 
 	return h.BaseHandler.GetQueryParamInt(c, key, defaultValue)
 }
 
-// Binding methods for BaseHandler
 func (h *BaseHandler) BindJSON(c *gin.Context, obj interface{}) error {
 	if err := c.ShouldBindJSON(obj); err != nil {
 		h.logger.Errorf("JSON binding failed: %v", err)
@@ -203,7 +185,6 @@ func (h *BaseHandler) BindURI(c *gin.Context, obj interface{}) error {
 	return nil
 }
 
-// Legacy methods for backward compatibility
 func (h *HTTPHandler) BindJSON(c *gin.Context, obj interface{}) error {
 	return h.BaseHandler.BindJSON(c, obj)
 }

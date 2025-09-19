@@ -292,10 +292,8 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 		return
 	}
 
-	// Get group info after joining
 	groupInfo, err = h.wmeowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 	if err != nil {
-		// Group joined but couldn't get info - still success
 		response := dto.NewGroupSuccessResponse(sessionID, "join", nil)
 		response.Data.Message = "Group joined successfully"
 		c.JSON(http.StatusOK, response)
@@ -355,7 +353,6 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use default values for missing parameters
 	groupInfo, err := h.wmeowService.JoinGroupWithInvite(ctx, sessionID, "", "", req.InviteCode, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -598,7 +595,6 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 		return
 	}
 
-	// Convert InviteInfo to response format
 	response := dto.NewGroupOperationResponse(sessionID, "invite_info", "Invite info retrieved successfully")
 	response.Data.InviteLink = inviteInfo.InviteCode
 	response.Data.Message = fmt.Sprintf("Group: %s, Inviter: %s", inviteInfo.GroupName, inviteInfo.Inviter)
@@ -653,7 +649,6 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use default values for missing parameters
 	groupInfo, err := h.wmeowService.GetGroupInfoFromInvite(ctx, sessionID, "", "", req.InviteCode, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
@@ -918,7 +913,6 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 		return
 	}
 
-	// Decode base64 photo data
 	photoData, err := base64.StdEncoding.DecodeString(req.Photo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
@@ -1183,7 +1177,6 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	// Use default duration of 7 days (604800 seconds) when enabling ephemeral messages
 	duration := 0
 	if req.Ephemeral {
 		duration = 604800 // 7 days in seconds
