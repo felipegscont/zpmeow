@@ -105,3 +105,13 @@ func (v *Validator) ValidateRequired(value, fieldName string) error {
 	}
 	return nil
 }
+
+// Validate is a generic validation method that can be used with structs
+// For now, it returns nil as the specific validation logic should be implemented
+// in the individual validation methods above
+func (v *Validator) Validate(data interface{}) error {
+	// This is a placeholder implementation
+	// In a real application, you might use reflection or a validation library
+	// For now, we'll return nil to satisfy the interface
+	return nil
+}

@@ -1,9 +1,9 @@
 package routes
 
 import (
-	"meow/docs"
-	"meow/internal/infra/middleware"
-	"meow/internal/interfaces/handlers"
+	"zpmeow/docs"
+	"zpmeow/internal/infra/middleware"
+	"zpmeow/internal/interfaces/handlers"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"

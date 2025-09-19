@@ -7840,7 +7840,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2023-01-01T00:00:00Z"
                 },
-                "wa_jid": {
+                "device_jid": {
                     "type": "string",
                     "example": "5511999999999@s.meow.net"
                 },
@@ -8018,7 +8018,7 @@ const docTemplate = `{
                     "type": "string",
                     "example": "2023-01-01T00:00:00Z"
                 },
-                "wa_jid": {
+                "device_jid": {
                     "type": "string",
                     "example": "5511999999999@s.meow.net"
                 }

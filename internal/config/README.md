@@ -54,7 +54,7 @@ type DatabaseConfigProvider interface {
 ### Carregamento Básico
 
 ```go
-import "meow/internal/config"
+import "zpmeow/internal/config"
 
 // Carregar configuração do ambiente
 cfg, err := config.LoadConfig()

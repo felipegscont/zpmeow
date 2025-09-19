@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"meow/internal/application/common"
-	"meow/internal/application/ports"
+	"zpmeow/internal/application/common"
+	"zpmeow/internal/application/ports"
 )
 
 // JoinGroupCommand represents the command to join a group via invite link

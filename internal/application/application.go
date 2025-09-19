@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"meow/internal/application/ports"
-	"meow/internal/domain/session"
+	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 // SessionApp represents the session application service
@@ -41,18 +41,20 @@ func (s *SessionApp) GetAllSessions(ctx context.Context) ([]*session.Session, er
 
 // CreateSessionWithRequest creates a new session with the given request
 func (s *SessionApp) CreateSessionWithRequest(ctx context.Context, req CreateSessionRequest) (*session.Session, error) {
-	// Create new session
-	sess, err := session.NewSession(req.SessionID, req.Name)
+	// Create new session with empty ID (PostgreSQL will generate it)
+	sess, err := session.NewSession("", req.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	// Save to repository
-	if err := s.sessionRepo.Create(ctx, sess); err != nil {
+	// Save to repository and get the generated ID
+	generatedID, err := s.sessionRepo.CreateWithGeneratedID(ctx, sess)
+	if err != nil {
 		return nil, err
 	}
 
-	return sess, nil
+	// Get the session back from the database with the generated ID
+	return s.sessionRepo.GetByID(ctx, generatedID)
 }
 
 // DeleteSession deletes a session

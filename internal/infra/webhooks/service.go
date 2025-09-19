@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"meow/internal/infra/logging"
+	"zpmeow/internal/infra/logging"
 )
 
 type Service struct {

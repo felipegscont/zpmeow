@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"meow/internal/application"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )

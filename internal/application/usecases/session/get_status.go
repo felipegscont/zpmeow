@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"meow/internal/application/common"
-	"meow/internal/application/ports"
+	"zpmeow/internal/application/common"
+	"zpmeow/internal/application/ports"
 )
 
 // GetSessionStatusQuery represents the query to get session status
@@ -29,7 +29,7 @@ type SessionStatusView struct {
 	Status          string
 	IsConnected     bool
 	IsAuthenticated bool
-	WaJID           string
+	DeviceJID       string
 	QRCode          string
 	LastSeen        string
 	ConnectionInfo  map[string]interface{}
@@ -104,7 +104,7 @@ func (uc *GetSessionStatusUseCase) Handle(ctx context.Context, query GetSessionS
 		Status:          whatsappStatus, // Use real-time status
 		IsConnected:     sessionEntity.IsConnected(),
 		IsAuthenticated: sessionEntity.IsAuthenticated(),
-		WaJID:           sessionEntity.WaJID().Value(),
+		DeviceJID:       sessionEntity.WaJID().Value(),
 		QRCode:          qrCode,
 		LastSeen:        sessionEntity.UpdatedAt().Value().Format("2006-01-02T15:04:05Z07:00"),
 		ConnectionInfo:  connectionInfo,

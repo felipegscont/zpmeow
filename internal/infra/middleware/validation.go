@@ -88,16 +88,16 @@ func ContentSecurityMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Prevent MIME type sniffing
 		c.Header("X-Content-Type-Options", "nosniff")
-		
+
 		// Prevent clickjacking
 		c.Header("X-Frame-Options", "DENY")
-		
+
 		// Enable XSS protection
 		c.Header("X-XSS-Protection", "1; mode=block")
-		
+
 		// Control referrer information
 		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
-		
+
 		// Content Security Policy
 		csp := "default-src 'self'; " +
 			"script-src 'self' 'unsafe-inline'; " +
@@ -107,7 +107,7 @@ func ContentSecurityMiddleware() gin.HandlerFunc {
 			"connect-src 'self'; " +
 			"frame-ancestors 'none'"
 		c.Header("Content-Security-Policy", csp)
-		
+
 		// Prevent caching of sensitive data
 		if strings.HasPrefix(c.Request.URL.Path, "/api/") {
 			c.Header("Cache-Control", "no-store, no-cache, must-revalidate, private")
@@ -140,10 +140,10 @@ func APIVersionMiddleware() gin.HandlerFunc {
 
 		if !isSupported {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-				"error":             "Unsupported API version",
-				"message":           fmt.Sprintf("API version '%s' is not supported", apiVersion),
+				"error":              "Unsupported API version",
+				"message":            fmt.Sprintf("API version '%s' is not supported", apiVersion),
 				"supported_versions": supportedVersions,
-				"code":              http.StatusBadRequest,
+				"code":               http.StatusBadRequest,
 			})
 			return
 		}

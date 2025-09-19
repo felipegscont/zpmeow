@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"meow/internal/config"
+	"zpmeow/internal/config"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"

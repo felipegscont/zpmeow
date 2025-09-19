@@ -4,19 +4,19 @@ import (
 	"net/http"
 	"time"
 
-	"meow/internal/application"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ContactHandler struct {
 	sessionService *application.SessionApp
-	wmeowService   wmeow.Service
+	wmeowService   wmeow.WameowService
 }
 
-func NewContactHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ContactHandler {
+func NewContactHandler(sessionService *application.SessionApp, wmeowService wmeow.WameowService) *ContactHandler {
 	return &ContactHandler{
 		sessionService: sessionService,
 		wmeowService:   wmeowService,

@@ -30,18 +30,18 @@ import (
 	"syscall"
 	"time"
 
-	_ "meow/docs" // Import for swagger docs
-	"meow/internal/application"
-	"meow/internal/config"
-	"meow/internal/domain/session"
-	"meow/internal/infra/database"
-	"meow/internal/infra/database/repository"
-	"meow/internal/infra/logging"
-	"meow/internal/infra/middleware"
-	"meow/internal/infra/webhooks"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/handlers"
-	"meow/internal/interfaces/routes"
+	_ "zpmeow/docs" // Import for swagger docs
+	"zpmeow/internal/application"
+	"zpmeow/internal/config"
+	"zpmeow/internal/domain/session"
+	"zpmeow/internal/infra/database"
+	"zpmeow/internal/infra/database/repository"
+	"zpmeow/internal/infra/logging"
+	"zpmeow/internal/infra/middleware"
+	"zpmeow/internal/infra/webhooks"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/handlers"
+	"zpmeow/internal/interfaces/routes"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/store/sqlstore"
@@ -70,7 +70,7 @@ func main() {
 	}
 
 	dbLog := logging.GetWALogger("Database")
-	_, err = sqlstore.New(context.Background(), "postgres", cfg.GetDatabaseURL(), dbLog)
+	container, err := sqlstore.New(context.Background(), "postgres", cfg.GetDatabaseURL(), dbLog)
 	if err != nil {
 		log.Fatalf("Failed to create whatsmeow container: %v", err)
 	}
@@ -82,7 +82,8 @@ func main() {
 	_ = webhooks.NewService()
 
 	// Create WhatsApp service (infrastructure implementation)
-	wmeowService := wmeow.NewService()
+	waLogger := logging.GetWALogger("WhatsApp")
+	wmeowService := wmeow.NewMeowService(container, waLogger, sessionRepo)
 
 	// Create domain service
 	domainService := session.NewService()
@@ -115,22 +116,23 @@ func main() {
 	// Create Gin router with custom middleware (no default logging)
 	ginRouter := gin.New()
 
+	// TODO: Implement middleware
 	// Add security and performance middlewares
-	ginRouter.Use(middleware.SecurityHeadersMiddleware())
-	ginRouter.Use(middleware.ContentSecurityMiddleware())
-	ginRouter.Use(middleware.RequestIDMiddleware())
-	ginRouter.Use(middleware.RecoveryMiddleware())
-	ginRouter.Use(middleware.TimeoutMiddleware(25 * time.Second)) // Slightly less than server timeout
-	ginRouter.Use(middleware.RateLimitMiddleware(100))            // 100 requests per minute per IP
-	ginRouter.Use(middleware.RequestValidationMiddleware())
-	ginRouter.Use(middleware.APIVersionMiddleware())
-	ginRouter.Use(middleware.MetricsMiddleware())
-	ginRouter.Use(middleware.PerformanceMiddleware())
-	ginRouter.Use(middleware.RequestSizeMiddleware(10 * 1024 * 1024)) // 10MB limit
-	ginRouter.Use(middleware.CacheControlMiddleware())
-	ginRouter.Use(middleware.CircuitBreakerMiddleware(10, 5*time.Minute)) // 10 errors in 5 minutes
-	ginRouter.Use(middleware.SlowRequestMiddleware(2 * time.Second))      // Log requests > 2s
-	ginRouter.Use(middleware.AuditMiddleware())                           // Audit important actions
+	// ginRouter.Use(middleware.SecurityHeadersMiddleware())
+	// ginRouter.Use(middleware.ContentSecurityMiddleware())
+	// ginRouter.Use(middleware.RequestIDMiddleware())
+	// ginRouter.Use(middleware.RecoveryMiddleware())
+	// ginRouter.Use(middleware.TimeoutMiddleware(25 * time.Second)) // Slightly less than server timeout
+	// ginRouter.Use(middleware.RateLimitMiddleware(100))            // 100 requests per minute per IP
+	// ginRouter.Use(middleware.RequestValidationMiddleware())
+	// ginRouter.Use(middleware.APIVersionMiddleware())
+	// ginRouter.Use(middleware.MetricsMiddleware())
+	// ginRouter.Use(middleware.PerformanceMiddleware())
+	// ginRouter.Use(middleware.RequestSizeMiddleware(10 * 1024 * 1024)) // 10MB limit
+	// ginRouter.Use(middleware.CacheControlMiddleware())
+	// ginRouter.Use(middleware.CircuitBreakerMiddleware(10, 5*time.Minute)) // 10 errors in 5 minutes
+	// ginRouter.Use(middleware.SlowRequestMiddleware(2 * time.Second))      // Log requests > 2s
+	// ginRouter.Use(middleware.AuditMiddleware())                           // Audit important actions
 
 	// Add custom logging middleware only for errors and important requests
 	ginRouter.Use(gin.LoggerWithConfig(gin.LoggerConfig{

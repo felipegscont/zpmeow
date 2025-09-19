@@ -1748,7 +1748,7 @@ definitions:
       updated_at:
         example: "2023-01-01T00:00:00Z"
         type: string
-      wa_jid:
+      device_jid:
         example: 5511999999999@s.meow.net
         type: string
       webhook_url:
@@ -1873,7 +1873,7 @@ definitions:
       updated_at:
         example: "2023-01-01T00:00:00Z"
         type: string
-      wa_jid:
+      device_jid:
         example: 5511999999999@s.meow.net
         type: string
     type: object

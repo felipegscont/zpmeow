@@ -1,7 +1,7 @@
 package session
 
 import (
-	"meow/internal/domain/common"
+	"zpmeow/internal/domain/common"
 )
 
 // Event types for session domain
@@ -42,10 +42,10 @@ type SessionConnectedEvent struct {
 }
 
 // NewSessionConnectedEvent creates a new session connected event
-func NewSessionConnectedEvent(sessionID string, waJID string) SessionConnectedEvent {
+func NewSessionConnectedEvent(sessionID string, DeviceJID string) SessionConnectedEvent {
 	data := map[string]interface{}{
 		"session_id": sessionID,
-		"wa_jid":     waJID,
+		"device_jid": DeviceJID,
 	}
 
 	return SessionConnectedEvent{
@@ -84,10 +84,10 @@ type SessionAuthenticatedEvent struct {
 }
 
 // NewSessionAuthenticatedEvent creates a new session authenticated event
-func NewSessionAuthenticatedEvent(sessionID string, waJID string) SessionAuthenticatedEvent {
+func NewSessionAuthenticatedEvent(sessionID string, DeviceJID string) SessionAuthenticatedEvent {
 	data := map[string]interface{}{
 		"session_id": sessionID,
-		"wa_jid":     waJID,
+		"device_jid": DeviceJID,
 	}
 
 	return SessionAuthenticatedEvent{

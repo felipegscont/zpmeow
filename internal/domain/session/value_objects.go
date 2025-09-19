@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"meow/internal/domain/common"
+	"zpmeow/internal/domain/common"
 )
 
 // SessionID represents a unique session identifier
@@ -82,43 +82,43 @@ func (a ApiKey) IsEmpty() bool {
 	return a.value == ""
 }
 
-// WaJID represents a WhatsApp JID (Jabber ID)
-type WaJID struct {
+// DeviceJID represents a WhatsApp JID (Jabber ID)
+type DeviceJID struct {
 	value string
 }
 
-// NewWaJID creates a new WhatsApp JID with validation
-func NewWaJID(value string) (WaJID, error) {
+// NewDeviceJID creates a new WhatsApp JID with validation
+func NewDeviceJID(value string) (DeviceJID, error) {
 	trimmed := strings.TrimSpace(value)
 
 	if trimmed == "" {
-		return WaJID{}, nil // Empty JID is allowed for new sessions
+		return DeviceJID{}, nil // Empty JID is allowed for new sessions
 	}
 
 	if !strings.Contains(trimmed, "@") {
-		return WaJID{}, fmt.Errorf("invalid JID format: must contain @")
+		return DeviceJID{}, fmt.Errorf("invalid JID format: must contain @")
 	}
 
 	parts := strings.Split(trimmed, "@")
 	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-		return WaJID{}, fmt.Errorf("invalid JID format: user@server required")
+		return DeviceJID{}, fmt.Errorf("invalid JID format: user@server required")
 	}
 
-	return WaJID{value: trimmed}, nil
+	return DeviceJID{value: trimmed}, nil
 }
 
 // Value returns the JID value
-func (w WaJID) Value() string {
+func (w DeviceJID) Value() string {
 	return w.value
 }
 
 // String returns the string representation
-func (w WaJID) String() string {
+func (w DeviceJID) String() string {
 	return w.value
 }
 
 // IsEmpty checks if JID is empty
-func (w WaJID) IsEmpty() bool {
+func (w DeviceJID) IsEmpty() bool {
 	return w.value == ""
 }
 

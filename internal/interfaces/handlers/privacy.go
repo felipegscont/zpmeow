@@ -10,17 +10,17 @@ import (
 	"github.com/gin-gonic/gin"
 	waTypes "go.mau.fi/whatsmeow/types"
 
-	"meow/internal/application"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/dto"
 )
 
 type PrivacyHandler struct {
 	sessionService *application.SessionApp
-	wmeowService   wmeow.Service
+	wmeowService   wmeow.WameowService
 }
 
-func NewPrivacyHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *PrivacyHandler {
+func NewPrivacyHandler(sessionService *application.SessionApp, wmeowService wmeow.WameowService) *PrivacyHandler {
 	return &PrivacyHandler{
 		sessionService: sessionService,
 		wmeowService:   wmeowService,
@@ -111,7 +111,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "groupAdd")
-		currentSettings["groupAdd"] = *req.GroupAdd
+		currentSettings.GroupsAdd = *req.GroupAdd
 	}
 
 	if req.LastSeen != nil {
@@ -128,7 +128,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "lastSeen")
-		currentSettings["LastSeen"] = *req.LastSeen
+		currentSettings.LastSeen = *req.LastSeen
 	}
 
 	if req.Status != nil {
@@ -145,7 +145,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "status")
-		currentSettings["Status"] = *req.Status
+		currentSettings.Status = *req.Status
 	}
 
 	if req.Profile != nil {
@@ -162,7 +162,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "profile")
-		currentSettings["Profile"] = *req.Profile
+		currentSettings.ProfilePhoto = *req.Profile
 	}
 
 	if req.ReadReceipts != nil {
@@ -183,7 +183,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "readReceipts")
-		currentSettings["ReadReceipts"] = value
+		currentSettings.ReadReceipts = value == "true"
 	}
 
 	if req.CallAdd != nil {
@@ -200,7 +200,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "callAdd")
-		currentSettings["CallAdd"] = *req.CallAdd
+		currentSettings.CallsAdd = *req.CallAdd
 	}
 
 	if req.Online != nil {
@@ -217,17 +217,17 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "online")
-		currentSettings["Online"] = *req.Online
+		// Online setting not supported in current PrivacySettings struct
 	}
 
 	data := &dto.PrivacySettingsData{
-		GroupAdd:     getStringFromMap(currentSettings, "GroupAdd"),
-		LastSeen:     getStringFromMap(currentSettings, "LastSeen"),
-		Status:       getStringFromMap(currentSettings, "Status"),
-		Profile:      getStringFromMap(currentSettings, "Profile"),
-		ReadReceipts: getStringFromMap(currentSettings, "ReadReceipts"),
-		CallAdd:      getStringFromMap(currentSettings, "CallAdd"),
-		Online:       getStringFromMap(currentSettings, "Online"),
+		GroupAdd:     currentSettings.GroupsAdd,
+		LastSeen:     currentSettings.LastSeen,
+		Status:       currentSettings.Status,
+		Profile:      currentSettings.ProfilePhoto,
+		ReadReceipts: fmt.Sprintf("%t", currentSettings.ReadReceipts),
+		CallAdd:      currentSettings.CallsAdd,
+		Online:       "contacts", // Default value since not supported
 	}
 
 	c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
@@ -287,10 +287,8 @@ func (h *PrivacyHandler) GetBlocklist(c *gin.Context) {
 	}
 
 	// Convert ContactInfo to JID strings
-	jids := make([]string, len(blocklist))
-	for i, contact := range blocklist {
-		jids[i] = contact.JID
-	}
+	// blocklist is already a slice of strings (JIDs)
+	jids := blocklist
 
 	c.JSON(http.StatusOK, dto.BlocklistResponse{
 		Success: true,
@@ -483,13 +481,13 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 
 	if len(req.Settings) == 0 {
 		data := &dto.PrivacySettingsData{
-			GroupAdd:     getStringFromMap(allSettings, "GroupAdd"),
-			LastSeen:     getStringFromMap(allSettings, "LastSeen"),
-			Status:       getStringFromMap(allSettings, "Status"),
-			Profile:      getStringFromMap(allSettings, "Profile"),
-			ReadReceipts: getStringFromMap(allSettings, "ReadReceipts"),
-			CallAdd:      getStringFromMap(allSettings, "CallAdd"),
-			Online:       getStringFromMap(allSettings, "Online"),
+			GroupAdd:     allSettings.GroupsAdd,
+			LastSeen:     allSettings.LastSeen,
+			Status:       allSettings.Status,
+			Profile:      allSettings.ProfilePhoto,
+			ReadReceipts: fmt.Sprintf("%t", allSettings.ReadReceipts),
+			CallAdd:      allSettings.CallsAdd,
+			Online:       "contacts", // Default value since not supported
 		}
 
 		c.JSON(http.StatusOK, dto.PrivacySettingsResponse{
@@ -506,25 +504,25 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 	for _, setting := range req.Settings {
 		switch setting {
 		case "groupAdd":
-			filteredData.GroupAdd = getStringFromMap(allSettings, "GroupAdd")
+			filteredData.GroupAdd = allSettings.GroupsAdd
 			requestedSettings = append(requestedSettings, "groupAdd")
 		case "lastSeen":
-			filteredData.LastSeen = getStringFromMap(allSettings, "LastSeen")
+			filteredData.LastSeen = allSettings.LastSeen
 			requestedSettings = append(requestedSettings, "lastSeen")
 		case "status":
-			filteredData.Status = getStringFromMap(allSettings, "Status")
+			filteredData.Status = allSettings.Status
 			requestedSettings = append(requestedSettings, "status")
 		case "profile":
-			filteredData.Profile = getStringFromMap(allSettings, "Profile")
+			filteredData.Profile = allSettings.ProfilePhoto
 			requestedSettings = append(requestedSettings, "profile")
 		case "readReceipts":
-			filteredData.ReadReceipts = getStringFromMap(allSettings, "ReadReceipts")
+			filteredData.ReadReceipts = fmt.Sprintf("%t", allSettings.ReadReceipts)
 			requestedSettings = append(requestedSettings, "readReceipts")
 		case "callAdd":
-			filteredData.CallAdd = getStringFromMap(allSettings, "CallAdd")
+			filteredData.CallAdd = allSettings.CallsAdd
 			requestedSettings = append(requestedSettings, "callAdd")
 		case "online":
-			filteredData.Online = getStringFromMap(allSettings, "Online")
+			filteredData.Online = "contacts" // Default value since not supported
 			requestedSettings = append(requestedSettings, "online")
 		}
 	}

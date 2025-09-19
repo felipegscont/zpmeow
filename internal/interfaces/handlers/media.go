@@ -3,19 +3,19 @@ package handlers
 import (
 	"net/http"
 
-	"meow/internal/application"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 type MediaHandler struct {
 	sessionService *application.SessionApp
-	wmeowService   wmeow.Service
+	wmeowService   wmeow.WameowService
 }
 
-func NewMediaHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *MediaHandler {
+func NewMediaHandler(sessionService *application.SessionApp, wmeowService wmeow.WameowService) *MediaHandler {
 	return &MediaHandler{
 		sessionService: sessionService,
 		wmeowService:   wmeowService,

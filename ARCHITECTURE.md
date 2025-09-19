@@ -285,9 +285,9 @@ HTTP Request → Handler → UseCase → Domain ← Infrastructure
 ```go
 // ✅ Clean imports (no aliases needed)
 import (
-    "meow/internal/domain/sessions"
-    "meow/internal/usecase/sessions"
-    "meow/internal/infra/web/handlers"
+    "zpmeow/internal/domain/sessions"
+    "zpmeow/internal/usecase/sessions"
+    "zpmeow/internal/infra/web/handlers"
 )
 ```
 

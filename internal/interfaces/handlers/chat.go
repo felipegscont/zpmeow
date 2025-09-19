@@ -6,19 +6,19 @@ import (
 	"strings"
 	"time"
 
-	"meow/internal/application"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ChatHandler struct {
 	sessionService *application.SessionApp
-	wmeowService   wmeow.Service
+	wmeowService   wmeow.WameowService
 }
 
-func NewChatHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *ChatHandler {
+func NewChatHandler(sessionService *application.SessionApp, wmeowService wmeow.WameowService) *ChatHandler {
 	return &ChatHandler{
 		sessionService: sessionService,
 		wmeowService:   wmeowService,

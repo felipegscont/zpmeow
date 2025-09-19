@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"meow/internal/application/common"
-	"meow/internal/application/ports"
-	"meow/internal/domain/session"
+	"zpmeow/internal/application/common"
+	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 // GetSessionQuery represents the query to get a session
@@ -34,7 +34,7 @@ type SessionView struct {
 	SessionID          string
 	Name               string
 	Status             string
-	WaJID              string
+	DeviceJID          string
 	QRCode             string
 	ProxyConfiguration string
 	WebhookEndpoint    string
@@ -103,7 +103,7 @@ func (uc *GetSessionUseCase) Handle(ctx context.Context, query GetSessionQuery) 
 		SessionID:          sessionEntity.SessionID().Value(),
 		Name:               sessionEntity.Name().Value(),
 		Status:             sessionEntity.Status().String(),
-		WaJID:              sessionEntity.WaJID().Value(),
+		DeviceJID:          sessionEntity.WaJID().Value(),
 		QRCode:             sessionEntity.QRCode().Value(),
 		ProxyConfiguration: sessionEntity.ProxyConfiguration().Value(),
 		WebhookEndpoint:    sessionEntity.WebhookEndpoint().Value(),
@@ -170,7 +170,7 @@ func (uc *GetAllSessionsUseCase) Handle(ctx context.Context, query GetAllSession
 			SessionID:          sessionEntity.SessionID().Value(),
 			Name:               sessionEntity.Name().Value(),
 			Status:             sessionEntity.Status().String(),
-			WaJID:              sessionEntity.WaJID().Value(),
+			DeviceJID:          sessionEntity.WaJID().Value(),
 			QRCode:             sessionEntity.QRCode().Value(),
 			ProxyConfiguration: sessionEntity.ProxyConfiguration().Value(),
 			WebhookEndpoint:    sessionEntity.WebhookEndpoint().Value(),

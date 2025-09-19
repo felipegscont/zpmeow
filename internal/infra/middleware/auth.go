@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"meow/internal/config"
-	"meow/internal/domain/session"
-	"meow/internal/infra/logging"
+	"zpmeow/internal/config"
+	"zpmeow/internal/domain/session"
+	"zpmeow/internal/infra/logging"
 
 	"github.com/gin-gonic/gin"
 )

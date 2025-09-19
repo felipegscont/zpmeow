@@ -8,11 +8,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	"meow/internal/application"
-	"meow/internal/infra/middleware"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/handlers"
-	"meow/internal/interfaces/routes"
+	"zpmeow/internal/application"
+	"zpmeow/internal/infra/middleware"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/handlers"
+	"zpmeow/internal/interfaces/routes"
 )
 
 // ServerConfig contains configuration for the HTTP server
@@ -47,7 +47,7 @@ func NewServer(
 	db *sqlx.DB,
 	sessionApp *application.SessionApp,
 	webhookApp *application.WebhookApp,
-	wmeowService wmeow.Service,
+	wmeowService wmeow.WameowService,
 	authMiddleware *middleware.AuthMiddleware,
 ) *Server {
 	// Create handlers

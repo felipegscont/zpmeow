@@ -8,19 +8,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"meow/internal/application"
-	"meow/internal/domain/session"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/domain/session"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/dto"
 )
 
 type SessionHandler struct {
 	*BaseHandler
 	sessionService *application.SessionApp
-	wmeowService   wmeow.Service
+	wmeowService   wmeow.WameowService
 }
 
-func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *SessionHandler {
+func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeow.WameowService) *SessionHandler {
 	return &SessionHandler{
 		BaseHandler:    NewBaseHandler("session-handler"),
 		sessionService: sessionService,
@@ -31,7 +31,7 @@ func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeo
 func (h *SessionHandler) validateSessionID(c *gin.Context) (string, bool) {
 	sessionIDOrName := c.Param("id")
 	if sessionIDOrName == "" {
-		h.sendErrorResponse(c, http.StatusBadRequest, "SESSION_ID_REQUIRED", "Session ID or name is required", "Missing session ID or name in path")
+		h.sendErrorResponse(c, http.StatusBadRequest, "SESSION_ID_REQUIRED", "Session ID or name is required")
 		return "", false
 	}
 	return sessionIDOrName, true
@@ -77,7 +77,7 @@ func (h *SessionHandler) sendSuccessResponse(c *gin.Context, sessionID, action s
 	c.Data(http.StatusOK, "application/json", jsonBytes)
 }
 
-func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode, message, details string) {
+func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode, message string) {
 	response := &dto.SessionResponse{
 		Success: false,
 		Code:    status,
@@ -205,8 +205,7 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 
 	// Convert DTO to application request
 	appReq := application.CreateSessionRequest{
-		SessionID: c.Param("id"), // Get session ID from URL path
-		Name:      req.Name,
+		Name: req.Name,
 	}
 
 	session, err := h.sessionService.CreateSessionWithRequest(c.Request.Context(), appReq)
@@ -222,7 +221,6 @@ func (h *SessionHandler) CreateSession(c *gin.Context) {
 		Success: true,
 		Code:    http.StatusCreated,
 		Data: dto.SessionCreateData{
-			SessionID: session.SessionID().Value(),
 			Action:    "create",
 			Status:    "success",
 			Timestamp: time.Now(),
@@ -319,7 +317,7 @@ func (h *SessionHandler) ConnectSession(c *gin.Context) {
 	}
 
 	var qrCode string
-	isConnected := h.wmeowService.IsClientConnected(c.Request.Context(), session.SessionID().Value())
+	isConnected := h.wmeowService.IsClientConnected(session.SessionID().Value())
 	if !isConnected {
 		qrCode, err = h.wmeowService.GetQRCode(session.SessionID().Value())
 		if err != nil {
@@ -473,7 +471,7 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 	}
 
 	clientStatus := h.wmeowService.GetClientStatus(session.SessionID().Value())
-	isConnected := h.wmeowService.IsClientConnected(c.Request.Context(), session.SessionID().Value())
+	isConnected := h.wmeowService.IsClientConnected(session.SessionID().Value())
 
 	response := &dto.SessionStatusResponse{
 		Success: true,
@@ -485,9 +483,9 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 			Timestamp:     time.Now(),
 			Name:          session.Name().Value(),
 			SessionStatus: string(session.Status()),
-			WaJID:         session.WaJID().Value(),
+			DeviceJID:     session.WaJID().Value(),
 			IsConnected:   isConnected,
-			ClientStatus:  clientStatus,
+			ClientStatus:  string(clientStatus),
 			CreatedAt:     session.CreatedAt().Value(),
 			UpdatedAt:     session.UpdatedAt().Value(),
 		},

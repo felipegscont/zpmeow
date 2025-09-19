@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"meow/internal/infra/logging"
+	"zpmeow/internal/infra/logging"
 )
 
 type RetryConfig struct {

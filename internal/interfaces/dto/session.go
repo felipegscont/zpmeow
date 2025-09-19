@@ -2,7 +2,27 @@ package dto
 
 import (
 	"time"
+	"zpmeow/internal/infra/validation"
 )
+
+// SessionInfo represents session information
+type SessionInfo struct {
+	ID         string    `json:"id" example:"default"`
+	Name       string    `json:"name" example:"default"`
+	Status     string    `json:"status" example:"connected"`
+	DeviceJID  string    `json:"device_jid" example:"5511999999999@s.whatsapp.net"`
+	ProxyURL   string    `json:"proxy_url,omitempty" example:"http://proxy.example.com:8080"`
+	WebhookURL string    `json:"webhook_url,omitempty" example:"https://webhook.example.com/whatsapp"`
+	Events     []string  `json:"events,omitempty" example:"message,status"`
+	ApiKey     string    `json:"api_key" example:"550e8400-e29b-41d4-a716-446655440000"`
+	CreatedAt  time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
+	UpdatedAt  time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
+}
+
+// NewValidator creates a new validator instance
+func NewValidator() *validation.Validator {
+	return validation.NewValidator()
+}
 
 // Session-related request types
 
@@ -64,7 +84,6 @@ type CreateSessionResponse struct {
 
 // SessionCreateData represents session creation response data
 type SessionCreateData struct {
-	SessionID string       `json:"session_id" example:"session_123"`
 	Action    string       `json:"action" example:"create"`
 	Status    string       `json:"status" example:"success"`
 	Timestamp time.Time    `json:"timestamp" example:"2023-01-01T00:00:00Z"`
@@ -134,7 +153,7 @@ type SessionStatusResponseData struct {
 	Timestamp     time.Time `json:"timestamp" example:"2023-01-01T00:00:00Z"`
 	Name          string    `json:"name" example:"My Session"`
 	SessionStatus string    `json:"session_status" example:"connected"`
-	WaJID         string    `json:"wa_jid,omitempty" example:"5511999999999@s.whatsapp.net"`
+	DeviceJID     string    `json:"device_jid,omitempty" example:"5511999999999@s.whatsapp.net"`
 	IsConnected   bool      `json:"is_connected"`
 	ClientStatus  string    `json:"client_status" example:"connected"`
 	CreatedAt     time.Time `json:"created_at" example:"2023-01-01T00:00:00Z"`
@@ -210,7 +229,6 @@ func NewCreateSessionSuccessResponse(sessionInfo *SessionInfo) *CreateSessionRes
 		Success: true,
 		Code:    201,
 		Data: SessionCreateData{
-			SessionID: sessionInfo.ID,
 			Action:    "create",
 			Status:    "success",
 			Timestamp: time.Now(),

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"meow/internal/application/common"
-	"meow/internal/application/ports"
+	"zpmeow/internal/application/common"
+	"zpmeow/internal/application/ports"
 )
 
 // MuteChatCommand represents the command to mute/unmute a chat

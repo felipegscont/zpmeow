@@ -57,7 +57,7 @@ internal/domain/
 - **Value Objects**
   - SessionName: Nome único da sessão
   - ApiKey: Chave de autenticação
-  - WaJID: Identificador WhatsApp
+  - DeviceJID: Identificador WhatsApp
   - QRCode: Código QR para pareamento
   - ProxyURL: Configuração de proxy
   - WebhookConfig: Configuração de webhooks

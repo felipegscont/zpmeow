@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"meow/internal/domain/common"
+	"zpmeow/internal/domain/common"
 )
 
 // EventPublisher defines the contract for publishing domain events

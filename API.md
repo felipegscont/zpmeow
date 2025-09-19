@@ -505,7 +505,7 @@ Get all available sessions.
       "id": "8e30680e-c96b-4361-bf00-4e62b17dae8f",
       "name": "default",
       "status": "connected",
-      "wa_jid": "5511999999999:84@s.meow.net"
+      "device_jid": "5511999999999:84@s.meow.net"
     }
   ]
 }
@@ -523,7 +523,7 @@ Get session connection status.
   "code": 200,
   "data": {
     "status": "connected",
-    "wa_jid": "5511999999999:84@s.meow.net"
+    "device_jid": "5511999999999:84@s.meow.net"
   }
 }
 ```

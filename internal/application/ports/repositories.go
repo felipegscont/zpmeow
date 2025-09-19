@@ -3,7 +3,7 @@ package ports
 import (
 	"context"
 
-	"meow/internal/domain/session"
+	"zpmeow/internal/domain/session"
 )
 
 // SessionRepository defines the contract for session persistence
@@ -11,6 +11,9 @@ import (
 type SessionRepository interface {
 	// Create persists a new session
 	Create(ctx context.Context, session *session.Session) error
+
+	// CreateWithGeneratedID persists a new session and returns the generated ID
+	CreateWithGeneratedID(ctx context.Context, session *session.Session) (string, error)
 
 	// GetByID retrieves a session by its ID
 	GetByID(ctx context.Context, id string) (*session.Session, error)

@@ -3,7 +3,7 @@ package middleware
 import (
 	"time"
 
-	"meow/internal/config"
+	"zpmeow/internal/config"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"

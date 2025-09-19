@@ -3,7 +3,7 @@ package session
 import (
 	"fmt"
 
-	"meow/internal/domain/common"
+	"zpmeow/internal/domain/common"
 )
 
 // Status represents the current status of a session
@@ -41,8 +41,8 @@ type Session struct {
 	status Status
 
 	// WhatsApp specific
-	waJID  WaJID
-	qrCode QRCode
+	deviceJID DeviceJID
+	qrCode    QRCode
 
 	// Configuration
 	proxyConfig     ProxyConfiguration
@@ -67,7 +67,7 @@ func NewSession(id, name string) (*Session, error) {
 	}
 
 	// Create empty value objects for new session
-	waJID, _ := NewWaJID("")
+	waJID, _ := NewDeviceJID("")
 	qrCode, _ := NewQRCode("")
 	proxyConfig, _ := NewProxyConfiguration("")
 	webhookEndpoint, _ := NewWebhookEndpoint("")
@@ -80,7 +80,7 @@ func NewSession(id, name string) (*Session, error) {
 		id:              sessionID,
 		name:            sessionName,
 		status:          StatusDisconnected,
-		waJID:           waJID,
+		deviceJID:       waJID,
 		qrCode:          qrCode,
 		proxyConfig:     proxyConfig,
 		webhookEndpoint: webhookEndpoint,
@@ -109,8 +109,8 @@ func (s *Session) Status() Status {
 	return s.status
 }
 
-func (s *Session) WaJID() WaJID {
-	return s.waJID
+func (s *Session) WaJID() DeviceJID {
+	return s.deviceJID
 }
 
 func (s *Session) QRCode() QRCode {
@@ -167,7 +167,7 @@ func (s *Session) HasProxy() bool {
 }
 
 func (s *Session) IsAuthenticated() bool {
-	return !s.waJID.IsEmpty()
+	return !s.deviceJID.IsEmpty()
 }
 
 // Connect attempts to connect the session
@@ -182,7 +182,7 @@ func (s *Session) Connect() error {
 
 	// Publish event if status actually changed
 	if oldStatus != StatusConnecting {
-		event := NewSessionConnectedEvent(s.id.Value(), s.waJID.Value())
+		event := NewSessionConnectedEvent(s.id.Value(), s.deviceJID.Value())
 		s.AddEvent(event)
 	}
 
@@ -218,7 +218,7 @@ func (s *Session) SetConnected() error {
 	s.updateTimestamp()
 
 	// Publish event
-	event := NewSessionConnectedEvent(s.id.Value(), s.waJID.Value())
+	event := NewSessionConnectedEvent(s.id.Value(), s.deviceJID.Value())
 	s.AddEvent(event)
 
 	return nil
@@ -232,6 +232,12 @@ func (s *Session) SetError(errorMessage string) {
 	// Publish event
 	event := NewSessionErrorEvent(s.id.Value(), errorMessage, "connection_error")
 	s.AddEvent(event)
+}
+
+// SetStatus sets the session status
+func (s *Session) SetStatus(status Status) {
+	s.status = status
+	s.updateTimestamp()
 }
 
 // SetQRCode sets the QR code for the session
@@ -256,12 +262,12 @@ func (s *Session) SetQRCode(qrCode string) error {
 
 // Authenticate sets the WhatsApp JID and marks session as authenticated
 func (s *Session) Authenticate(jid string) error {
-	waJID, err := NewWaJID(jid)
+	deviceJID, err := NewDeviceJID(jid)
 	if err != nil {
 		return err
 	}
 
-	s.waJID = waJID
+	s.deviceJID = deviceJID
 	s.updateTimestamp()
 
 	// Clear QR code after authentication
@@ -380,9 +386,9 @@ func (s *Session) HasApiKey() bool {
 	return !s.apiKey.IsEmpty()
 }
 
-// GetWaJIDString returns the WhatsApp JID as string
-func (s *Session) GetWaJIDString() string {
-	return s.waJID.Value()
+// GetDeviceJIDString returns the WhatsApp JID as string
+func (s *Session) GetDeviceJIDString() string {
+	return s.deviceJID.Value()
 }
 
 // GetQRCodeString returns the QR code as string

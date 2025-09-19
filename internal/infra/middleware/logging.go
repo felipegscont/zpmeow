@@ -3,10 +3,31 @@ package middleware
 import (
 	"strings"
 
-	"meow/internal/infra/logging"
+	"zpmeow/internal/infra/logging"
 
 	"github.com/gin-gonic/gin"
 )
+
+// LogLevel represents the log level for HTTP requests
+type LogLevel int
+
+const (
+	LogLevelInfo LogLevel = iota
+	LogLevelWarn
+	LogLevelError
+)
+
+// HTTPLogEntry represents an HTTP request log entry
+type HTTPLogEntry struct {
+	Method    string   `json:"method"`
+	Path      string   `json:"path"`
+	Status    int      `json:"status"`
+	Latency   string   `json:"latency"`
+	ClientIP  string   `json:"client_ip"`
+	UserAgent string   `json:"user_agent,omitempty"`
+	Error     string   `json:"error,omitempty"`
+	Level     LogLevel `json:"level"`
+}
 
 func Logger() gin.HandlerFunc {
 	httpLogger := logging.GetLogger().Sub("http")

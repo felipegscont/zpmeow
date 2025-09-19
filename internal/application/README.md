@@ -108,7 +108,7 @@ type SessionApp struct {
 }
 
 // ❌ INCORRETO: Importar infrastructure diretamente
-import "meow/internal/infra/webhooks" // VIOLAÇÃO!
+import "zpmeow/internal/infra/webhooks" // VIOLAÇÃO!
 ```
 
 ### **2. Use Case Pattern**
@@ -201,7 +201,7 @@ type MegaService interface {
 #### **Problema**: Application importando Infrastructure
 ```go
 // ❌ INCORRETO
-import "meow/internal/infra/webhooks"
+import "zpmeow/internal/infra/webhooks"
 
 type WebhookApp struct {
     webhookService *webhooks.Service // Dependência direta!

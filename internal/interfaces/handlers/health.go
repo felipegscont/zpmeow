@@ -6,9 +6,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	"meow/internal/infra/database"
-	"meow/internal/infra/middleware"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/infra/database"
+	"zpmeow/internal/interfaces/dto"
 )
 
 type HealthHandler struct {
@@ -120,7 +119,11 @@ func (h *HealthHandler) Ping(c *gin.Context) {
 func (h *HealthHandler) Metrics(c *gin.Context) {
 	h.logger.Infof("Metrics requested")
 
-	metrics := middleware.GetMetrics()
+	// TODO: Implement metrics collection
+	metrics := map[string]interface{}{
+		"status":    "metrics not implemented yet",
+		"timestamp": time.Now().Unix(),
+	}
 	h.SendSuccessResponse(c, http.StatusOK, metrics)
 
 	h.logger.Infof("Metrics completed successfully")
@@ -136,8 +139,8 @@ func (h *HealthHandler) Metrics(c *gin.Context) {
 func (h *HealthHandler) ResetMetrics(c *gin.Context) {
 	h.logger.Infof("Metrics reset requested")
 
-	middleware.ResetMetrics()
-	h.sendSuccessResponse(c, "ok", "Metrics reset successfully", "", nil)
+	// TODO: Implement metrics reset
+	h.sendSuccessResponse(c, "ok", "Metrics reset not implemented yet", "", nil)
 
 	h.logger.Infof("Metrics reset completed successfully")
 }

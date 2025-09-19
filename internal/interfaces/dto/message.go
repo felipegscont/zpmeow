@@ -72,7 +72,7 @@ func (r *SendImageRequest) Validate() error {
 type SendAudioRequest struct {
 	Phone string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
 	Audio string `json:"audio" validate:"required,min=1" binding:"required" example:"data:audio/mp3;base64,SUQzBAA..."` // Base64 data URL or HTTP URL
-	PTT   bool   `json:"ptt,omitempty" example:"true"`                                        // Push to talk
+	PTT   bool   `json:"ptt,omitempty" example:"true"`                                                                  // Push to talk
 }
 
 // Validate validates the SendAudioRequest

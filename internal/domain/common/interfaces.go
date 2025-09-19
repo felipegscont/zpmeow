@@ -60,7 +60,7 @@ func (v *basicURLValidator) ValidateScheme(url string, allowedSchemes []string) 
 	}
 
 	for _, allowed := range allowedSchemes {
-		if strings.ToLower(scheme) == strings.ToLower(allowed) {
+		if strings.EqualFold(scheme, allowed) {
 			return nil
 		}
 	}

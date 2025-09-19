@@ -1,23 +1,24 @@
 package handlers
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"time"
 
-	"meow/internal/application"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 type GroupHandler struct {
 	sessionService *application.SessionApp
-	wmeowService   wmeow.Service
+	wmeowService   wmeow.WameowService
 }
 
-func NewGroupHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *GroupHandler {
+func NewGroupHandler(sessionService *application.SessionApp, wmeowService wmeow.WameowService) *GroupHandler {
 	return &GroupHandler{
 		sessionService: sessionService,
 		wmeowService:   wmeowService,
@@ -280,7 +281,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	err = h.wmeowService.JoinGroup(ctx, sessionID, req.GroupJID)
+	groupInfo, err := h.wmeowService.JoinGroup(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -292,7 +293,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	}
 
 	// Get group info after joining
-	groupInfo, err := h.wmeowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
+	groupInfo, err = h.wmeowService.GetGroupInfo(ctx, sessionID, req.GroupJID)
 	if err != nil {
 		// Group joined but couldn't get info - still success
 		response := dto.NewGroupSuccessResponse(sessionID, "join", nil)
@@ -354,7 +355,8 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	groupInfo, err := h.wmeowService.JoinGroupWithInvite(ctx, sessionID, req.InviteCode)
+	// Use default values for missing parameters
+	groupInfo, err := h.wmeowService.JoinGroupWithInvite(ctx, sessionID, "", "", req.InviteCode, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -651,7 +653,8 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	groupInfo, err := h.wmeowService.GetGroupInfoFromInvite(ctx, sessionID, req.InviteCode)
+	// Use default values for missing parameters
+	groupInfo, err := h.wmeowService.GetGroupInfoFromInvite(ctx, sessionID, "", "", req.InviteCode, 0)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -915,8 +918,20 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 		return
 	}
 
+	// Decode base64 photo data
+	photoData, err := base64.StdEncoding.DecodeString(req.Photo)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, dto.NewGroupErrorResponse(
+			http.StatusBadRequest,
+			"INVALID_PHOTO_DATA",
+			"Invalid base64 photo data",
+			err.Error(),
+		))
+		return
+	}
+
 	ctx := c.Request.Context()
-	err = h.wmeowService.SetGroupPhoto(ctx, sessionID, req.GroupJID, req.Photo)
+	err = h.wmeowService.SetGroupPhoto(ctx, sessionID, req.GroupJID, photoData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,
@@ -1168,7 +1183,12 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	err = h.wmeowService.SetGroupEphemeral(ctx, sessionID, req.GroupJID, req.Ephemeral)
+	// Use default duration of 7 days (604800 seconds) when enabling ephemeral messages
+	duration := 0
+	if req.Ephemeral {
+		duration = 604800 // 7 days in seconds
+	}
+	err = h.wmeowService.SetGroupEphemeral(ctx, sessionID, req.GroupJID, req.Ephemeral, duration)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewGroupErrorResponse(
 			http.StatusInternalServerError,

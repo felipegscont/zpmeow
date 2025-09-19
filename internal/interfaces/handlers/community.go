@@ -3,19 +3,19 @@ package handlers
 import (
 	"net/http"
 
-	"meow/internal/application"
-	"meow/internal/infra/wmeow"
-	"meow/internal/interfaces/dto"
+	"zpmeow/internal/application"
+	"zpmeow/internal/infra/wmeow"
+	"zpmeow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 type CommunityHandler struct {
 	sessionService *application.SessionApp
-	wmeowService   wmeow.Service
+	wmeowService   wmeow.WameowService
 }
 
-func NewCommunityHandler(sessionService *application.SessionApp, wmeowService wmeow.Service) *CommunityHandler {
+func NewCommunityHandler(sessionService *application.SessionApp, wmeowService wmeow.WameowService) *CommunityHandler {
 	return &CommunityHandler{
 		sessionService: sessionService,
 		wmeowService:   wmeowService,
@@ -238,11 +238,8 @@ func (h *CommunityHandler) GetSubGroups(c *gin.Context) {
 		return
 	}
 
-	// Convert GroupInfo slice to string slice (JIDs)
-	subGroupJIDs := make([]string, len(subGroups))
-	for i, group := range subGroups {
-		subGroupJIDs[i] = group.JID
-	}
+	// subGroups is already a string slice (JIDs)
+	subGroupJIDs := subGroups
 
 	response := dto.NewCommunitySubGroupsResponse(sessionID, req.CommunityJID, subGroupJIDs)
 	c.JSON(http.StatusOK, response)
@@ -316,15 +313,8 @@ func (h *CommunityHandler) GetLinkedGroupsParticipants(c *gin.Context) {
 		return
 	}
 
-	// Convert ContactInfo slice to string slice (phones or JIDs)
-	participantJIDs := make([]string, len(participants))
-	for i, participant := range participants {
-		if participant.Phone != "" {
-			participantJIDs[i] = participant.Phone
-		} else {
-			participantJIDs[i] = participant.JID
-		}
-	}
+	// participants is already a string slice (JIDs)
+	participantJIDs := participants
 
 	response := dto.NewCommunityParticipantsResponse(sessionID, req.CommunityJID, participantJIDs)
 	c.JSON(http.StatusOK, response)
