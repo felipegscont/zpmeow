@@ -106,7 +106,10 @@ func (h *SessionHandler) convertToSessionInfo(session *session.Session) *dto.Ses
 		ID:        session.SessionID().Value(),
 		Name:      session.Name().Value(),
 		Status:    string(session.Status()),
+		DeviceJID: session.GetDeviceJIDString(),
+		ApiKey:    session.ApiKey().Value(),
 		CreatedAt: session.CreatedAt().Value(),
+		UpdatedAt: session.UpdatedAt().Value(),
 	}
 
 	return sessionInfo
