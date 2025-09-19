@@ -88,6 +88,17 @@ func main() {
 	webhookAppService := application.NewWebhookApp(sessionRepo)
 
 	log.Info("WhatsApp service initialized")
+	// Reconnect sessions with credentials on startup
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		if err := wmeowService.ConnectOnStartup(ctx); err != nil {
+			log.Errorf("ConnectOnStartup failed: %v", err)
+		} else {
+			log.Info("ConnectOnStartup completed")
+		}
+	}()
+
 
 	log.Info("Session service initialized")
 

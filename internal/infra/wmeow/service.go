@@ -475,11 +475,11 @@ func (m *MeowService) ConnectOnStartup(ctx context.Context) error {
 			sessionEntity.ID().Value(), sessionEntity.Status().String(), sessionEntity.GetDeviceJIDString())
 
 		if err := m.StartClient(sessionEntity.ID().Value()); err != nil {
-			m.logger.Errorf("Failed to start client for session %s: %v", sessionEntity.ID, err)
+			m.logger.Errorf("Failed to start client for session %s: %v", sessionEntity.ID().Value(), err)
 			continue
 		}
 
-		m.logger.Infof("Successfully initiated reconnection for session %s", sessionEntity.ID)
+		m.logger.Infof("Successfully initiated reconnection for session %s", sessionEntity.ID().Value())
 	}
 
 	return nil

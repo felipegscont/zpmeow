@@ -91,7 +91,7 @@ func (h *MessageHandler) decodeMediaData(dataURL string) ([]byte, error) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/text [post]
+// @Router			/session/{sessionId}/message/send/text [post]
 func (h *MessageHandler) SendText(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -164,7 +164,7 @@ func (h *MessageHandler) SendText(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/media [post]
+// @Router			/session/{sessionId}/message/send/media [post]
 func (h *MessageHandler) SendMedia(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -285,7 +285,7 @@ func (h *MessageHandler) SendMedia(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageActionResponse
 // @Failure		500			{object}	dto.MessageActionResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/markread [post]
+// @Router			/session/{sessionId}/message/markread [post]
 func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -341,13 +341,13 @@ func (h *MessageHandler) MarkAsRead(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			sessionId	path		string						true	"Session ID"
-// @Param			messageId	path		string						true	"Message ID"
+// @ParamX		messageId	path		string						true	"Message ID"
 // @Param			request		body		dto.ReactToMessageRequest	true	"React request"
 // @Success		200			{object}	dto.MessageActionResponse
 // @Failure		400			{object}	dto.MessageActionResponse
 // @Failure		500			{object}	dto.MessageActionResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/{messageId}/reactions [post]
+// @Router			/session/{sessionId}/message/react [post]
 func (h *MessageHandler) ReactToMessage(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -414,13 +414,13 @@ func (h *MessageHandler) ReactToMessage(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			sessionId	path		string						true	"Session ID"
-// @Param			messageId	path		string						true	"Message ID"
+// @ParamX		messageId	path		string						true	"Message ID"
 // @Param			request		body		dto.DeleteMessageRequest	true	"Delete request"
 // @Success		200			{object}	dto.MessageActionResponse
 // @Failure		400			{object}	dto.MessageActionResponse
 // @Failure		500			{object}	dto.MessageActionResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/{messageId} [delete]
+// @Router			/session/{sessionId}/message/delete [post]
 func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -477,13 +477,13 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			sessionId	path		string					true	"Session ID"
-// @Param			messageId	path		string					true	"Message ID"
+
 // @Param			request		body		dto.EditMessageRequest	true	"Edit request"
 // @Success		200			{object}	dto.MessageActionResponse
 // @Failure		400			{object}	dto.MessageActionResponse
 // @Failure		500			{object}	dto.MessageActionResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/{messageId}/edit [put]
+// @Router			/session/{sessionId}/message/edit [post]
 func (h *MessageHandler) EditMessage(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
@@ -556,7 +556,7 @@ func (h *MessageHandler) EditMessage(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/location [post]
+// @Router			/session/{sessionId}/message/send/location [post]
 func (h *MessageHandler) SendLocation(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -629,7 +629,7 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/contact [post]
+// @Router			/session/{sessionId}/message/send/contact [post]
 func (h *MessageHandler) SendContact(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -703,7 +703,7 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/image [post]
+// @Router			/session/{sessionId}/message/send/image [post]
 func (h *MessageHandler) SendImage(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -787,7 +787,7 @@ func (h *MessageHandler) SendImage(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/audio [post]
+// @Router			/session/{sessionId}/message/send/audio [post]
 func (h *MessageHandler) SendAudio(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -871,7 +871,7 @@ func (h *MessageHandler) SendAudio(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/document [post]
+// @Router			/session/{sessionId}/message/send/document [post]
 func (h *MessageHandler) SendDocument(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -965,7 +965,7 @@ func (h *MessageHandler) SendDocument(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/video [post]
+// @Router			/session/{sessionId}/message/send/video [post]
 func (h *MessageHandler) SendVideo(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1049,7 +1049,7 @@ func (h *MessageHandler) SendVideo(c *gin.Context) {
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/sticker [post]
+// @Router			/session/{sessionId}/message/send/sticker [post]
 func (h *MessageHandler) SendSticker(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1130,7 +1130,7 @@ func (h *MessageHandler) SendSticker(c *gin.Context) {
 // @Param			sessionId	path		string	true	"Session ID"
 // @Success		501			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/buttons [post]
+// @Router			/session/{sessionId}/message/send/buttons [post]
 func (h *MessageHandler) SendButton(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, dto.NewMessageErrorResponse(
 		http.StatusNotImplemented,
@@ -1148,7 +1148,7 @@ func (h *MessageHandler) SendButton(c *gin.Context) {
 // @Param			sessionId	path		string	true	"Session ID"
 // @Success		501			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/list [post]
+// @Router			/session/{sessionId}/message/send/list [post]
 func (h *MessageHandler) SendList(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, dto.NewMessageErrorResponse(
 		http.StatusNotImplemented,
@@ -1166,7 +1166,7 @@ func (h *MessageHandler) SendList(c *gin.Context) {
 // @Param			sessionId	path		string	true	"Session ID"
 // @Success		501			{object}	dto.MessageResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/messages/poll [post]
+// @Router			/session/{sessionId}/message/send/poll [post]
 func (h *MessageHandler) SendPoll(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, dto.NewMessageErrorResponse(
 		http.StatusNotImplemented,

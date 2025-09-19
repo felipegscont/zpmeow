@@ -268,7 +268,7 @@ func (h *NewsletterHandler) SubscribeLiveUpdates(c *gin.Context) {
 // @Param			sessionId	path		string	true	"Session ID"
 // @Param			file		formData	file	true	"Media file to upload"
 // @Param			media_type	formData	string	true	"Media type (image, video, audio, document)"
-// @Success		200			{object}	dto.UploadNewsletterMediaResponse	"Media uploaded successfully"
+// @Success		200			{object}	dto.StandardResponse	"Media uploaded successfully"
 // @Failure		400			{object}	dto.StandardResponse				"Bad request - Invalid file or parameters"
 // @Failure		404			{object}	dto.StandardResponse				"Session not found or not connected"
 // @Failure		500			{object}	dto.StandardResponse				"Internal server error"

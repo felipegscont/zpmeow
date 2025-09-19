@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type SendLocationMessageCommand struct {
@@ -56,13 +57,13 @@ type SendLocationMessageResult struct {
 }
 
 type SendLocationMessageUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewSendLocationMessageUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *SendLocationMessageUseCase {

@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type ConfigureWebhookCommand struct {
@@ -47,12 +48,12 @@ type ConfigureWebhookResult struct {
 }
 
 type ConfigureWebhookUseCase struct {
-	sessionRepo ports.SessionRepository
+	sessionRepo session.Repository
 	logger      ports.Logger
 }
 
 func NewConfigureWebhookUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	logger ports.Logger,
 ) *ConfigureWebhookUseCase {
 	return &ConfigureWebhookUseCase{
@@ -140,13 +141,13 @@ type TestWebhookResult struct {
 }
 
 type TestWebhookUseCase struct {
-	sessionRepo         ports.SessionRepository
+	sessionRepo         session.Repository
 	notificationService ports.NotificationService
 	logger              ports.Logger
 }
 
 func NewTestWebhookUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	notificationService ports.NotificationService,
 	logger ports.Logger,
 ) *TestWebhookUseCase {

@@ -2,7 +2,9 @@ package dto
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -13,8 +15,17 @@ type SendTextRequest struct {
 }
 
 func (r *SendTextRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	body := strings.TrimSpace(r.Body)
+	if body == "" {
+		return errors.New("body is required")
+	}
+	if len(body) > 4096 {
+		return errors.New("body must not exceed 4096 characters")
+	}
+	return nil
 }
 
 type SendMediaRequest struct {
@@ -25,8 +36,22 @@ type SendMediaRequest struct {
 }
 
 func (r *SendMediaRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	switch r.MediaType {
+	case "image", "video", "audio", "document":
+		// ok
+	default:
+		return errors.New("media_type must be one of: image, video, audio, document")
+	}
+	if _, err := url.ParseRequestURI(r.MediaURL); err != nil {
+		return errors.New("invalid media_url")
+	}
+	if len(r.Caption) > 1024 {
+		return errors.New("caption must not exceed 1024 characters")
+	}
+	return nil
 }
 
 type SendLocationRequest struct {
@@ -38,8 +63,22 @@ type SendLocationRequest struct {
 }
 
 func (r *SendLocationRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	if r.Latitude < -90 || r.Latitude > 90 {
+		return errors.New("latitude must be between -90 and 90")
+	}
+	if r.Longitude < -180 || r.Longitude > 180 {
+		return errors.New("longitude must be between -180 and 180")
+	}
+	if len(r.Name) > 100 {
+		return errors.New("name must not exceed 100 characters")
+	}
+	if len(r.Address) > 500 {
+		return errors.New("address must not exceed 500 characters")
+	}
+	return nil
 }
 
 type SendContactRequest struct {
@@ -49,8 +88,19 @@ type SendContactRequest struct {
 }
 
 func (r *SendContactRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	if strings.TrimSpace(r.ContactName) == "" {
+		return errors.New("contact_name is required")
+	}
+	if strings.TrimSpace(r.ContactPhone) == "" {
+		return errors.New("contact_phone is required")
+	}
+	if len(r.ContactName) > 100 {
+		return errors.New("contact_name must not exceed 100 characters")
+	}
+	return nil
 }
 
 type SendImageRequest struct {
@@ -60,8 +110,16 @@ type SendImageRequest struct {
 }
 
 func (r *SendImageRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	if strings.TrimSpace(r.Image) == "" {
+		return errors.New("image is required")
+	}
+	if len(r.Caption) > 1024 {
+		return errors.New("caption must not exceed 1024 characters")
+	}
+	return nil
 }
 
 type SendAudioRequest struct {
@@ -71,8 +129,13 @@ type SendAudioRequest struct {
 }
 
 func (r *SendAudioRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	if strings.TrimSpace(r.Audio) == "" {
+		return errors.New("audio is required")
+	}
+	return nil
 }
 
 type SendVideoRequest struct {
@@ -83,8 +146,16 @@ type SendVideoRequest struct {
 }
 
 func (r *SendVideoRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	if strings.TrimSpace(r.Video) == "" {
+		return errors.New("video is required")
+	}
+	if len(r.Caption) > 1024 {
+		return errors.New("caption must not exceed 1024 characters")
+	}
+	return nil
 }
 
 type SendDocumentRequest struct {
@@ -95,8 +166,19 @@ type SendDocumentRequest struct {
 }
 
 func (r *SendDocumentRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	if strings.TrimSpace(r.Document) == "" {
+		return errors.New("document is required")
+	}
+	if len(r.FileName) > 255 {
+		return errors.New("filename must not exceed 255 characters")
+	}
+	if len(r.MimeType) > 100 {
+		return errors.New("mimetype must not exceed 100 characters")
+	}
+	return nil
 }
 
 type SendStickerRequest struct {
@@ -105,8 +187,13 @@ type SendStickerRequest struct {
 }
 
 func (r *SendStickerRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	if strings.TrimSpace(r.Phone) == "" {
+		return errors.New("phone is required")
+	}
+	if strings.TrimSpace(r.Sticker) == "" {
+		return errors.New("sticker is required")
+	}
+	return nil
 }
 
 type MessageStatusRequest struct {

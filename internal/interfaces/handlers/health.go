@@ -110,7 +110,7 @@ func (h *HealthHandler) Ping(c *gin.Context) {
 // @Tags			Health
 // @Accept			json
 // @Produce		json
-// @Success		200	{object}	middleware.Metrics	"Application metrics"
+// @Success		200	{object}	map[string]interface{}	"Application metrics"
 // @Router			/metrics [get]
 func (h *HealthHandler) Metrics(c *gin.Context) {
 	h.logger.Infof("Metrics requested")

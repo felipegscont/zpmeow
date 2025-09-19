@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type MediaType string
@@ -79,13 +80,13 @@ type SendMediaMessageResult struct {
 }
 
 type SendMediaMessageUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewSendMediaMessageUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *SendMediaMessageUseCase {

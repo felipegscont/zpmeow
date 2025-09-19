@@ -46,12 +46,12 @@ func (h *GroupHandler) resolveSessionID(c *gin.Context, sessionIDOrName string) 
 // @Produce		json
 // @Param			sessionId	path		string					true	"Session ID"
 // @Param			request		body		dto.CreateGroupRequest	true	"Create group request"
-// @Success		201			{object}	dto.CreateGroupResponse
+// @Success		201			{object}	dto.GroupResponse
 // @Failure		400			{object}	dto.GroupResponse
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/create [post]
+// @Router			/session/{sessionId}/group/create [post]
 func (h *GroupHandler) CreateGroup(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -127,7 +127,7 @@ func (h *GroupHandler) CreateGroup(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/info [post]
+// @Router			/session/{sessionId}/group/info [post]
 func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -191,7 +191,7 @@ func (h *GroupHandler) GetGroupInfo(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/list [get]
+// @Router			/session/{sessionId}/group/list [get]
 func (h *GroupHandler) ListGroups(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -245,7 +245,7 @@ func (h *GroupHandler) ListGroups(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/join [post]
+// @Router			/session/{sessionId}/group/join [post]
 func (h *GroupHandler) JoinGroup(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -317,7 +317,7 @@ func (h *GroupHandler) JoinGroup(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/join-with-invite [post]
+// @Router			/session/{sessionId}/group/join-with-invite [post]
 func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -382,7 +382,7 @@ func (h *GroupHandler) JoinGroupWithInvite(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/leave [post]
+// @Router			/session/{sessionId}/group/leave [post]
 func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -445,7 +445,7 @@ func (h *GroupHandler) LeaveGroup(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/invite-link [post]
+// @Router			/session/{sessionId}/group/invitelink [post]
 func (h *GroupHandler) GetInviteLink(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -548,7 +548,7 @@ func convertWmeowGroupInfoSliceToDTO(groups []wmeow.GroupInfo) []dto.GroupInfo {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/invite-info [post]
+// @Router			/session/{sessionId}/group/inviteinfo [post]
 func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -613,7 +613,7 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/invite-info-specific [post]
+// @Router			/session/{sessionId}/group/inviteinfo-specific [post]
 func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -678,7 +678,7 @@ func (h *GroupHandler) GetGroupInfoFromInvite(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/participants [put]
+// @Router			/session/{sessionId}/group/participants/update [post]
 func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -752,7 +752,7 @@ func (h *GroupHandler) UpdateParticipants(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/name [put]
+// @Router			/session/{sessionId}/group/settings/name [post]
 func (h *GroupHandler) SetName(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -815,7 +815,7 @@ func (h *GroupHandler) SetName(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/topic [put]
+// @Router			/session/{sessionId}/group/settings/topic [post]
 func (h *GroupHandler) SetTopic(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -878,7 +878,7 @@ func (h *GroupHandler) SetTopic(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/photo [put]
+// @Router			/session/{sessionId}/group/settings/photo/set [post]
 func (h *GroupHandler) SetPhoto(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -952,7 +952,7 @@ func (h *GroupHandler) SetPhoto(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/photo [delete]
+// @Router			/session/{sessionId}/group/settings/photo/remove [post]
 func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1015,7 +1015,7 @@ func (h *GroupHandler) RemovePhoto(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/announce [put]
+// @Router			/session/{sessionId}/group/settings/announce [post]
 func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1078,7 +1078,7 @@ func (h *GroupHandler) SetAnnounce(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/locked [put]
+// @Router			/session/{sessionId}/group/settings/locked [post]
 func (h *GroupHandler) SetLocked(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1141,7 +1141,7 @@ func (h *GroupHandler) SetLocked(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/ephemeral [put]
+// @Router			/session/{sessionId}/group/settings/ephemeral [post]
 func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1208,7 +1208,7 @@ func (h *GroupHandler) SetEphemeral(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/join-approval [put]
+// @Router			/session/{sessionId}/group/settings/join-approval [post]
 func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1271,7 +1271,7 @@ func (h *GroupHandler) SetJoinApproval(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/member-add-mode [put]
+// @Router			/session/{sessionId}/group/settings/member-add-mode [post]
 func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1334,7 +1334,7 @@ func (h *GroupHandler) SetMemberAddMode(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/request-participants [post]
+// @Router			/session/{sessionId}/group/requests/list [post]
 func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {
@@ -1418,7 +1418,7 @@ func (h *GroupHandler) GetGroupRequestParticipants(c *gin.Context) {
 // @Failure		404			{object}	dto.GroupResponse
 // @Failure		500			{object}	dto.GroupResponse
 // @Security		ApiKeyAuth
-// @Router			/session/{sessionId}/groups/request-participants [put]
+// @Router			/session/{sessionId}/group/requests/update [post]
 func (h *GroupHandler) UpdateGroupRequestParticipants(c *gin.Context) {
 	sessionIDOrName := c.Param("sessionId")
 	if sessionIDOrName == "" {

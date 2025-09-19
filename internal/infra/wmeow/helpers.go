@@ -49,9 +49,15 @@ func (h *SessionHelper) UpdateSessionStatus(sessionID string, status session.Sta
 
 	switch status {
 	case session.StatusConnected:
-		err := sessionEntity.SetConnected()
-		if err != nil {
-			h.logger.Errorf("Failed to set session %s as connected: %v", sessionID, err)
+		if sessionEntity.IsConnected() {
+			// Already connected; no-op
+		} else if sessionEntity.IsConnecting() {
+			if err := sessionEntity.SetConnected(); err != nil {
+				h.logger.Errorf("Failed to set session %s as connected: %v", sessionID, err)
+				return
+			}
+		} else {
+			h.logger.Warnf("Skipping SetConnected for session %s: current status=%s", sessionID, sessionEntity.Status())
 			return
 		}
 	case session.StatusDisconnected:
@@ -61,10 +67,13 @@ func (h *SessionHelper) UpdateSessionStatus(sessionID string, status session.Sta
 			return
 		}
 	case session.StatusConnecting:
-		err := sessionEntity.Connect()
-		if err != nil {
-			h.logger.Errorf("Failed to set session %s as connecting: %v", sessionID, err)
-			return
+		if sessionEntity.IsConnected() || sessionEntity.IsConnecting() {
+			// Already connected or connecting; no-op
+		} else {
+			if err := sessionEntity.Connect(); err != nil {
+				h.logger.Errorf("Failed to set session %s as connecting: %v", sessionID, err)
+				return
+			}
 		}
 	}
 

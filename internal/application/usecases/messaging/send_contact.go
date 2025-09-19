@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type ContactInfo = ports.ContactInfo
@@ -76,13 +77,13 @@ type SendContactMessageResult struct {
 }
 
 type SendContactMessageUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewSendContactMessageUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *SendContactMessageUseCase {

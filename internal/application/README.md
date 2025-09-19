@@ -8,7 +8,6 @@ Esta camada contém os **Use Cases** da aplicação seguindo rigorosamente os pr
 internal/application/
 ├── README.md                           # Esta documentação
 ├── ports/                              # Interfaces (Ports) para Infrastructure
-│   ├── repositories.go                # Repository interfaces
 │   ├── services.go                    # External service interfaces
 │   └── events.go                      # Event handling interfaces
 ├── usecases/                          # Use Cases (Application Services)
@@ -104,7 +103,6 @@ type WebhookSender interface {
 type SessionApp struct {
     sessionRepo    session.Repository    // Domain interface
     webhookSender  WebhookSender        // Application interface
-    validator      *validation.Validator // Shared utility
 }
 
 // ❌ INCORRETO: Importar infrastructure diretamente
@@ -116,40 +114,26 @@ import "zpmeow/internal/infra/webhooks" // VIOLAÇÃO!
 Cada caso de uso segue o padrão de orquestração:
 
 ```go
-func (s *SessionApp) CreateSession(ctx context.Context, req *dto.CreateSessionRequest) (*dto.SessionResponse, error) {
-    // 1. Validação de entrada (Application responsibility)
-    if err := s.validator.Validate(req); err != nil {
-        return nil, fmt.Errorf("validation failed: %w", err)
+func (s *SessionApp) CreateSession(ctx context.Context, name string) (*session.Session, error) {
+    // 1. Validar entrada (Application responsibility)
+    if strings.TrimSpace(name) == "" {
+        return nil, fmt.Errorf("name is required")
     }
 
     // 2. Criar entidade de domínio (Domain responsibility)
-    sessionID, err := session.NewSessionID(req.ID)
+    sess, err := session.NewSession("", name)
     if err != nil {
-        return nil, fmt.Errorf("invalid session ID: %w", err)
+        return nil, fmt.Errorf("invalid session: %w", err)
     }
 
-    sessionName, err := session.NewSessionName(req.Name)
+    // 3. Persistir (Infrastructure via interface)
+    id, err := s.sessionRepo.CreateWithGeneratedID(ctx, sess)
     if err != nil {
-        return nil, fmt.Errorf("invalid session name: %w", err)
-    }
-
-    // 3. Aplicar regras de negócio (Domain responsibility)
-    sessionEntity, err := session.NewSession(sessionID, sessionName, proxyURL)
-    if err != nil {
-        return nil, fmt.Errorf("failed to create session: %w", err)
-    }
-
-    // 4. Persistir (Infrastructure via interface)
-    if err := s.sessionRepo.Create(ctx, sessionEntity); err != nil {
         return nil, fmt.Errorf("failed to save session: %w", err)
     }
 
-    // 5. Converter para DTO de resposta (Application responsibility)
-    return &dto.SessionResponse{
-        ID:     sessionEntity.ID.Value(),
-        Name:   sessionEntity.Name.Value(),
-        Status: string(sessionEntity.Status),
-    }, nil
+    // 4. Retornar entidade de domínio (Interfaces convertem para DTO)
+    return s.sessionRepo.GetByID(ctx, id)
 }
 ```
 
@@ -184,8 +168,7 @@ type MegaService interface {
 |------|---------|---------------|
 | **Standard Library** | `context`, `fmt`, `time` | Sempre permitido |
 | **Domain Layer** | `internal/domain/session` | Application usa Domain |
-| **DTOs** | `internal/interfaces/dto` | Comunicação com interfaces |
-| **Shared Utilities** | `internal/shared/validation` | Utilitários compartilhados |
+| **Application Ports** | `internal/application/ports` | Contratos para infraestrutura |
 | **External Libraries** | `github.com/google/uuid` | Bibliotecas específicas |
 
 ### **❌ DEPENDÊNCIAS PROIBIDAS**
@@ -253,36 +236,29 @@ type MessageSender interface {
 type MessageApp struct {
     sessionRepo   session.Repository
     messageSender MessageSender
-    validator     *validation.Validator
 }
 
-func NewMessageApp(repo session.Repository, sender MessageSender, validator *validation.Validator) *MessageApp {
+func NewMessageApp(repo session.Repository, sender MessageSender) *MessageApp {
     return &MessageApp{
         sessionRepo:   repo,
         messageSender: sender,
-        validator:     validator,
     }
 }
 
-func (m *MessageApp) SendMessage(ctx context.Context, req *dto.SendMessageRequest) error {
-    // 1. Validar entrada
-    if err := m.validator.Validate(req); err != nil {
-        return fmt.Errorf("validation failed: %w", err)
-    }
-
-    // 2. Verificar sessão existe
-    session, err := m.sessionRepo.GetByID(ctx, req.SessionID)
+func (m *MessageApp) SendMessage(ctx context.Context, sessionID, chatJID, content string) error {
+    // 1. Verificar sessão existe
+    sess, err := m.sessionRepo.GetByID(ctx, sessionID)
     if err != nil {
         return fmt.Errorf("session not found: %w", err)
     }
 
-    // 3. Verificar regras de negócio (Domain)
-    if !session.IsConnected() {
+    // 2. Verificar regras de negócio (Domain)
+    if !sess.IsConnected() {
         return fmt.Errorf("session not connected")
     }
 
-    // 4. Executar operação (Infrastructure via interface)
-    if err := m.messageSender.SendTextMessage(ctx, req.SessionID, req.ChatJID, req.Content); err != nil {
+    // 3. Executar operação (Infrastructure via interface)
+    if err := m.messageSender.SendTextMessage(ctx, sessionID, chatJID, content); err != nil {
         return fmt.Errorf("failed to send message: %w", err)
     }
 

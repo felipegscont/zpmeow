@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type CreateGroupCommand struct {
@@ -69,13 +70,13 @@ type CreateGroupResult struct {
 }
 
 type CreateGroupUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewCreateGroupUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *CreateGroupUseCase {

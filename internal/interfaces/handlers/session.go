@@ -161,7 +161,7 @@ func (h *SessionHandler) GetSessions(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			id	path		string					true	"Session ID or Name"
-// @Success		200	{object}	dto.SessionInfoResponse	"Session information retrieved successfully"
+// @Success		200	{object}	dto.SessionResponse	"Session information retrieved successfully"
 // @Failure		400	{object}	dto.SessionResponse		"Invalid session ID or name"
 // @Failure		404	{object}	dto.SessionResponse		"Session not found"
 // @Failure		500	{object}	dto.SessionResponse		"Internal server error"

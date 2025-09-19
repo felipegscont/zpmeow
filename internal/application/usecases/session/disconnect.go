@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type DisconnectSessionCommand struct {
@@ -33,14 +34,14 @@ type DisconnectSessionResult struct {
 }
 
 type DisconnectSessionUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	eventPublisher  ports.EventPublisher
 	logger          ports.Logger
 }
 
 func NewDisconnectSessionUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	eventPublisher ports.EventPublisher,
 	logger ports.Logger,

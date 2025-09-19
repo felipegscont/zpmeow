@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type PairPhoneCommand struct {
@@ -39,14 +40,14 @@ type PairPhoneResult struct {
 }
 
 type PairPhoneUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	eventPublisher  ports.EventPublisher
 	logger          ports.Logger
 }
 
 func NewPairPhoneUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	eventPublisher ports.EventPublisher,
 	logger ports.Logger,

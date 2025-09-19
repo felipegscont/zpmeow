@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type ListGroupsQuery struct {
@@ -44,13 +45,13 @@ type ListGroupsResult struct {
 }
 
 type ListGroupsUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewListGroupsUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *ListGroupsUseCase {
@@ -146,13 +147,13 @@ func (q GetGroupInfoQuery) Validate() error {
 }
 
 type GetGroupInfoUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewGetGroupInfoUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *GetGroupInfoUseCase {

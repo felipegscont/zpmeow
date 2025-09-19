@@ -1,8 +1,10 @@
 package dto
 
 import (
+	"errors"
+	"net/url"
+	"strings"
 	"time"
-	"zpmeow/internal/infra/validation"
 )
 
 type SessionInfo struct {
@@ -18,9 +20,6 @@ type SessionInfo struct {
 	UpdatedAt  time.Time `json:"updated_at" example:"2023-01-01T00:00:00Z"`
 }
 
-func NewValidator() *validation.Validator {
-	return validation.NewValidator()
-}
 
 
 type CreateSessionRequest struct {
@@ -31,8 +30,24 @@ type CreateSessionRequest struct {
 }
 
 func (r *CreateSessionRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	name := strings.TrimSpace(r.Name)
+	if name == "" {
+		return errors.New("name is required")
+	}
+	if len(name) > 50 {
+		return errors.New("name must not exceed 50 characters")
+	}
+	if r.WebhookURL != "" {
+		if _, err := url.ParseRequestURI(r.WebhookURL); err != nil {
+			return errors.New("invalid webhook_url")
+		}
+	}
+	if r.ProxyURL != "" {
+		if _, err := url.ParseRequestURI(r.ProxyURL); err != nil {
+			return errors.New("invalid proxy_url")
+		}
+	}
+	return nil
 }
 
 type PairPhoneRequest struct {
@@ -40,8 +55,11 @@ type PairPhoneRequest struct {
 }
 
 func (r *PairPhoneRequest) Validate() error {
-	validator := NewValidator()
-	return validator.Validate(r)
+	phone := strings.TrimSpace(r.Phone)
+	if phone == "" {
+		return errors.New("phone is required")
+	}
+	return nil
 }
 
 

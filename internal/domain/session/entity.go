@@ -61,7 +61,7 @@ func NewSession(id, name string) (*Session, error) {
 	qrCode, _ := NewQRCode("")
 	proxyConfig, _ := NewProxyConfiguration("")
 	webhookEndpoint, _ := NewWebhookEndpoint("")
-	apiKey, _ := NewApiKey("temp-key") // Temporary key, will be replaced by application layer
+	// apiKey intentionally unset; will be set by application layer via SetApiKey()
 
 	now := common.Now()
 
@@ -74,13 +74,16 @@ func NewSession(id, name string) (*Session, error) {
 		qrCode:          qrCode,
 		proxyConfig:     proxyConfig,
 		webhookEndpoint: webhookEndpoint,
-		apiKey:          apiKey,
+		apiKey:          ApiKey{},
 		createdAt:       now,
 		updatedAt:       now,
 	}
 
-	event := NewSessionCreatedEvent(sessionID.Value(), sessionName.Value())
-	session.AddEvent(event)
+	// Only emit created event when we have a non-empty ID
+	if !session.id.IsEmpty() {
+		event := NewSessionCreatedEvent(sessionID.Value(), sessionName.Value())
+		session.AddEvent(event)
+	}
 
 	return session, nil
 }
@@ -162,14 +165,8 @@ func (s *Session) Connect() error {
 		return fmt.Errorf("session cannot connect from current status: %s", s.status)
 	}
 
-	oldStatus := s.status
 	s.status = StatusConnecting
 	s.updateTimestamp()
-
-	if oldStatus != StatusConnecting {
-		event := NewSessionConnectedEvent(s.id.Value(), s.deviceJID.Value())
-		s.AddEvent(event)
-	}
 
 	return nil
 }
@@ -212,9 +209,14 @@ func (s *Session) SetError(errorMessage string) {
 	s.AddEvent(event)
 }
 
-func (s *Session) SetStatus(status Status) {
+func (s *Session) SetStatus(status Status) error {
+	if err := ValidateSessionStatus(s.status, status); err != nil {
+		return err
+	}
+
 	s.status = status
 	s.updateTimestamp()
+	return nil
 }
 
 func (s *Session) SetQRCode(qrCode string) error {
@@ -363,4 +365,23 @@ func (s *Session) HasWebhook() bool {
 
 func (s *Session) GetWebhookEndpointString() string {
 	return s.webhookEndpoint.Value()
+}
+
+
+// SetID assigns a persisted ID to the session aggregate.
+// Should be called by the application layer after the repository generates the ID.
+func (s *Session) SetID(id string) error {
+	newID, err := NewSessionID(id)
+	if err != nil {
+		return err
+	}
+	s.id = newID
+	return nil
+}
+
+// MarkCreated emits the SessionCreatedEvent using the current session ID and name.
+// Should be invoked after SetID when the session is persisted.
+func (s *Session) MarkCreated() {
+	event := NewSessionCreatedEvent(s.id.Value(), s.name.Value())
+	s.AddEvent(event)
 }

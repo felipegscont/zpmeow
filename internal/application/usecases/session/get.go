@@ -43,12 +43,12 @@ type SessionView struct {
 }
 
 type GetSessionUseCase struct {
-	sessionRepo ports.SessionRepository
+	sessionRepo session.Repository
 	logger      ports.Logger
 }
 
 func NewGetSessionUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	logger ports.Logger,
 ) *GetSessionUseCase {
 	return &GetSessionUseCase{
@@ -118,12 +118,12 @@ func (q GetAllSessionsQuery) Validate() error {
 }
 
 type GetAllSessionsUseCase struct {
-	sessionRepo ports.SessionRepository
+	sessionRepo session.Repository
 	logger      ports.Logger
 }
 
 func NewGetAllSessionsUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	logger ports.Logger,
 ) *GetAllSessionsUseCase {
 	return &GetAllSessionsUseCase{

@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type MarkAsReadCommand struct {
@@ -123,13 +124,13 @@ type MessageActionResult struct {
 }
 
 type MarkAsReadUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewMarkAsReadUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *MarkAsReadUseCase {
@@ -184,13 +185,13 @@ func (uc *MarkAsReadUseCase) Handle(ctx context.Context, cmd MarkAsReadCommand) 
 }
 
 type ReactToMessageUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewReactToMessageUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *ReactToMessageUseCase {
@@ -252,13 +253,13 @@ func (uc *ReactToMessageUseCase) Handle(ctx context.Context, cmd ReactToMessageC
 }
 
 type EditMessageUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewEditMessageUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *EditMessageUseCase {
@@ -313,13 +314,13 @@ func (uc *EditMessageUseCase) Handle(ctx context.Context, cmd EditMessageCommand
 }
 
 type DeleteMessageUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewDeleteMessageUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *DeleteMessageUseCase {

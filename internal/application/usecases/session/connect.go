@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type ConnectSessionCommand struct {
@@ -28,14 +29,14 @@ type ConnectSessionResult struct {
 }
 
 type ConnectSessionUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	eventPublisher  ports.EventPublisher
 	logger          ports.Logger
 }
 
 func NewConnectSessionUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	eventPublisher ports.EventPublisher,
 	logger ports.Logger,

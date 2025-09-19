@@ -8,6 +8,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type MuteChatCommand struct {
@@ -77,13 +78,13 @@ type ChatManagementResult struct {
 }
 
 type MuteChatUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewMuteChatUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *MuteChatUseCase {
@@ -141,13 +142,13 @@ func (uc *MuteChatUseCase) Handle(ctx context.Context, cmd MuteChatCommand) (*Ch
 }
 
 type ArchiveChatUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewArchiveChatUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *ArchiveChatUseCase {

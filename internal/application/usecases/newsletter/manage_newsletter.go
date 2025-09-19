@@ -7,6 +7,7 @@ import (
 
 	"zpmeow/internal/application/common"
 	"zpmeow/internal/application/ports"
+	"zpmeow/internal/domain/session"
 )
 
 type CreateNewsletterCommand struct {
@@ -106,13 +107,13 @@ type NewsletterResult struct {
 }
 
 type CreateNewsletterUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewCreateNewsletterUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *CreateNewsletterUseCase {
@@ -190,13 +191,13 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 }
 
 type SubscribeNewsletterUseCase struct {
-	sessionRepo     ports.SessionRepository
+	sessionRepo     session.Repository
 	whatsappService ports.WhatsAppService
 	logger          ports.Logger
 }
 
 func NewSubscribeNewsletterUseCase(
-	sessionRepo ports.SessionRepository,
+	sessionRepo session.Repository,
 	whatsappService ports.WhatsAppService,
 	logger ports.Logger,
 ) *SubscribeNewsletterUseCase {

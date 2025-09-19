@@ -316,15 +316,15 @@ definitions:
   dto.ConnectSessionResponse:
     properties:
       code:
-        example: 200
         type: integer
       data:
         $ref: '#/definitions/dto.SessionConnectData'
       error:
-        $ref: '#/definitions/dto.SessionErrorResponse'
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
-        example: true
         type: boolean
+      timestamp:
+        type: string
     type: object
   dto.ContactCheckResult:
     properties:
@@ -403,6 +403,9 @@ definitions:
         type: string
       notify:
         example: João
+        type: string
+      phone:
+        example: "5511999999999"
         type: string
       picture_id:
         example: pic_123
@@ -483,36 +486,6 @@ definitions:
     - name
     - participants
     type: object
-  dto.CreateGroupResponse:
-    properties:
-      code:
-        example: 201
-        type: integer
-      data:
-        $ref: '#/definitions/dto.CreateGroupResponseData'
-      error:
-        $ref: '#/definitions/dto.GroupErrorResponse'
-      success:
-        example: true
-        type: boolean
-    type: object
-  dto.CreateGroupResponseData:
-    properties:
-      action:
-        example: create
-        type: string
-      group:
-        $ref: '#/definitions/dto.GroupInfo'
-      session_id:
-        example: default
-        type: string
-      status:
-        example: success
-        type: string
-      timestamp:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-    type: object
   dto.CreateNewsletterRequest:
     properties:
       description:
@@ -529,10 +502,12 @@ definitions:
     type: object
   dto.CreateNewsletterResponse:
     properties:
+      code:
+        type: integer
       data:
         $ref: '#/definitions/dto.CreateNewsletterResult'
       error:
-        type: string
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
         type: boolean
     type: object
@@ -553,15 +528,18 @@ definitions:
     properties:
       events:
         example: message,status
+        maxLength: 500
         type: string
       name:
         example: default
+        maxLength: 50
+        minLength: 1
         type: string
       proxy_url:
         example: http://proxy.example.com:8080
         type: string
       webhook_url:
-        example: https://webhook.example.com/meow
+        example: https://webhook.example.com/whatsapp
         type: string
     required:
     - name
@@ -569,15 +547,15 @@ definitions:
   dto.CreateSessionResponse:
     properties:
       code:
-        example: 201
         type: integer
       data:
         $ref: '#/definitions/dto.SessionCreateData'
       error:
-        $ref: '#/definitions/dto.SessionErrorResponse'
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
-        example: true
         type: boolean
+      timestamp:
+        type: string
     type: object
   dto.DeleteMessageRequest:
     properties:
@@ -630,6 +608,18 @@ definitions:
     - message_id
     - new_text
     - phone
+    type: object
+  dto.ErrorInfo:
+    properties:
+      code:
+        example: INVALID_REQUEST
+        type: string
+      details:
+        example: Additional error details
+        type: string
+      message:
+        example: Invalid request parameters
+        type: string
     type: object
   dto.FindPrivacySettingsRequest:
     properties:
@@ -699,11 +689,11 @@ definitions:
     type: object
   dto.GetInviteInfoRequest:
     properties:
-      invite_link:
-        example: https://chat.meow.com/ABC123
+      invite_code:
+        example: ABC123DEF456
         type: string
     required:
-    - invite_link
+    - invite_code
     type: object
   dto.GetInviteLinkRequest:
     properties:
@@ -752,10 +742,8 @@ definitions:
           $ref: '#/definitions/dto.GroupInfo'
         type: array
       invite_link:
-        example: https://chat.meow.com/ABC123
         type: string
       message:
-        example: Operation completed successfully
         type: string
       session_id:
         example: default
@@ -782,89 +770,72 @@ definitions:
   dto.GroupInfo:
     properties:
       admins:
-        example:
-        - '["5511999999999@s.meow.net"]'
         items:
           type: string
         type: array
       announce:
-        example: false
         type: boolean
-      created_at:
-        example: 1640995200
+      createdAt:
         type: integer
+      description:
+        type: string
       ephemeral:
-        example: false
+        type: boolean
+      isAnnounce:
+        type: boolean
+      isEphemeral:
+        type: boolean
+      isLocked:
         type: boolean
       jid:
-        example: 120363025246125486@g.us
         type: string
       locked:
-        example: false
         type: boolean
       name:
-        example: My Group
         type: string
       owner:
-        example: 5511999999999@s.meow.net
         type: string
+      participantCount:
+        type: integer
       participants:
-        example:
-        - '["5511999999999@s.meow.net"'
-        - ' "5511888888888@s.meow.net"]'
         items:
           type: string
         type: array
       size:
-        example: 2
         type: integer
       topic:
-        example: Group topic description
         type: string
     type: object
   dto.GroupInviteInfoReq:
     properties:
-      code:
+      invite_code:
         example: ABC123DEF456
         type: string
-      expiration:
-        example: 1640995200
-        type: integer
-      group_jid:
-        example: 120363025246125486@g.us
-        type: string
-      inviter:
-        example: 5511999999999@s.meow.net
-        type: string
     required:
-    - code
-    - expiration
-    - group_jid
-    - inviter
+    - invite_code
     type: object
   dto.GroupJoinApprovalReq:
     properties:
       group_jid:
         example: 120363025246125486@g.us
         type: string
-      require_approval:
+      join_approval:
         example: true
         type: boolean
     required:
     - group_jid
-    - require_approval
     type: object
   dto.GroupMemberModeReq:
     properties:
       group_jid:
         example: 120363025246125486@g.us
         type: string
-      mode:
-        example: admin
+      member_add_mode:
+        example: admin_only
         type: string
     required:
     - group_jid
-    - mode
+    - member_add_mode
     type: object
   dto.GroupResponse:
     properties:
@@ -888,31 +859,19 @@ definitions:
     type: object
   dto.JoinGroupRequest:
     properties:
-      invite_link:
-        example: https://chat.meow.com/ABC123
-        type: string
-    required:
-    - invite_link
-    type: object
-  dto.JoinGroupWithInviteRequest:
-    properties:
-      code:
-        example: ABC123DEF456
-        type: string
-      expiration:
-        example: 1640995200
-        type: integer
       group_jid:
         example: 120363025246125486@g.us
         type: string
-      inviter:
-        example: 5511999999999@s.meow.net
+    required:
+    - group_jid
+    type: object
+  dto.JoinGroupWithInviteRequest:
+    properties:
+      invite_code:
+        example: ABC123DEF456
         type: string
     required:
-    - code
-    - expiration
-    - group_jid
-    - inviter
+    - invite_code
     type: object
   dto.LeaveGroupRequest:
     properties:
@@ -1243,10 +1202,12 @@ definitions:
     type: object
   dto.NewsletterInfo:
     properties:
-      created_at:
-        type: string
+      createdAt:
+        type: integer
       description:
         type: string
+      isVerified:
+        type: boolean
       jid:
         type: string
       muted:
@@ -1257,6 +1218,8 @@ definitions:
         type: string
       picture:
         type: string
+      subscriberCount:
+        type: integer
       subscribers:
         type: integer
       updated_at:
@@ -1266,16 +1229,19 @@ definitions:
     type: object
   dto.NewsletterInfoResponse:
     properties:
+      code:
+        type: integer
       data:
         $ref: '#/definitions/dto.NewsletterInfo'
       error:
-        type: string
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
         type: boolean
     type: object
   dto.NewsletterList:
     properties:
       count:
+        description: Additional field referenced in handlers
         type: integer
       newsletters:
         items:
@@ -1286,47 +1252,49 @@ definitions:
     type: object
   dto.NewsletterListResponse:
     properties:
+      code:
+        type: integer
       data:
         $ref: '#/definitions/dto.NewsletterList'
       error:
-        type: string
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
         type: boolean
     type: object
   dto.PairPhoneRequest:
     properties:
-      phone_number:
+      phone:
         example: "5511999999999"
         type: string
     required:
-    - phone_number
+    - phone
     type: object
   dto.PairPhoneResponse:
     properties:
       code:
-        example: 200
         type: integer
       data:
         $ref: '#/definitions/dto.PairPhoneResponseData'
       error:
-        $ref: '#/definitions/dto.SessionErrorResponse'
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
-        example: true
         type: boolean
+      timestamp:
+        type: string
     type: object
   dto.PairPhoneResponseData:
     properties:
       action:
         example: pair
         type: string
-      pair_code:
-        example: ABCD-1234
+      code:
+        example: "123456"
         type: string
-      phone_number:
+      phone:
         example: "5511999999999"
         type: string
       session_id:
-        example: default
+        example: session_123
         type: string
       status:
         example: success
@@ -1444,6 +1412,7 @@ definitions:
       audio:
         description: Base64 data URL or HTTP URL
         example: data:audio/mp3;base64,SUQzBAA...
+        minLength: 1
         type: string
       phone:
         example: "5511999999999"
@@ -1460,6 +1429,8 @@ definitions:
     properties:
       contact_name:
         example: John Doe
+        maxLength: 100
+        minLength: 1
         type: string
       contact_phone:
         example: "5511888888888"
@@ -1477,12 +1448,15 @@ definitions:
       document:
         description: Base64 data URL or HTTP URL
         example: data:application/pdf;base64,JVBERi0x...
+        minLength: 1
         type: string
       filename:
         example: document.pdf
+        maxLength: 255
         type: string
       mimetype:
         example: application/pdf
+        maxLength: 100
         type: string
       phone:
         example: "5511999999999"
@@ -1495,10 +1469,12 @@ definitions:
     properties:
       caption:
         example: Check out this image!
+        maxLength: 1024
         type: string
       image:
         description: Base64 data URL or HTTP URL
         example: data:image/jpeg;base64,/9j/4AAQ...
+        minLength: 1
         type: string
       phone:
         example: "5511999999999"
@@ -1511,15 +1487,21 @@ definitions:
     properties:
       address:
         example: São Paulo, SP, Brazil
+        maxLength: 500
         type: string
       latitude:
         example: -23.5505
+        maximum: 90
+        minimum: -90
         type: number
       longitude:
         example: -46.6333
+        maximum: 180
+        minimum: -180
         type: number
       name:
         example: São Paulo
+        maxLength: 100
         type: string
       phone:
         example: "5511999999999"
@@ -1533,8 +1515,14 @@ definitions:
     properties:
       caption:
         example: Check out this image!
+        maxLength: 1024
         type: string
       media_type:
+        enum:
+        - image
+        - video
+        - audio
+        - document
         example: image
         type: string
       media_url:
@@ -1548,33 +1536,48 @@ definitions:
     - media_url
     - phone
     type: object
+  dto.SendNewsletterMessageData:
+    properties:
+      action:
+        type: string
+      message_id:
+        type: string
+      newsletter_jid:
+        type: string
+      session_id:
+        type: string
+      status:
+        type: string
+      timestamp:
+        type: string
+    type: object
   dto.SendNewsletterMessageRequest:
     properties:
-      caption:
-        example: Image caption
-        type: string
-      content:
-        example: Hello newsletter!
-        type: string
       media_handle:
-        example: media_handle_from_upload
+        example: media_123
         type: string
       media_type:
         example: image
         type: string
+      message:
+        example: Hello subscribers!
+        type: string
+      newsletter_jid:
+        example: 120363025246125486@newsletter
+        type: string
+    required:
+    - newsletter_jid
     type: object
   dto.SendNewsletterMessageResponse:
     properties:
+      code:
+        type: integer
+      data:
+        $ref: '#/definitions/dto.SendNewsletterMessageData'
       error:
-        type: string
-      message_id:
-        type: string
-      server_id:
-        type: string
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
         type: boolean
-      timestamp:
-        type: string
     type: object
   dto.SendStickerRequest:
     properties:
@@ -1584,6 +1587,7 @@ definitions:
       sticker:
         description: Base64 data URL or HTTP URL
         example: data:image/webp;base64,UklGRnoGAABXRUJQ...
+        minLength: 1
         type: string
     required:
     - phone
@@ -1593,6 +1597,8 @@ definitions:
     properties:
       body:
         example: Hello, World!
+        maxLength: 4096
+        minLength: 1
         type: string
       phone:
         example: "5511999999999"
@@ -1605,6 +1611,7 @@ definitions:
     properties:
       caption:
         example: Check out this video!
+        maxLength: 1024
         type: string
       gif_playback:
         example: false
@@ -1615,6 +1622,7 @@ definitions:
       video:
         description: Base64 data URL or HTTP URL
         example: data:video/mp4;base64,AAAAIGZ0eXA...
+        minLength: 1
         type: string
     required:
     - phone
@@ -1628,12 +1636,11 @@ definitions:
       connection:
         $ref: '#/definitions/dto.SessionConnectionInfo'
       qr_code:
-        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         type: string
       session:
         $ref: '#/definitions/dto.SessionInfo'
       session_id:
-        example: default
+        example: session_123
         type: string
       status:
         example: success
@@ -1645,19 +1652,10 @@ definitions:
   dto.SessionConnectionInfo:
     properties:
       connected:
-        example: true
         type: boolean
       is_connected:
-        example: true
         type: boolean
-      last_seen:
-        example: "2023-01-01T00:00:00Z"
-        type: string
-      pair_code:
-        example: ABCD-1234
-        type: string
       qr_code:
-        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         type: string
     type: object
   dto.SessionCreateData:
@@ -1667,9 +1665,6 @@ definitions:
         type: string
       session:
         $ref: '#/definitions/dto.SessionInfo'
-      session_id:
-        example: 550e8400-e29b-41d4-a716-446655440000
-        type: string
       status:
         example: success
         type: string
@@ -1682,18 +1677,12 @@ definitions:
       action:
         example: create
         type: string
-      connection:
-        $ref: '#/definitions/dto.SessionConnectionInfo'
-      pair_code:
-        example: ABCD-1234
-        type: string
       qr_code:
-        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
         type: string
       session:
         $ref: '#/definitions/dto.SessionInfo'
       session_id:
-        example: default
+        example: session_123
         type: string
       sessions:
         items:
@@ -1706,18 +1695,6 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
     type: object
-  dto.SessionErrorResponse:
-    properties:
-      code:
-        example: INVALID_SESSION_ID
-        type: string
-      details:
-        example: Session ID must be alphanumeric
-        type: string
-      message:
-        example: Invalid session ID format
-        type: string
-    type: object
   dto.SessionInfo:
     properties:
       api_key:
@@ -1725,6 +1702,9 @@ definitions:
         type: string
       created_at:
         example: "2023-01-01T00:00:00Z"
+        type: string
+      device_jid:
+        example: 5511999999999@s.whatsapp.net
         type: string
       events:
         example:
@@ -1748,74 +1728,22 @@ definitions:
       updated_at:
         example: "2023-01-01T00:00:00Z"
         type: string
-      device_jid:
-        example: 5511999999999@s.meow.net
-        type: string
       webhook_url:
-        example: https://webhook.example.com/meow
-        type: string
-    type: object
-  dto.SessionInfoResponse:
-    properties:
-      code:
-        example: 200
-        type: integer
-      data:
-        $ref: '#/definitions/dto.SessionInfoResponseData'
-      error:
-        $ref: '#/definitions/dto.SessionErrorResponse'
-      success:
-        example: true
-        type: boolean
-    type: object
-  dto.SessionInfoResponseData:
-    properties:
-      action:
-        example: get
-        type: string
-      session:
-        $ref: '#/definitions/dto.SessionInfo'
-      session_id:
-        example: default
-        type: string
-      status:
-        example: success
-        type: string
-      timestamp:
-        example: "2023-01-01T00:00:00Z"
+        example: https://webhook.example.com/whatsapp
         type: string
     type: object
   dto.SessionListResponse:
     properties:
       code:
-        example: 200
         type: integer
       data:
-        $ref: '#/definitions/dto.SessionListResponseData'
+        $ref: '#/definitions/dto.SessionData'
       error:
-        $ref: '#/definitions/dto.SessionErrorResponse'
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
-        example: true
         type: boolean
-    type: object
-  dto.SessionListResponseData:
-    properties:
-      action:
-        example: list
-        type: string
-      sessions:
-        items:
-          $ref: '#/definitions/dto.SessionInfo'
-        type: array
-      status:
-        example: success
-        type: string
       timestamp:
-        example: "2023-01-01T00:00:00Z"
         type: string
-      total:
-        example: 5
-        type: integer
     type: object
   dto.SessionResponse:
     properties:
@@ -1824,22 +1752,24 @@ definitions:
       data:
         $ref: '#/definitions/dto.SessionData'
       error:
-        $ref: '#/definitions/dto.SessionErrorResponse'
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
         type: boolean
+      timestamp:
+        type: string
     type: object
   dto.SessionStatusResponse:
     properties:
       code:
-        example: 200
         type: integer
       data:
         $ref: '#/definitions/dto.SessionStatusResponseData'
       error:
-        $ref: '#/definitions/dto.SessionErrorResponse'
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
-        example: true
         type: boolean
+      timestamp:
+        type: string
     type: object
   dto.SessionStatusResponseData:
     properties:
@@ -1852,14 +1782,16 @@ definitions:
       created_at:
         example: "2023-01-01T00:00:00Z"
         type: string
+      device_jid:
+        example: 5511999999999@s.whatsapp.net
+        type: string
       is_connected:
-        example: true
         type: boolean
       name:
-        example: default
+        example: My Session
         type: string
       session_id:
-        example: default
+        example: session_123
         type: string
       session_status:
         example: connected
@@ -1872,9 +1804,6 @@ definitions:
         type: string
       updated_at:
         example: "2023-01-01T00:00:00Z"
-        type: string
-      device_jid:
-        example: 5511999999999@s.meow.net
         type: string
     type: object
   dto.SetAllPrivacySettingsRequest:
@@ -1928,7 +1857,7 @@ definitions:
     type: object
   dto.SetGroupAnnounceRequest:
     properties:
-      announce_only:
+      announce:
         example: true
         type: boolean
       group_jid:
@@ -1939,9 +1868,6 @@ definitions:
     type: object
   dto.SetGroupEphemeralRequest:
     properties:
-      duration:
-        example: 86400
-        type: integer
       ephemeral:
         example: true
         type: boolean
@@ -1980,7 +1906,7 @@ definitions:
         example: 120363025246125486@g.us
         type: string
       photo:
-        example: data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD...
+        example: base64_encoded_image
         type: string
     required:
     - group_jid
@@ -2016,12 +1942,15 @@ definitions:
     type: object
   dto.StandardResponse:
     properties:
+      code:
+        type: integer
+      data: {}
       error:
-        type: string
-      message:
-        type: string
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
         type: boolean
+      timestamp:
+        type: string
     type: object
   dto.StandardWebhookCreateResponse:
     properties:
@@ -2150,6 +2079,7 @@ definitions:
   dto.UpdateGroupRequestsReq:
     properties:
       action:
+        description: '"approve" or "reject"'
         example: approve
         type: string
       group_jid:
@@ -2170,6 +2100,7 @@ definitions:
   dto.UpdateParticipantsRequest:
     properties:
       action:
+        description: '"add" or "remove"'
         example: add
         type: string
       group_jid:
@@ -2220,32 +2151,6 @@ definitions:
     required:
     - media_type
     - session_id
-    type: object
-  dto.UploadNewsletterMediaResponse:
-    properties:
-      data:
-        $ref: '#/definitions/dto.UploadNewsletterMediaResult'
-      error:
-        type: string
-      success:
-        type: boolean
-    type: object
-  dto.UploadNewsletterMediaResult:
-    properties:
-      direct_path:
-        type: string
-      file_hash:
-        type: string
-      file_length:
-        type: integer
-      handle:
-        type: string
-      media_key:
-        type: string
-      object_id:
-        type: string
-      url:
-        type: string
     type: object
   dto.VideoMessagePayload:
     properties:
@@ -2337,43 +2242,17 @@ definitions:
           $ref: '#/definitions/dto.WebhookInfo'
         type: array
     type: object
-  handlers.HealthData:
-    properties:
-      message:
-        example: Service is healthy
-        type: string
-      service:
-        example: meow
-        type: string
-      status:
-        example: ok
-        type: string
-      version:
-        example: 1.0.0
-        type: string
-    type: object
-  handlers.HealthErrorResponse:
-    properties:
-      code:
-        example: HEALTH_CHECK_FAILED
-        type: string
-      details:
-        example: Service is not responding
-        type: string
-      message:
-        example: Health check failed
-        type: string
-    type: object
   handlers.HealthStandardResponse:
     properties:
       code:
         type: integer
-      data:
-        $ref: '#/definitions/handlers.HealthData'
+      data: {}
       error:
-        $ref: '#/definitions/handlers.HealthErrorResponse'
+        $ref: '#/definitions/dto.ErrorInfo'
       success:
         type: boolean
+      timestamp:
+        type: string
     type: object
 host: localhost:8080
 info:
@@ -2402,7 +2281,42 @@ paths:
           description: Service is healthy
           schema:
             $ref: '#/definitions/handlers.HealthStandardResponse'
+        "503":
+          description: Service is unhealthy
+          schema:
+            $ref: '#/definitions/handlers.HealthStandardResponse'
       summary: Health check endpoint
+      tags:
+      - Health
+  /metrics:
+    get:
+      consumes:
+      - application/json
+      description: Returns application metrics and performance data
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Application metrics
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Metrics endpoint
+      tags:
+      - Health
+  /metrics/reset:
+    post:
+      consumes:
+      - application/json
+      description: Resets all application metrics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Metrics reset successfully
+          schema:
+            $ref: '#/definitions/handlers.HealthStandardResponse'
+      summary: Reset metrics endpoint
       tags:
       - Health
   /ping:
@@ -3192,48 +3106,7 @@ paths:
       summary: Set contact presence
       tags:
       - Contacts
-  /session/{sessionId}/groups/announce:
-    put:
-      consumes:
-      - application/json
-      description: Set whether only admins can send messages to the group
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Set group announce request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SetGroupAnnounceRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group announce mode
-      tags:
-      - Groups
-  /session/{sessionId}/groups/create:
+  /session/{sessionId}/group/create:
     post:
       consumes:
       - application/json
@@ -3256,7 +3129,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/dto.CreateGroupResponse'
+            $ref: '#/definitions/dto.GroupResponse'
         "400":
           description: Bad Request
           schema:
@@ -3274,48 +3147,7 @@ paths:
       summary: Create a new group
       tags:
       - Groups
-  /session/{sessionId}/groups/ephemeral:
-    put:
-      consumes:
-      - application/json
-      description: Set disappearing messages for the group
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Set group ephemeral request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SetGroupEphemeralRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group ephemeral mode
-      tags:
-      - Groups
-  /session/{sessionId}/groups/info:
+  /session/{sessionId}/group/info:
     post:
       consumes:
       - application/json
@@ -3356,7 +3188,7 @@ paths:
       summary: Get group information
       tags:
       - Groups
-  /session/{sessionId}/groups/invite-info:
+  /session/{sessionId}/group/inviteinfo:
     post:
       consumes:
       - application/json
@@ -3397,7 +3229,7 @@ paths:
       summary: Get group info from invite link
       tags:
       - Groups
-  /session/{sessionId}/groups/invite-info-specific:
+  /session/{sessionId}/group/inviteinfo-specific:
     post:
       consumes:
       - application/json
@@ -3438,7 +3270,7 @@ paths:
       summary: Get group info from specific invite
       tags:
       - Groups
-  /session/{sessionId}/groups/invite-link:
+  /session/{sessionId}/group/invitelink:
     post:
       consumes:
       - application/json
@@ -3479,7 +3311,7 @@ paths:
       summary: Get group invite link
       tags:
       - Groups
-  /session/{sessionId}/groups/join:
+  /session/{sessionId}/group/join:
     post:
       consumes:
       - application/json
@@ -3520,48 +3352,7 @@ paths:
       summary: Join group via invite link
       tags:
       - Groups
-  /session/{sessionId}/groups/join-approval:
-    put:
-      consumes:
-      - application/json
-      description: Set whether admin approval is required to join the group
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Set group join approval request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.GroupJoinApprovalReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group join approval mode
-      tags:
-      - Groups
-  /session/{sessionId}/groups/join-with-invite:
+  /session/{sessionId}/group/join-with-invite:
     post:
       consumes:
       - application/json
@@ -3602,7 +3393,7 @@ paths:
       summary: Join group with specific invite
       tags:
       - Groups
-  /session/{sessionId}/groups/leave:
+  /session/{sessionId}/group/leave:
     post:
       consumes:
       - application/json
@@ -3643,7 +3434,7 @@ paths:
       summary: Leave group
       tags:
       - Groups
-  /session/{sessionId}/groups/list:
+  /session/{sessionId}/group/list:
     get:
       consumes:
       - application/json
@@ -3678,131 +3469,8 @@ paths:
       summary: List all groups
       tags:
       - Groups
-  /session/{sessionId}/groups/locked:
-    put:
-      consumes:
-      - application/json
-      description: Set whether only admins can edit group info
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Set group locked request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SetGroupLockedRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group locked mode
-      tags:
-      - Groups
-  /session/{sessionId}/groups/member-add-mode:
-    put:
-      consumes:
-      - application/json
-      description: Set who can add members to the group (all or admin only)
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Set group member add mode request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.GroupMemberModeReq'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group member add mode
-      tags:
-      - Groups
-  /session/{sessionId}/groups/name:
-    put:
-      consumes:
-      - application/json
-      description: Update the name of a group
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Set group name request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SetGroupNameRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group name
-      tags:
-      - Groups
-  /session/{sessionId}/groups/participants:
-    put:
+  /session/{sessionId}/group/participants/update:
+    post:
       consumes:
       - application/json
       description: Add or remove participants from a group
@@ -3842,88 +3510,7 @@ paths:
       summary: Update group participants
       tags:
       - Groups
-  /session/{sessionId}/groups/photo:
-    delete:
-      consumes:
-      - application/json
-      description: Remove the photo/avatar of a group
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Remove group photo request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.RemoveGroupPhotoRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Remove group photo
-      tags:
-      - Groups
-    put:
-      consumes:
-      - application/json
-      description: Update the photo/avatar of a group
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Set group photo request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SetGroupPhotoRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.GroupResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Set group photo
-      tags:
-      - Groups
-  /session/{sessionId}/groups/request-participants:
+  /session/{sessionId}/group/requests/list:
     post:
       consumes:
       - application/json
@@ -3964,7 +3551,8 @@ paths:
       summary: Get group request participants
       tags:
       - Groups
-    put:
+  /session/{sessionId}/group/requests/update:
+    post:
       consumes:
       - application/json
       description: Approve or reject users requesting to join the group
@@ -4004,8 +3592,336 @@ paths:
       summary: Update group request participants
       tags:
       - Groups
-  /session/{sessionId}/groups/topic:
-    put:
+  /session/{sessionId}/group/settings/announce:
+    post:
+      consumes:
+      - application/json
+      description: Set whether only admins can send messages to the group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set group announce request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetGroupAnnounceRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group announce mode
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/ephemeral:
+    post:
+      consumes:
+      - application/json
+      description: Set disappearing messages for the group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set group ephemeral request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetGroupEphemeralRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group ephemeral mode
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/join-approval:
+    post:
+      consumes:
+      - application/json
+      description: Set whether admin approval is required to join the group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set group join approval request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GroupJoinApprovalReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group join approval mode
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/locked:
+    post:
+      consumes:
+      - application/json
+      description: Set whether only admins can edit group info
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set group locked request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetGroupLockedRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group locked mode
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/member-add-mode:
+    post:
+      consumes:
+      - application/json
+      description: Set who can add members to the group (all or admin only)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set group member add mode request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.GroupMemberModeReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group member add mode
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/name:
+    post:
+      consumes:
+      - application/json
+      description: Update the name of a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set group name request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetGroupNameRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group name
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/photo/remove:
+    post:
+      consumes:
+      - application/json
+      description: Remove the photo/avatar of a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Remove group photo request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.RemoveGroupPhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Remove group photo
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/photo/set:
+    post:
+      consumes:
+      - application/json
+      description: Update the photo/avatar of a group
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Set group photo request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SetGroupPhotoRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.GroupResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set group photo
+      tags:
+      - Groups
+  /session/{sessionId}/group/settings/topic:
+    post:
       consumes:
       - application/json
       description: Update the topic/description of a group
@@ -4411,8 +4327,8 @@ paths:
       summary: Upload media file
       tags:
       - Media
-  /session/{sessionId}/messages/{messageId}:
-    delete:
+  /session/{sessionId}/message/delete:
+    post:
       consumes:
       - application/json
       description: Delete a message for everyone or just for me
@@ -4420,11 +4336,6 @@ paths:
       - description: Session ID
         in: path
         name: sessionId
-        required: true
-        type: string
-      - description: Message ID
-        in: path
-        name: messageId
         required: true
         type: string
       - description: Delete request
@@ -4453,30 +4364,15 @@ paths:
       summary: Delete message
       tags:
       - Messages
-  /session/{sessionId}/messages/{messageId}/edit:
-    put:
-      consumes:
-      - application/json
-      description: Edit the text content of a message
+  /session/{sessionId}/message/edit:
+    post:
       parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Message ID
-        in: path
-        name: messageId
-        required: true
-        type: string
       - description: Edit request
         in: body
         name: request
         required: true
         schema:
           $ref: '#/definitions/dto.EditMessageRequest'
-      produces:
-      - application/json
       responses:
         "200":
           description: OK
@@ -4492,283 +4388,7 @@ paths:
             $ref: '#/definitions/dto.MessageActionResponse'
       security:
       - ApiKeyAuth: []
-      summary: Edit message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/{messageId}/reactions:
-    post:
-      consumes:
-      - application/json
-      description: Add or remove reaction to a message
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Message ID
-        in: path
-        name: messageId
-        required: true
-        type: string
-      - description: React request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.ReactToMessageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.MessageActionResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.MessageActionResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.MessageActionResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: React to message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/audio:
-    post:
-      consumes:
-      - application/json
-      description: Send an audio message to a meow contact
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Audio message request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SendAudioRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send audio message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/buttons:
-    post:
-      consumes:
-      - application/json
-      description: Send a button message to a meow contact (not yet implemented)
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "501":
-          description: Not Implemented
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send button message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/contact:
-    post:
-      consumes:
-      - application/json
-      description: Send a contact message to a meow contact
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Contact message request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SendContactRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send contact message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/document:
-    post:
-      consumes:
-      - application/json
-      description: Send a document message to a meow contact
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Document message request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SendDocumentRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send document message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/image:
-    post:
-      consumes:
-      - application/json
-      description: Send an image message to a meow contact
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Image message request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SendImageRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send image message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/list:
-    post:
-      consumes:
-      - application/json
-      description: Send a list message to a meow contact (not yet implemented)
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "501":
-          description: Not Implemented
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send list message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/location:
-    post:
-      consumes:
-      - application/json
-      description: Send a location message to a meow contact
-      parameters:
-      - description: Session ID
-        in: path
-        name: sessionId
-        required: true
-        type: string
-      - description: Location message request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.SendLocationRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.MessageResponse'
-      security:
-      - ApiKeyAuth: []
-      summary: Send location message
-      tags:
-      - Messages
-  /session/{sessionId}/messages/markread:
+  /session/{sessionId}/message/markread:
     post:
       consumes:
       - application/json
@@ -4805,7 +4425,275 @@ paths:
       summary: Mark messages as read
       tags:
       - Messages
-  /session/{sessionId}/messages/media:
+  /session/{sessionId}/message/react:
+    post:
+      consumes:
+      - application/json
+      description: Add or remove reaction to a message
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: React request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReactToMessageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageActionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.MessageActionResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.MessageActionResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: React to message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/audio:
+    post:
+      consumes:
+      - application/json
+      description: Send an audio message to a meow contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Audio message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendAudioRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send audio message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/buttons:
+    post:
+      consumes:
+      - application/json
+      description: Send a button message to a meow contact (not yet implemented)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send button message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/contact:
+    post:
+      consumes:
+      - application/json
+      description: Send a contact message to a meow contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Contact message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendContactRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send contact message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/document:
+    post:
+      consumes:
+      - application/json
+      description: Send a document message to a meow contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Document message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendDocumentRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send document message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/image:
+    post:
+      consumes:
+      - application/json
+      description: Send an image message to a meow contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Image message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendImageRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send image message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/list:
+    post:
+      consumes:
+      - application/json
+      description: Send a list message to a meow contact (not yet implemented)
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: Not Implemented
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send list message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/location:
+    post:
+      consumes:
+      - application/json
+      description: Send a location message to a meow contact
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Location message request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendLocationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.MessageResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Send location message
+      tags:
+      - Messages
+  /session/{sessionId}/message/send/media:
     post:
       consumes:
       - application/json
@@ -4843,7 +4731,7 @@ paths:
       summary: Send media message
       tags:
       - Messages
-  /session/{sessionId}/messages/poll:
+  /session/{sessionId}/message/send/poll:
     post:
       consumes:
       - application/json
@@ -4866,7 +4754,7 @@ paths:
       summary: Send poll message
       tags:
       - Messages
-  /session/{sessionId}/messages/sticker:
+  /session/{sessionId}/message/send/sticker:
     post:
       consumes:
       - application/json
@@ -4903,7 +4791,7 @@ paths:
       summary: Send sticker message
       tags:
       - Messages
-  /session/{sessionId}/messages/text:
+  /session/{sessionId}/message/send/text:
     post:
       consumes:
       - application/json
@@ -4940,7 +4828,7 @@ paths:
       summary: Send text message
       tags:
       - Messages
-  /session/{sessionId}/messages/video:
+  /session/{sessionId}/message/send/video:
     post:
       consumes:
       - application/json
@@ -5210,7 +5098,7 @@ paths:
         "200":
           description: Media uploaded successfully
           schema:
-            $ref: '#/definitions/dto.UploadNewsletterMediaResponse'
+            $ref: '#/definitions/dto.StandardResponse'
         "400":
           description: Bad request - Invalid file or parameters
           schema:
@@ -5619,7 +5507,7 @@ paths:
         "200":
           description: Session information retrieved successfully
           schema:
-            $ref: '#/definitions/dto.SessionInfoResponse'
+            $ref: '#/definitions/dto.SessionResponse'
         "400":
           description: Invalid session ID or name
           schema:

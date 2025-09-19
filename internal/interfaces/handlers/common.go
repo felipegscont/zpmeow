@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"zpmeow/internal/infra/logging"
-	"zpmeow/internal/infra/validation"
 	"zpmeow/internal/interfaces/dto"
 )
 
@@ -16,14 +15,12 @@ type Handler interface {
 }
 
 type BaseHandler struct {
-	logger    logging.Logger
-	validator *validation.Validator
+	logger logging.Logger
 }
 
 func NewBaseHandler(moduleName string) *BaseHandler {
 	return &BaseHandler{
-		logger:    logging.GetLogger().Sub(moduleName),
-		validator: validation.NewValidator(),
+		logger: logging.GetLogger().Sub(moduleName),
 	}
 }
 
@@ -32,7 +29,7 @@ func (h *BaseHandler) ValidateRequest(req interface{}) error {
 		return validator.Validate()
 	}
 
-	return h.validator.Validate(req)
+	return nil
 }
 
 func (h *BaseHandler) BindAndValidate(c *gin.Context, req interface{}) error {
