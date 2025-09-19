@@ -1,6 +1,5 @@
 package session
 
-
 type Service interface {
 	CanConnect(session *Session) bool
 	CanDisconnect(session *Session) bool
