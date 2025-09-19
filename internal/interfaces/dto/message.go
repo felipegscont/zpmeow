@@ -464,13 +464,6 @@ func (e *MessageValidationError) Error() string {
 	return fmt.Sprintf("%s: %s", e.Field, e.Message)
 }
 
-func validateMessagePhone(phone string) bool {
-	if phone == "" {
-		return false
-	}
-	return len(phone) >= 10 && len(phone) <= 15
-}
-
 func NewMessageActionSuccessResponse(phone, messageID, action string) *MessageActionResponse {
 	return &MessageActionResponse{
 		Success: true,

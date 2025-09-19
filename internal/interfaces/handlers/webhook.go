@@ -260,25 +260,3 @@ func (h *WebhookHandler) isValidEvent(event string, validEvents []string) bool {
 	}
 	return false
 }
-
-// extractEventsFromWebhook extracts events from webhook configuration
-func (h *WebhookHandler) extractEventsFromWebhook(webhook map[string]interface{}) []string {
-	if events, ok := webhook["events"].([]interface{}); ok {
-		result := make([]string, len(events))
-		for i, event := range events {
-			if eventStr, ok := event.(string); ok {
-				result[i] = eventStr
-			}
-		}
-		return result
-	}
-	return []string{}
-}
-
-// extractURLFromWebhook extracts URL from webhook configuration
-func (h *WebhookHandler) extractURLFromWebhook(webhook map[string]interface{}) string {
-	if url, ok := webhook["url"].(string); ok {
-		return url
-	}
-	return ""
-}

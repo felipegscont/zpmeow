@@ -31,7 +31,7 @@ func NewSessionHandler(sessionService *application.SessionApp, wmeowService wmeo
 func (h *SessionHandler) validateSessionID(c *gin.Context) (string, bool) {
 	sessionIDOrName := c.Param("id")
 	if sessionIDOrName == "" {
-		h.sendErrorResponse(c, http.StatusBadRequest, "SESSION_ID_REQUIRED", "Session ID or name is required")
+		h.sendErrorResponse(c, http.StatusBadRequest, "SESSION_ID_REQUIRED", "Session ID or name is required", "Missing session ID or name in path")
 		return "", false
 	}
 	return sessionIDOrName, true
@@ -77,7 +77,7 @@ func (h *SessionHandler) sendSuccessResponse(c *gin.Context, sessionID, action s
 	c.Data(http.StatusOK, "application/json", jsonBytes)
 }
 
-func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode, message string) {
+func (h *SessionHandler) sendErrorResponse(c *gin.Context, status int, errorCode, message, _ string) {
 	response := &dto.SessionResponse{
 		Success: false,
 		Code:    status,

@@ -529,5 +529,3 @@ func (r *PostgresRepo) generateAPIKey() string {
 	}
 	return string(b)
 }
-
-

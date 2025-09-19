@@ -533,13 +533,3 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 		Data:    filteredData,
 	})
 }
-
-// Helper function to safely get string from map
-func getStringFromMap(m map[string]interface{}, key string) string {
-	if val, ok := m[key]; ok {
-		if str, ok := val.(string); ok {
-			return str
-		}
-	}
-	return ""
-}

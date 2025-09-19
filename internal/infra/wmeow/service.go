@@ -2200,11 +2200,6 @@ func (m *MeowService) UpdateSessionSubscriptions(sessionID string, events []stri
 	return nil
 }
 
-// Simplified parsePhoneToJID helper
-func (m *MeowService) parsePhoneToJID(phone string) (waTypes.JID, error) {
-	return parsePhoneToJID(phone) // Use the helper function from messages.go
-}
-
 // Chat Operations Implementation
 
 func (m *MeowService) SetDisappearingTimer(ctx context.Context, sessionID, chatJID string, duration time.Duration) error {

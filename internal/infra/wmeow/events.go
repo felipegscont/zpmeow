@@ -63,40 +63,7 @@ func (ep *EventProcessor) HandleEvent(evt interface{}) {
 	}
 }
 
-// Event category helpers for better organization
-
-// isMessageEvent checks if event is message-related
-func (ep *EventProcessor) isMessageEvent(eventType string) bool {
-	messageEvents := []string{"*events.Message", "*events.Receipt"}
-	for _, msgEvent := range messageEvents {
-		if eventType == msgEvent {
-			return true
-		}
-	}
-	return false
-}
-
-// isConnectionEvent checks if event is connection-related
-func (ep *EventProcessor) isConnectionEvent(eventType string) bool {
-	connectionEvents := []string{"*events.Connected", "*events.Disconnected", "*events.LoggedOut"}
-	for _, connEvent := range connectionEvents {
-		if eventType == connEvent {
-			return true
-		}
-	}
-	return false
-}
-
-// isAuthEvent checks if event is authentication-related
-func (ep *EventProcessor) isAuthEvent(eventType string) bool {
-	authEvents := []string{"*events.QR", "*events.PairSuccess", "*events.PairError"}
-	for _, authEvent := range authEvents {
-		if eventType == authEvent {
-			return true
-		}
-	}
-	return false
-}
+// Event category helpers for better organization (removed unused methods)
 
 // processConnectionEvents - Common processing for connection events
 func (ep *EventProcessor) processConnectionEvents(eventType, status string) {
@@ -214,7 +181,7 @@ func (ep *EventProcessor) handleChatPresence(evt interface{}) {
 }
 
 // Helper functions shared across handlers (DRY principle)
-func sendWebhook(url string, data interface{}) error {
+func sendWebhook(url string, _ interface{}) error {
 	if url == "" {
 		return nil // No webhook configured
 	}
