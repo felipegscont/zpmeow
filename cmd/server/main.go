@@ -15,6 +15,39 @@
 
 //	@schemes	http https
 
+// @tag.name		Health
+// @tag.description	Health check and monitoring endpoints
+
+// @tag.name		Sessions
+// @tag.description	Session management endpoints
+
+// @tag.name		Messages
+// @tag.description	Message sending and management endpoints
+
+// @tag.name		Privacy
+// @tag.description	Privacy settings and blocklist management endpoints
+
+// @tag.name		Webhooks
+// @tag.description	Webhook configuration and event management endpoints
+
+// @tag.name		Chat
+// @tag.description	Chat management and interaction endpoints
+
+// @tag.name		Groups
+// @tag.description	Group management and administration endpoints
+
+// @tag.name		Community
+// @tag.description	Community management and linking endpoints
+
+// @tag.name		Contacts
+// @tag.description	Contact management and information endpoints
+
+// @tag.name		Media
+// @tag.description	Media upload, download and management endpoints
+
+// @tag.name		Newsletters
+// @tag.description	Newsletter creation and management endpoints
+
 // @securityDefinitions.apikey	ApiKeyAuth
 // @in							header
 // @name						Authorization

@@ -481,7 +481,6 @@ func (h *MessageHandler) DeleteMessage(c *gin.Context) {
 // @Accept			json
 // @Produce		json
 // @Param			sessionId	path		string					true	"Session ID"
-
 // @Param			request		body		dto.EditMessageRequest	true	"Edit request"
 // @Success		200			{object}	dto.MessageActionResponse
 // @Failure		400			{object}	dto.MessageActionResponse

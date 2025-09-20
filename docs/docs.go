@@ -3304,7 +3304,25 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
+                "description": "Edit the text content of a message",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Messages"
+                ],
+                "summary": "Edit message",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
                     {
                         "description": "Edit request",
                         "name": "request",
@@ -8639,7 +8657,53 @@ const docTemplate = `{
             "name": "Authorization",
             "in": "header"
         }
-    }
+    },
+    "tags": [
+        {
+            "description": "Health check and monitoring endpoints",
+            "name": "Health"
+        },
+        {
+            "description": "Session management endpoints",
+            "name": "Sessions"
+        },
+        {
+            "description": "Message sending and management endpoints",
+            "name": "Messages"
+        },
+        {
+            "description": "Privacy settings and blocklist management endpoints",
+            "name": "Privacy"
+        },
+        {
+            "description": "Webhook configuration and event management endpoints",
+            "name": "Webhooks"
+        },
+        {
+            "description": "Chat management and interaction endpoints",
+            "name": "Chat"
+        },
+        {
+            "description": "Group management and administration endpoints",
+            "name": "Groups"
+        },
+        {
+            "description": "Community management and linking endpoints",
+            "name": "Community"
+        },
+        {
+            "description": "Contact management and information endpoints",
+            "name": "Contacts"
+        },
+        {
+            "description": "Media upload, download and management endpoints",
+            "name": "Media"
+        },
+        {
+            "description": "Newsletter creation and management endpoints",
+            "name": "Newsletters"
+        }
+    ]
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
