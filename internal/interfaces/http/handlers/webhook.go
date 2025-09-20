@@ -3,23 +3,29 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"zpmeow/internal/application"
+	"zpmeow/internal/infra/wmeow"
 	"zpmeow/internal/interfaces/dto"
 
 	"github.com/gin-gonic/gin"
 )
 
 type WebhookHandler struct {
+	*BaseHandler
 	sessionService *application.SessionApp
 	webhookApp     *application.WebhookApp
+	wmeowService   wmeow.WameowService
 }
 
-func NewWebhookHandler(sessionService *application.SessionApp, webhookApp *application.WebhookApp) *WebhookHandler {
+func NewWebhookHandler(sessionService *application.SessionApp, webhookApp *application.WebhookApp, wmeowService wmeow.WameowService) *WebhookHandler {
 	return &WebhookHandler{
+		BaseHandler:    NewBaseHandler("webhook-handler"),
 		sessionService: sessionService,
 		webhookApp:     webhookApp,
+		wmeowService:   wmeowService,
 	}
 }
 
@@ -116,7 +122,7 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 			Data:    dto.WebhookResponseData{},
 			Error: &dto.WebhookErrorResponse{
 				Code:    "INVALID_EVENTS",
-				Message: "No valid events provided. Valid events include: message, status, connection, call, contact, group, presence, qr, pair, disconnect, error, all",
+				Message: fmt.Sprintf("No valid events provided. Valid events include: %s", strings.Join(allValidEvents, ", ")),
 			},
 		})
 		return
@@ -134,6 +140,14 @@ func (h *WebhookHandler) SetWebhook(c *gin.Context) {
 			},
 		})
 		return
+	}
+
+	// Update the EventProcessor with the new subscribed events
+	err = h.wmeowService.UpdateSessionSubscriptions(sessionID, validEvents)
+	if err != nil {
+		// Log the error but don't fail the webhook registration
+		// The webhook is already saved, we just couldn't update the live processor
+		h.logger.Warnf("Failed to update session subscriptions for %s: %v", sessionID, err)
 	}
 
 	c.JSON(http.StatusCreated, dto.StandardWebhookCreateResponse{

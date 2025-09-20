@@ -112,7 +112,7 @@ func main() {
 	chatHandler := handlers.NewChatHandler(appSessionService, wmeowService)
 	groupHandler := handlers.NewGroupHandler(appSessionService, wmeowService)
 	communityHandler := handlers.NewCommunityHandler(appSessionService, wmeowService)
-	webhookHandler := handlers.NewWebhookHandler(appSessionService, webhookAppService)
+	webhookHandler := handlers.NewWebhookHandler(appSessionService, webhookAppService, wmeowService)
 	contactHandler := handlers.NewContactHandler(appSessionService, wmeowService)
 	newsletterHandler := handlers.NewNewsletterHandler(appSessionService, wmeowService)
 	privacyHandler := handlers.NewPrivacyHandler(appSessionService, wmeowService)

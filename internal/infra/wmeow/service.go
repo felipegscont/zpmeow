@@ -120,12 +120,19 @@ func (m *MeowService) getOrCreateClient(sessionID string) *WameowClient {
 
 	sessionEntity, err := m.sessions.GetByID(context.Background(), sessionID)
 	var expectedDeviceJID string
-	if err == nil && sessionEntity.GetDeviceJIDString() != "" {
-		expectedDeviceJID = sessionEntity.GetDeviceJIDString()
-		m.logger.Infof("Creating client for session %s with expected device JID: %s", sessionID, expectedDeviceJID)
+	var webhookURL string
+	if err == nil {
+		if sessionEntity.GetDeviceJIDString() != "" {
+			expectedDeviceJID = sessionEntity.GetDeviceJIDString()
+			m.logger.Infof("Creating client for session %s with expected device JID: %s", sessionID, expectedDeviceJID)
+		}
+		webhookURL = sessionEntity.GetWebhookEndpointString()
+		if webhookURL != "" {
+			m.logger.Infof("Creating client for session %s with webhook URL: %s", sessionID, webhookURL)
+		}
 	}
 
-	eventProcessor := NewEventProcessor(sessionID, "", m.sessions)
+	eventProcessor := NewEventProcessor(sessionID, webhookURL, m.sessions)
 
 	client, err := NewWameowClientWithDeviceJID(sessionID, expectedDeviceJID, m.container, m.waLogger, eventProcessor, m.sessions)
 	if err != nil {
@@ -1902,7 +1909,23 @@ func (m *MeowService) UpdateSessionWebhook(sessionID, webhookURL string) error {
 }
 
 func (m *MeowService) UpdateSessionSubscriptions(sessionID string, events []string) error {
-	m.logger.Infof("Updated event subscriptions for session %s", sessionID)
+	m.logger.Infof("Updating event subscriptions for session %s to: %v", sessionID, events)
+
+	// Get the client for this session
+	client := m.getOrCreateClient(sessionID)
+	if client == nil {
+		return fmt.Errorf("failed to get client for session %s", sessionID)
+	}
+
+	// Cast the eventHandler to EventProcessor to access UpdateSubscribedEvents
+	if eventProcessor, ok := client.eventHandler.(*EventProcessor); ok {
+		eventProcessor.UpdateSubscribedEvents(events)
+		m.logger.Infof("Successfully updated event subscriptions for session %s", sessionID)
+	} else {
+		m.logger.Warnf("EventHandler for session %s is not an EventProcessor", sessionID)
+		return fmt.Errorf("invalid event handler type for session %s", sessionID)
+	}
+
 	return nil
 }
 

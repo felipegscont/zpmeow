@@ -80,6 +80,9 @@ func (w *WebhookApp) SetWebhook(ctx context.Context, sessionID, webhookURL strin
 		return err
 	}
 
+	// Set webhook events
+	sess.SetWebhookEvents(events)
+
 	return w.sessionRepo.Update(ctx, sess)
 }
 
@@ -97,16 +100,76 @@ func (w *WebhookApp) GetWebhook(ctx context.Context, sessionID string) (string, 
 
 func (w *WebhookApp) ListEvents(ctx context.Context) ([]string, error) {
 	events := []string{
-		"message",
-		"message_ack",
-		"message_revoke",
-		"presence",
-		"chat_presence",
-		"connected",
-		"disconnected",
-		"qr",
-		"group_join",
-		"group_leave",
+		// Messages and Communication
+		"Message",
+		"UndecryptableMessage",
+		"Receipt",
+		"MediaRetry",
+		"ReadReceipt",
+
+		// Groups and Contacts
+		"GroupInfo",
+		"JoinedGroup",
+		"Picture",
+		"BlocklistChange",
+		"Blocklist",
+
+		// Connection and Session
+		"Connected",
+		"Disconnected",
+		"ConnectFailure",
+		"KeepAliveRestored",
+		"KeepAliveTimeout",
+		"LoggedOut",
+		"ClientOutdated",
+		"TemporaryBan",
+		"StreamError",
+		"StreamReplaced",
+		"PairSuccess",
+		"PairError",
+		"QR",
+		"QRScannedWithoutMultidevice",
+
+		// Privacy and Settings
+		"PrivacySettings",
+		"PushNameSetting",
+		"UserAbout",
+
+		// Synchronization and State
+		"AppState",
+		"AppStateSyncComplete",
+		"HistorySync",
+		"OfflineSyncCompleted",
+		"OfflineSyncPreview",
+
+		// Calls
+		"CallOffer",
+		"CallAccept",
+		"CallTerminate",
+		"CallOfferNotice",
+		"CallRelayLatency",
+
+		// Presence and Activity
+		"Presence",
+		"ChatPresence",
+
+		// Identity
+		"IdentityChange",
+
+		// Errors
+		"CATRefreshError",
+
+		// Newsletter (WhatsApp Channels)
+		"NewsletterJoin",
+		"NewsletterLeave",
+		"NewsletterMuteChange",
+		"NewsletterLiveUpdate",
+
+		// Facebook/Meta Bridge
+		"FBMessage",
+
+		// Special - receives all events
+		"All",
 	}
 	return events, nil
 }

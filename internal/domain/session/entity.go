@@ -40,6 +40,7 @@ type Session struct {
 
 	proxyConfig     ProxyConfiguration
 	webhookEndpoint WebhookEndpoint
+	webhookEvents   []string
 	apiKey          ApiKey
 
 	createdAt common.Timestamp
@@ -73,6 +74,7 @@ func NewSession(id, name string) (*Session, error) {
 		qrCode:          qrCode,
 		proxyConfig:     proxyConfig,
 		webhookEndpoint: webhookEndpoint,
+		webhookEvents:   []string{},
 		apiKey:          ApiKey{},
 		createdAt:       now,
 		updatedAt:       now,
@@ -363,6 +365,21 @@ func (s *Session) HasWebhook() bool {
 
 func (s *Session) GetWebhookEndpointString() string {
 	return s.webhookEndpoint.Value()
+}
+
+func (s *Session) GetWebhookEvents() []string {
+	return s.webhookEvents
+}
+
+func (s *Session) SetWebhookEvents(events []string) {
+	s.webhookEvents = events
+	s.updateTimestamp()
+
+	changes := map[string]interface{}{
+		"webhook_events": events,
+	}
+	event := NewSessionConfigurationChangedEvent(s.id.Value(), changes)
+	s.AddEvent(event)
 }
 
 func (s *Session) SetID(id string) error {
