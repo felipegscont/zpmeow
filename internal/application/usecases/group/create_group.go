@@ -123,14 +123,14 @@ func (uc *CreateGroupUseCase) Handle(ctx context.Context, cmd CreateGroupCommand
 		return nil, fmt.Errorf("failed to create group: %w", err)
 	}
 
-	groupInfo, err := uc.whatsappService.GetGroupInfo(ctx, cmd.SessionID, groupJID)
+	groupInfo, err := uc.whatsappService.GetGroupInfo(ctx, cmd.SessionID, groupJID.JID)
 	if err != nil {
 		uc.logger.Warn(ctx, "Failed to get group info after creation",
 			"sessionID", cmd.SessionID,
 			"groupJID", groupJID,
 			"error", err)
 		groupInfo = &ports.GroupInfo{
-			JID:          groupJID,
+			JID:          groupJID.JID,
 			Name:         cmd.Name,
 			Description:  cmd.Description,
 			Participants: cmd.Participants,
@@ -144,7 +144,7 @@ func (uc *CreateGroupUseCase) Handle(ctx context.Context, cmd CreateGroupCommand
 		Participants: groupInfo.Participants,
 		Admins:       groupInfo.Admins,
 		Owner:        groupInfo.Owner,
-		CreatedAt:    groupInfo.CreatedAt,
+		CreatedAt:    fmt.Sprintf("%d", groupInfo.CreatedAt),
 		IsAnnounce:   groupInfo.IsAnnounce,
 		IsLocked:     groupInfo.IsLocked,
 	}

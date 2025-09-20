@@ -99,6 +99,41 @@ func (h *HTTPHandler) SendValidationErrorResponse(c *gin.Context, err error) {
 	h.BaseHandler.SendValidationErrorResponse(c, err)
 }
 
+// Métodos de conveniência usando as novas estruturas padronizadas
+func (h *BaseHandler) SendStandardErrorResponse(c *gin.Context, errorResponse *dto.StandardErrorResponse) {
+	c.JSON(errorResponse.Code, errorResponse)
+}
+
+func (h *BaseHandler) SendValidationError(c *gin.Context, details string) {
+	response := dto.NewValidationErrorResponse(details)
+	h.SendStandardErrorResponse(c, response)
+}
+
+func (h *BaseHandler) SendNotFoundError(c *gin.Context, resource string) {
+	response := dto.NewNotFoundErrorResponse(resource)
+	h.SendStandardErrorResponse(c, response)
+}
+
+func (h *BaseHandler) SendInternalError(c *gin.Context, details string) {
+	response := dto.NewInternalErrorResponse(details)
+	h.SendStandardErrorResponse(c, response)
+}
+
+func (h *BaseHandler) SendUnauthorizedError(c *gin.Context) {
+	response := dto.NewUnauthorizedErrorResponse()
+	h.SendStandardErrorResponse(c, response)
+}
+
+func (h *BaseHandler) SendConflictError(c *gin.Context, message, details string) {
+	response := dto.NewConflictErrorResponse(message, details)
+	h.SendStandardErrorResponse(c, response)
+}
+
+func (h *BaseHandler) SendNotImplementedError(c *gin.Context, feature string) {
+	response := dto.NewNotImplementedErrorResponse(feature)
+	h.SendStandardErrorResponse(c, response)
+}
+
 func (h *HTTPHandler) SendInternalErrorResponse(c *gin.Context, err error) {
 	h.BaseHandler.SendInternalErrorResponse(c, err)
 }

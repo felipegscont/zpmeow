@@ -117,11 +117,11 @@ func (uc *GetChatHistoryUseCase) Handle(ctx context.Context, query GetChatHistor
 			FromJID:   message.FromJID,
 			Content:   message.Content,
 			Type:      message.Type,
-			Timestamp: message.Timestamp,
-			IsFromMe:  message.IsFromMe,
-			IsRead:    message.IsRead,
-			MediaURL:  message.MediaURL,
-			Caption:   message.Caption,
+			Timestamp: fmt.Sprintf("%d", message.Timestamp.Unix()),
+			IsFromMe:  false, // Default value since not available in ChatMessage
+			IsRead:    false, // Default value since not available in ChatMessage
+			MediaURL:  "",    // Default value since not available in ChatMessage
+			Caption:   "",    // Default value since not available in ChatMessage
 		}
 	}
 

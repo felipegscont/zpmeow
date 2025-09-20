@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 )
@@ -15,15 +14,14 @@ type SendTextRequest struct {
 }
 
 func (r *SendTextRequest) Validate() error {
-	if strings.TrimSpace(r.Phone) == "" {
-		return errors.New("phone is required")
+	if err := ValidatePhone(r.Phone); err != nil {
+		return err
 	}
-	body := strings.TrimSpace(r.Body)
-	if body == "" {
-		return errors.New("body is required")
+	if err := ValidateRequiredString(r.Body, "body"); err != nil {
+		return err
 	}
-	if len(body) > 4096 {
-		return errors.New("body must not exceed 4096 characters")
+	if err := ValidateStringLength(r.Body, "body", 1, 4096); err != nil {
+		return err
 	}
 	return nil
 }
@@ -36,19 +34,19 @@ type SendMediaRequest struct {
 }
 
 func (r *SendMediaRequest) Validate() error {
-	if strings.TrimSpace(r.Phone) == "" {
-		return errors.New("phone is required")
+	if err := ValidatePhone(r.Phone); err != nil {
+		return err
 	}
 	switch r.MediaType {
 	case "image", "video", "audio", "document":
 	default:
 		return errors.New("media_type must be one of: image, video, audio, document")
 	}
-	if _, err := url.ParseRequestURI(r.MediaURL); err != nil {
-		return errors.New("invalid media_url")
+	if err := ValidateURL(r.MediaURL, "media_url"); err != nil {
+		return err
 	}
-	if len(r.Caption) > 1024 {
-		return errors.New("caption must not exceed 1024 characters")
+	if err := ValidateStringLength(r.Caption, "caption", 0, 1024); err != nil {
+		return err
 	}
 	return nil
 }
@@ -62,44 +60,99 @@ type SendLocationRequest struct {
 }
 
 func (r *SendLocationRequest) Validate() error {
-	if strings.TrimSpace(r.Phone) == "" {
-		return errors.New("phone is required")
+	if err := ValidatePhone(r.Phone); err != nil {
+		return err
 	}
-	if r.Latitude < -90 || r.Latitude > 90 {
-		return errors.New("latitude must be between -90 and 90")
+	if err := ValidateLatitude(r.Latitude); err != nil {
+		return err
 	}
-	if r.Longitude < -180 || r.Longitude > 180 {
-		return errors.New("longitude must be between -180 and 180")
+	if err := ValidateLongitude(r.Longitude); err != nil {
+		return err
 	}
-	if len(r.Name) > 100 {
-		return errors.New("name must not exceed 100 characters")
+	if err := ValidateStringLength(r.Name, "name", 0, 100); err != nil {
+		return err
 	}
-	if len(r.Address) > 500 {
-		return errors.New("address must not exceed 500 characters")
+	if err := ValidateStringLength(r.Address, "address", 0, 500); err != nil {
+		return err
 	}
 	return nil
 }
 
+// SendContactRequest supports both single contact and multiple contacts in the same endpoint
 type SendContactRequest struct {
-	Phone        string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
-	ContactName  string `json:"contact_name" validate:"required,min=1,max=100" binding:"required" example:"John Doe"`
-	ContactPhone string `json:"contact_phone" validate:"required,phone_number" binding:"required" example:"5511888888888"`
+	Phone string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511999999999"`
+	// Single contact fields (legacy format)
+	ContactName  string `json:"contact_name,omitempty" validate:"omitempty,min=1,max=100" example:"John Doe"`
+	ContactPhone string `json:"contact_phone,omitempty" validate:"omitempty,phone_number" example:"5511888888888"`
+	// Multiple contacts field (new format)
+	Contacts []MessageContactData `json:"contacts,omitempty" validate:"omitempty,min=1,max=10" example:"[{\"name\":\"John Doe\",\"phone\":\"5511888888888\"},{\"name\":\"Jane Smith\",\"phone\":\"5511777777777\"}]"`
 }
 
 func (r *SendContactRequest) Validate() error {
 	if strings.TrimSpace(r.Phone) == "" {
 		return errors.New("phone is required")
 	}
-	if strings.TrimSpace(r.ContactName) == "" {
-		return errors.New("contact_name is required")
+
+	// Check if using single contact format
+	hasSingleContact := strings.TrimSpace(r.ContactName) != "" || strings.TrimSpace(r.ContactPhone) != ""
+	// Check if using multiple contacts format
+	hasMultipleContacts := len(r.Contacts) > 0
+
+	// Must use either single contact format OR multiple contacts format, not both
+	if hasSingleContact && hasMultipleContacts {
+		return errors.New("cannot use both single contact format (contact_name/contact_phone) and multiple contacts format (contacts) in the same request")
 	}
-	if strings.TrimSpace(r.ContactPhone) == "" {
-		return errors.New("contact_phone is required")
+
+	// Must use at least one format
+	if !hasSingleContact && !hasMultipleContacts {
+		return errors.New("must provide either single contact (contact_name and contact_phone) or multiple contacts (contacts array)")
 	}
-	if len(r.ContactName) > 100 {
-		return errors.New("contact_name must not exceed 100 characters")
+
+	// Validate single contact format
+	if hasSingleContact {
+		if strings.TrimSpace(r.ContactName) == "" {
+			return errors.New("contact_name is required when using single contact format")
+		}
+		if strings.TrimSpace(r.ContactPhone) == "" {
+			return errors.New("contact_phone is required when using single contact format")
+		}
+		if len(r.ContactName) > 100 {
+			return errors.New("contact_name must not exceed 100 characters")
+		}
 	}
+
+	// Validate multiple contacts format
+	if hasMultipleContacts {
+		if len(r.Contacts) > 10 {
+			return errors.New("maximum 10 contacts allowed")
+		}
+		for i, contact := range r.Contacts {
+			if err := contact.Validate(); err != nil {
+				return fmt.Errorf("contact %d validation failed: %w", i+1, err)
+			}
+		}
+	}
+
 	return nil
+}
+
+// IsSingleContact returns true if the request is for a single contact
+func (r *SendContactRequest) IsSingleContact() bool {
+	return strings.TrimSpace(r.ContactName) != "" || strings.TrimSpace(r.ContactPhone) != ""
+}
+
+// IsMultipleContacts returns true if the request is for multiple contacts
+func (r *SendContactRequest) IsMultipleContacts() bool {
+	return len(r.Contacts) > 0
+}
+
+type MessageContactData struct {
+	Name  string `json:"name" validate:"required,min=1,max=100" binding:"required" example:"John Doe"`
+	Phone string `json:"phone" validate:"required,phone_number" binding:"required" example:"5511888888888"`
+}
+
+func (c *MessageContactData) Validate() error {
+	return ValidateContactData(c.Name, c.Phone)
 }
 
 type SendImageRequest struct {
@@ -348,6 +401,7 @@ type MessagePayload struct {
 	Document *DocumentMessagePayload `json:"document,omitempty"`
 	Sticker  *StickerMessagePayload  `json:"sticker,omitempty"`
 	Contact  *ContactMessagePayload  `json:"contact,omitempty"`
+	Contacts *ContactsMessagePayload `json:"contacts,omitempty"`
 	Location *LocationMessagePayload `json:"location,omitempty"`
 }
 
@@ -390,6 +444,11 @@ type StickerMessagePayload struct {
 type ContactMessagePayload struct {
 	DisplayName string `json:"displayName" example:"John Doe"`
 	Vcard       string `json:"vcard" example:"BEGIN:VCARD..."`
+}
+
+type ContactsMessagePayload struct {
+	DisplayName string   `json:"displayName" example:"Multiple Contacts"`
+	Contacts    []string `json:"contacts" example:"[\"BEGIN:VCARD...\", \"BEGIN:VCARD...\"]"`
 }
 
 type LocationMessagePayload struct {
@@ -449,6 +508,16 @@ func NewContactResponse(success bool, code int, phone, messageID, displayName, v
 		Contact: &ContactMessagePayload{
 			DisplayName: displayName,
 			Vcard:       vcard,
+		},
+	}
+	return NewMessageResponse(success, code, phoneToRemoteJid(phone), messageID, fromMe, payload)
+}
+
+func NewContactsMessageResponse(success bool, code int, phone, messageID string, contacts []string, fromMe bool) *MessageResponse {
+	payload := MessagePayload{
+		Contacts: &ContactsMessagePayload{
+			DisplayName: fmt.Sprintf("%d contacts", len(contacts)),
+			Contacts:    contacts,
 		},
 	}
 	return NewMessageResponse(success, code, phoneToRemoteJid(phone), messageID, fromMe, payload)

@@ -622,13 +622,13 @@ func (h *MessageHandler) SendLocation(c *gin.Context) {
 	c.JSON(http.StatusOK, messageResponse)
 }
 
-// @Summary		Send contact message
-// @Description	Send a contact message to a meow contact
+// @Summary		Send contact message(s)
+// @Description	Send a single contact or multiple contacts to a meow contact. Supports both legacy single contact format and new multiple contacts format.
 // @Tags			Messages
 // @Accept			json
 // @Produce		json
 // @Param			sessionId	path		string					true	"Session ID"
-// @Param			request		body		dto.SendContactRequest	true	"Contact message request"
+// @Param			request		body		dto.SendContactRequest	true	"Contact message request (supports single or multiple contacts)"
 // @Success		200			{object}	dto.MessageResponse
 // @Failure		400			{object}	dto.MessageResponse
 // @Failure		500			{object}	dto.MessageResponse
@@ -679,21 +679,74 @@ func (h *MessageHandler) SendContact(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	sendResp, err := h.wmeowService.SendContactMessage(ctx, sessionID, req.Phone, req.ContactName, req.ContactPhone)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
-			http.StatusInternalServerError,
-			"SEND_CONTACT_FAILED",
-			"Failed to send contact message",
-			err.Error(),
-		))
+
+	// Handle single contact format (legacy) - convert to contacts array
+	if req.IsSingleContact() {
+		contacts := []wmeow.ContactData{{
+			Name:  req.ContactName,
+			Phone: req.ContactPhone,
+		}}
+
+		sendResp, err := h.wmeowService.SendContactsMessage(ctx, sessionID, req.Phone, contacts)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
+				http.StatusInternalServerError,
+				"SEND_CONTACT_FAILED",
+				"Failed to send contact message",
+				err.Error(),
+			))
+			return
+		}
+
+		vcard := "BEGIN:VCARD\nVERSION:3.0\nFN:" + req.ContactName + "\nTEL:" + req.ContactPhone + "\nEND:VCARD"
+		messageID := string(sendResp.ID)
+		messageResponse := dto.NewContactResponse(true, http.StatusOK, req.Phone, messageID, req.ContactName, vcard, true)
+		c.JSON(http.StatusOK, messageResponse)
 		return
 	}
 
-	vcard := "BEGIN:VCARD\nVERSION:3.0\nFN:" + req.ContactName + "\nTEL:" + req.ContactPhone + "\nEND:VCARD"
-	messageID := string(sendResp.ID)
-	messageResponse := dto.NewContactResponse(true, http.StatusOK, req.Phone, messageID, req.ContactName, vcard, true)
-	c.JSON(http.StatusOK, messageResponse)
+	// Handle multiple contacts format
+	if req.IsMultipleContacts() {
+		// Convert DTO contacts to service contacts
+		var contacts []wmeow.ContactData
+		for _, contact := range req.Contacts {
+			contacts = append(contacts, wmeow.ContactData{
+				Name:  contact.Name,
+				Phone: contact.Phone,
+			})
+		}
+
+		sendResp, err := h.wmeowService.SendContactsMessage(ctx, sessionID, req.Phone, contacts)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, dto.NewMessageErrorResponse(
+				http.StatusInternalServerError,
+				"SEND_CONTACTS_FAILED",
+				"Failed to send contacts message",
+				err.Error(),
+			))
+			return
+		}
+
+		// Create VCards for response
+		var vcards []string
+		for _, contact := range req.Contacts {
+			vcard := fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nFN:%s\nTEL:%s\nEND:VCARD", contact.Name, contact.Phone)
+			vcards = append(vcards, vcard)
+		}
+
+		messageID := string(sendResp.ID)
+		messageResponse := dto.NewContactsMessageResponse(true, http.StatusOK, req.Phone, messageID, vcards, true)
+		c.JSON(http.StatusOK, messageResponse)
+		return
+	}
+
+	// This should never happen due to validation, but just in case
+	c.JSON(http.StatusBadRequest, dto.NewMessageErrorResponse(
+		http.StatusBadRequest,
+		"INVALID_REQUEST_FORMAT",
+		"Invalid request format",
+		"Must provide either single contact or multiple contacts",
+	))
 }
 
 // @Summary		Send image message

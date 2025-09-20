@@ -68,7 +68,8 @@ func (uc *ConnectSessionUseCase) Handle(ctx context.Context, cmd ConnectSessionC
 		)
 	}
 
-	if err := uc.whatsappService.ConnectSession(ctx, cmd.SessionID); err != nil {
+	qrCodeFromConnect, err := uc.whatsappService.ConnectSession(ctx, cmd.SessionID)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to connect session via WhatsApp service", "sessionID", cmd.SessionID, "error", err)
 
 		sessionEntity.SetError("connection failed: " + err.Error())
@@ -85,15 +86,17 @@ func (uc *ConnectSessionUseCase) Handle(ctx context.Context, cmd ConnectSessionC
 		return nil, fmt.Errorf("failed to update session state: %w", err)
 	}
 
-	qrCode := ""
-	if !sessionEntity.IsAuthenticated() {
-		qrCode, err = uc.whatsappService.GetQRCode(ctx, cmd.SessionID)
+	qrCode := qrCodeFromConnect
+	if !sessionEntity.IsAuthenticated() && qrCode == "" {
+		qrCode, err = uc.whatsappService.GetQRCode(cmd.SessionID)
 		if err != nil {
 			uc.logger.Warn(ctx, "Failed to get QR code", "sessionID", cmd.SessionID, "error", err)
-		} else if qrCode != "" {
-			if err := sessionEntity.SetQRCode(qrCode); err != nil {
-				uc.logger.Warn(ctx, "Failed to set QR code in session", "sessionID", cmd.SessionID, "error", err)
-			}
+		}
+	}
+
+	if qrCode != "" {
+		if err := sessionEntity.SetQRCode(qrCode); err != nil {
+			uc.logger.Warn(ctx, "Failed to set QR code in session", "sessionID", cmd.SessionID, "error", err)
 		}
 	}
 

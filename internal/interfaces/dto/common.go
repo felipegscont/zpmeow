@@ -79,31 +79,6 @@ func NewActionResponse(code int, action string, data interface{}) *StandardRespo
 	}
 }
 
-const (
-	StatusOK                  = 200
-	StatusCreated             = 201
-	StatusAccepted            = 202
-	StatusNoContent           = 204
-	StatusBadRequest          = 400
-	StatusUnauthorized        = 401
-	StatusForbidden           = 403
-	StatusNotFound            = 404
-	StatusConflict            = 409
-	StatusUnprocessableEntity = 422
-	StatusInternalServerError = 500
-)
+// Constantes de status HTTP movidas para internal/interfaces/dto/errors.go
 
-const (
-	ErrorCodeInvalidRequest     = "INVALID_REQUEST"
-	ErrorCodeValidationFailed   = "VALIDATION_FAILED"
-	ErrorCodeUnauthorized       = "UNAUTHORIZED"
-	ErrorCodeForbidden          = "FORBIDDEN"
-	ErrorCodeNotFound           = "NOT_FOUND"
-	ErrorCodeConflict           = "CONFLICT"
-	ErrorCodeInternalError      = "INTERNAL_ERROR"
-	ErrorCodeSessionNotFound    = "SESSION_NOT_FOUND"
-	ErrorCodeSessionInactive    = "SESSION_INACTIVE"
-	ErrorCodeInvalidPhoneNumber = "INVALID_PHONE_NUMBER"
-	ErrorCodeInvalidMessageID   = "INVALID_MESSAGE_ID"
-	ErrorCodeInvalidURL         = "INVALID_URL"
-)
+// Constantes movidas para internal/interfaces/dto/errors.go para evitar duplicação

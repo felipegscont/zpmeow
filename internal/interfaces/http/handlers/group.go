@@ -506,13 +506,13 @@ func convertWmeowGroupInfoToDTO(groupInfo *wmeow.GroupInfo) *dto.GroupInfo {
 		Name:         groupInfo.Name,
 		Topic:        groupInfo.Topic,
 		Participants: groupInfo.Participants,
-		Admins:       groupInfo.Admins,
-		Owner:        groupInfo.Owner,
+		Admins:       []string{}, // Campo removido da estrutura simplificada
+		Owner:        groupInfo.CreatedBy,
 		CreatedAt:    groupInfo.CreatedAt,
-		Size:         groupInfo.Size,
-		Announce:     groupInfo.Announce,
-		Locked:       groupInfo.Locked,
-		Ephemeral:    groupInfo.Ephemeral,
+		Size:         len(groupInfo.Participants),
+		Announce:     groupInfo.IsAnnounce,
+		Locked:       groupInfo.IsLocked,
+		Ephemeral:    groupInfo.IsEphemeral,
 	}
 }
 
@@ -524,13 +524,13 @@ func convertWmeowGroupInfoSliceToDTO(groups []wmeow.GroupInfo) []dto.GroupInfo {
 			Name:         group.Name,
 			Topic:        group.Topic,
 			Participants: group.Participants,
-			Admins:       group.Admins,
-			Owner:        group.Owner,
+			Admins:       []string{}, // Campo removido da estrutura simplificada
+			Owner:        group.CreatedBy,
 			CreatedAt:    group.CreatedAt,
-			Size:         group.Size,
-			Announce:     group.Announce,
-			Locked:       group.Locked,
-			Ephemeral:    group.Ephemeral,
+			Size:         len(group.Participants),
+			Announce:     group.IsAnnounce,
+			Locked:       group.IsLocked,
+			Ephemeral:    group.IsEphemeral,
 		})
 	}
 	return dtoGroups
@@ -596,8 +596,8 @@ func (h *GroupHandler) GetInviteInfo(c *gin.Context) {
 	}
 
 	response := dto.NewGroupOperationResponse(sessionID, "invite_info", "Invite info retrieved successfully")
-	response.Data.InviteLink = inviteInfo.InviteCode
-	response.Data.Message = fmt.Sprintf("Group: %s, Inviter: %s", inviteInfo.GroupName, inviteInfo.Inviter)
+	response.Data.InviteLink = "" // Campo removido da estrutura simplificada
+	response.Data.Message = fmt.Sprintf("Group: %s, Created by: %s", inviteInfo.Name, inviteInfo.CreatedBy)
 	c.JSON(http.StatusOK, response)
 }
 

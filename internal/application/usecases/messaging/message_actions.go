@@ -11,9 +11,9 @@ import (
 )
 
 type MarkAsReadCommand struct {
-	SessionID string
-	ChatJID   string
-	MessageID string
+	SessionID  string
+	ChatJID    string
+	MessageIDs []string
 }
 
 func (c MarkAsReadCommand) Validate() error {
@@ -25,8 +25,14 @@ func (c MarkAsReadCommand) Validate() error {
 		return common.NewValidationError("chatJID", c.ChatJID, "chat JID is required")
 	}
 
-	if strings.TrimSpace(c.MessageID) == "" {
-		return common.NewValidationError("messageID", c.MessageID, "message ID is required")
+	if len(c.MessageIDs) == 0 {
+		return common.NewValidationError("messageIDs", "", "at least one message ID is required")
+	}
+
+	for i, msgID := range c.MessageIDs {
+		if strings.TrimSpace(msgID) == "" {
+			return common.NewValidationError("messageIDs", msgID, fmt.Sprintf("message ID at index %d is required", i))
+		}
 	}
 
 	return nil
@@ -160,27 +166,27 @@ func (uc *MarkAsReadUseCase) Handle(ctx context.Context, cmd MarkAsReadCommand) 
 		)
 	}
 
-	if err := uc.whatsappService.MarkAsRead(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID); err != nil {
-		uc.logger.Error(ctx, "Failed to mark message as read",
+	if err := uc.whatsappService.MarkAsRead(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageIDs); err != nil {
+		uc.logger.Error(ctx, "Failed to mark messages as read",
 			"sessionID", cmd.SessionID,
 			"chatJID", cmd.ChatJID,
-			"messageID", cmd.MessageID,
+			"messageIDs", cmd.MessageIDs,
 			"error", err)
-		return nil, fmt.Errorf("failed to mark message as read: %w", err)
+		return nil, fmt.Errorf("failed to mark messages as read: %w", err)
 	}
 
-	uc.logger.Info(ctx, "Message marked as read successfully",
+	uc.logger.Info(ctx, "Messages marked as read successfully",
 		"sessionID", cmd.SessionID,
 		"chatJID", cmd.ChatJID,
-		"messageID", cmd.MessageID)
+		"messageIDs", cmd.MessageIDs)
 
 	return &MessageActionResult{
 		SessionID: cmd.SessionID,
 		ChatJID:   cmd.ChatJID,
-		MessageID: cmd.MessageID,
+		MessageID: strings.Join(cmd.MessageIDs, ","), // Para compatibilidade com a struct existente
 		Action:    "mark_as_read",
 		Success:   true,
-		Message:   "Message marked as read successfully",
+		Message:   fmt.Sprintf("%d messages marked as read successfully", len(cmd.MessageIDs)),
 	}, nil
 }
 
@@ -221,7 +227,13 @@ func (uc *ReactToMessageUseCase) Handle(ctx context.Context, cmd ReactToMessageC
 		)
 	}
 
-	if err := uc.whatsappService.ReactToMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID, cmd.Emoji, cmd.Remove); err != nil {
+	// Para remover uma reação, envie emoji vazio
+	emoji := cmd.Emoji
+	if cmd.Remove {
+		emoji = ""
+	}
+
+	if err := uc.whatsappService.ReactToMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID, emoji); err != nil {
 		uc.logger.Error(ctx, "Failed to react to message",
 			"sessionID", cmd.SessionID,
 			"chatJID", cmd.ChatJID,
@@ -289,7 +301,8 @@ func (uc *EditMessageUseCase) Handle(ctx context.Context, cmd EditMessageCommand
 		)
 	}
 
-	if err := uc.whatsappService.EditMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID, cmd.NewContent); err != nil {
+	sendResp, err := uc.whatsappService.EditMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.MessageID, cmd.NewContent)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to edit message",
 			"sessionID", cmd.SessionID,
 			"chatJID", cmd.ChatJID,
@@ -301,7 +314,9 @@ func (uc *EditMessageUseCase) Handle(ctx context.Context, cmd EditMessageCommand
 	uc.logger.Info(ctx, "Message edited successfully",
 		"sessionID", cmd.SessionID,
 		"chatJID", cmd.ChatJID,
-		"messageID", cmd.MessageID)
+		"messageID", cmd.MessageID,
+		"editMessageID", sendResp.ID,
+		"timestamp", sendResp.Timestamp)
 
 	return &MessageActionResult{
 		SessionID: cmd.SessionID,

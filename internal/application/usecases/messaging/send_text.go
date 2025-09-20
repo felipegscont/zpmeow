@@ -87,7 +87,8 @@ func (uc *SendTextMessageUseCase) Handle(ctx context.Context, cmd SendTextMessag
 		)
 	}
 
-	if err := uc.whatsappService.SendTextMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Message); err != nil {
+	_, err = uc.whatsappService.SendTextMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Message)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to send text message",
 			"sessionID", cmd.SessionID,
 			"chatJID", cmd.ChatJID,

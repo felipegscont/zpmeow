@@ -131,7 +131,8 @@ func (uc *SendMediaMessageUseCase) Handle(ctx context.Context, cmd SendMediaMess
 		Filename: cmd.Filename,
 	}
 
-	if err := uc.whatsappService.SendMediaMessage(ctx, cmd.SessionID, cmd.ChatJID, mediaMessage); err != nil {
+	_, err = uc.whatsappService.SendMediaMessage(ctx, cmd.SessionID, cmd.ChatJID, mediaMessage)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to send media message",
 			"sessionID", cmd.SessionID,
 			"chatJID", cmd.ChatJID,

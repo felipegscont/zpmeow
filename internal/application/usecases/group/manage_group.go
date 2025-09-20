@@ -93,7 +93,8 @@ func (uc *JoinGroupUseCase) Handle(ctx context.Context, cmd JoinGroupCommand) (*
 		)
 	}
 
-	if err := uc.whatsappService.JoinGroup(ctx, cmd.SessionID, cmd.InviteLink); err != nil {
+	groupInfo, err := uc.whatsappService.JoinGroup(ctx, cmd.SessionID, cmd.InviteLink)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to join group",
 			"sessionID", cmd.SessionID,
 			"inviteLink", cmd.InviteLink,
@@ -107,7 +108,7 @@ func (uc *JoinGroupUseCase) Handle(ctx context.Context, cmd JoinGroupCommand) (*
 
 	return &GroupManagementResult{
 		SessionID: cmd.SessionID,
-		GroupJID:  "", // Group JID would be extracted from invite link
+		GroupJID:  groupInfo.JID,
 		Action:    "join",
 		Success:   true,
 		Message:   "Successfully joined group",

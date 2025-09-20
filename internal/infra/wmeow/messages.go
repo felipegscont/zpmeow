@@ -5,10 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"zpmeow/internal/application/ports"
+
 	"go.mau.fi/whatsmeow"
 	waProto "go.mau.fi/whatsmeow/proto/waE2E"
 	waTypes "go.mau.fi/whatsmeow/types"
 )
+
+// ContactData movido para internal/application/ports/interfaces.go
+type ContactData = ports.ContactData
 
 func sendMessageToJID(client *whatsmeow.Client, to string, message *waProto.Message) (*whatsmeow.SendResponse, error) {
 	jid, err := parsePhoneToJID(to)
@@ -208,6 +213,49 @@ func SendContactMessage(client *whatsmeow.Client, to, contactName, contactPhone 
 		ContactMessage: &waProto.ContactMessage{
 			DisplayName: &contactName,
 			Vcard:       &vcard,
+		},
+	}
+
+	resp, err := client.SendMessage(context.Background(), jid, message)
+	return &resp, err
+}
+
+func SendContactsMessage(client *whatsmeow.Client, to string, contacts []ContactData) (*whatsmeow.SendResponse, error) {
+	jid, err := parsePhoneToJID(to)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(contacts) == 0 {
+		return nil, fmt.Errorf("at least one contact is required")
+	}
+
+	if len(contacts) > 10 {
+		return nil, fmt.Errorf("maximum 10 contacts allowed")
+	}
+
+	// For single contact, use ContactMessage for better compatibility
+	if len(contacts) == 1 {
+		return SendContactMessage(client, to, contacts[0].Name, contacts[0].Phone)
+	}
+
+	// For multiple contacts, use ContactsArrayMessage to send all contacts in a single message
+	var contactMessages []*waProto.ContactMessage
+	for _, contact := range contacts {
+		vcard := fmt.Sprintf("BEGIN:VCARD\nVERSION:3.0\nFN:%s\nTEL;type=CELL;type=VOICE;waid=%s:+%s\nEND:VCARD",
+			contact.Name, contact.Phone, contact.Phone)
+
+		contactMessages = append(contactMessages, &waProto.ContactMessage{
+			DisplayName: &contact.Name,
+			Vcard:       &vcard,
+		})
+	}
+
+	displayName := fmt.Sprintf("%d contacts", len(contacts))
+	message := &waProto.Message{
+		ContactsArrayMessage: &waProto.ContactsArrayMessage{
+			DisplayName: &displayName,
+			Contacts:    contactMessages,
 		},
 	}
 

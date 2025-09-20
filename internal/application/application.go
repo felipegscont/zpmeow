@@ -125,48 +125,48 @@ func NewMessageApp(sessionRepo session.Repository, messageSender ports.MessageSe
 
 type ChatApp struct {
 	sessionRepo session.Repository
-	chatService ports.ChatService
+	chatManager ports.ChatManager
 }
 
-func NewChatApp(sessionRepo session.Repository, chatService ports.ChatService) *ChatApp {
+func NewChatApp(sessionRepo session.Repository, chatManager ports.ChatManager) *ChatApp {
 	return &ChatApp{
 		sessionRepo: sessionRepo,
-		chatService: chatService,
+		chatManager: chatManager,
 	}
 }
 
 type GroupApp struct {
 	sessionRepo  session.Repository
-	groupService ports.GroupService
+	groupManager ports.GroupManager
 }
 
-func NewGroupApp(sessionRepo session.Repository, groupService ports.GroupService) *GroupApp {
+func NewGroupApp(sessionRepo session.Repository, groupManager ports.GroupManager) *GroupApp {
 	return &GroupApp{
 		sessionRepo:  sessionRepo,
-		groupService: groupService,
+		groupManager: groupManager,
 	}
 }
 
 type ContactApp struct {
 	sessionRepo    session.Repository
-	contactService ports.ContactService
+	contactManager ports.ContactManager
 }
 
-func NewContactApp(sessionRepo session.Repository, contactService ports.ContactService) *ContactApp {
+func NewContactApp(sessionRepo session.Repository, contactManager ports.ContactManager) *ContactApp {
 	return &ContactApp{
 		sessionRepo:    sessionRepo,
-		contactService: contactService,
+		contactManager: contactManager,
 	}
 }
 
 type NewsletterApp struct {
 	sessionRepo       session.Repository
-	newsletterService ports.NewsletterService
+	newsletterManager ports.NewsletterManager
 }
 
-func NewNewsletterApp(sessionRepo session.Repository, newsletterService ports.NewsletterService) *NewsletterApp {
+func NewNewsletterApp(sessionRepo session.Repository, newsletterManager ports.NewsletterManager) *NewsletterApp {
 	return &NewsletterApp{
 		sessionRepo:       sessionRepo,
-		newsletterService: newsletterService,
+		newsletterManager: newsletterManager,
 	}
 }

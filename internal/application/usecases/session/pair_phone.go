@@ -35,6 +35,7 @@ func (c PairPhoneCommand) Validate() error {
 type PairPhoneResult struct {
 	SessionID   string
 	PhoneNumber string
+	PairCode    string
 	Success     bool
 	Message     string
 }
@@ -79,7 +80,8 @@ func (uc *PairPhoneUseCase) Handle(ctx context.Context, cmd PairPhoneCommand) (*
 		)
 	}
 
-	if err := uc.whatsappService.PairWithPhone(ctx, cmd.SessionID, cmd.PhoneNumber); err != nil {
+	pairCode, err := uc.whatsappService.PairPhone(cmd.SessionID, cmd.PhoneNumber)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to pair phone with session",
 			"sessionID", cmd.SessionID,
 			"phoneNumber", cmd.PhoneNumber,
@@ -114,6 +116,7 @@ func (uc *PairPhoneUseCase) Handle(ctx context.Context, cmd PairPhoneCommand) (*
 	return &PairPhoneResult{
 		SessionID:   cmd.SessionID,
 		PhoneNumber: cmd.PhoneNumber,
+		PairCode:    pairCode,
 		Success:     true,
 		Message:     "Phone paired successfully",
 	}, nil

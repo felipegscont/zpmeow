@@ -120,7 +120,17 @@ func (uc *SendContactMessageUseCase) Handle(ctx context.Context, cmd SendContact
 		)
 	}
 
-	if err := uc.whatsappService.SendContactMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Contacts); err != nil {
+	// Convert ContactInfo to ContactData
+	var contactData []ports.ContactData
+	for _, contact := range cmd.Contacts {
+		contactData = append(contactData, ports.ContactData{
+			Name:  contact.Name,
+			Phone: contact.Phone,
+		})
+	}
+
+	_, err = uc.whatsappService.SendContactsMessage(ctx, cmd.SessionID, cmd.ChatJID, contactData)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to send contact message",
 			"sessionID", cmd.SessionID,
 			"chatJID", cmd.ChatJID,

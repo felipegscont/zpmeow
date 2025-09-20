@@ -383,11 +383,11 @@ func (h *ChatHandler) ListChats(c *gin.Context) {
 			Name:        chat.Name,
 			Type:        chat.Type,
 			LastMessage: chat.LastMessage,
-			Timestamp:   time.Unix(chat.Timestamp, 0),
+			Timestamp:   chat.LastSeen,
 			UnreadCount: chat.UnreadCount,
-			Pinned:      chat.Pinned,
-			Muted:       chat.Muted,
-			Archived:    chat.Archived,
+			Pinned:      chat.IsPinned,
+			Muted:       chat.IsMuted,
+			Archived:    chat.IsArchived,
 		}
 	}
 
@@ -448,11 +448,11 @@ func (h *ChatHandler) GetChatInfo(c *gin.Context) {
 		Name:        chatInfo.Name,
 		Type:        chatInfo.Type,
 		LastMessage: chatInfo.LastMessage,
-		Timestamp:   time.Unix(chatInfo.Timestamp, 0),
+		Timestamp:   chatInfo.LastSeen,
 		UnreadCount: chatInfo.UnreadCount,
-		Pinned:      chatInfo.Pinned,
-		Muted:       chatInfo.Muted,
-		Archived:    chatInfo.Archived,
+		Pinned:      chatInfo.IsPinned,
+		Muted:       chatInfo.IsMuted,
+		Archived:    chatInfo.IsArchived,
 	}
 
 	response := dto.NewGetChatInfoSuccessResponse(dtoChatInfo)

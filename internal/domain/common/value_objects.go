@@ -13,13 +13,15 @@ type ID struct {
 
 type IDGenerator interface {
 	Generate() string
+	GenerateAPIKey() string
 }
 
 var defaultGenerator IDGenerator = &counterIDGenerator{counter: 0}
 
-func SetIDGenerator(generator IDGenerator) {
-	defaultGenerator = generator
-}
+// SetIDGenerator foi removido por não ser utilizado
+// func SetIDGenerator(generator IDGenerator) {
+//     defaultGenerator = generator
+// }
 
 type counterIDGenerator struct {
 	counter int
@@ -28,6 +30,11 @@ type counterIDGenerator struct {
 func (g *counterIDGenerator) Generate() string {
 	g.counter++
 	return fmt.Sprintf("domain-id-%d", g.counter)
+}
+
+func (g *counterIDGenerator) GenerateAPIKey() string {
+	g.counter++
+	return fmt.Sprintf("api-key-%d", g.counter)
 }
 
 func NewID(value string) (ID, error) {

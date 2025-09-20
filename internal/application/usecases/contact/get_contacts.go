@@ -190,7 +190,7 @@ func (uc *CheckContactUseCase) Handle(ctx context.Context, query CheckContactQue
 		)
 	}
 
-	isOnWhatsApp, jid, err := uc.whatsappService.CheckContact(ctx, query.SessionID, query.Phone)
+	checkResult, err := uc.whatsappService.CheckContact(ctx, query.SessionID, query.Phone)
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to check contact",
 			"sessionID", query.SessionID,
@@ -198,6 +198,9 @@ func (uc *CheckContactUseCase) Handle(ctx context.Context, query CheckContactQue
 			"error", err)
 		return nil, fmt.Errorf("failed to check contact: %w", err)
 	}
+
+	isOnWhatsApp := checkResult.IsInWhatsapp
+	jid := checkResult.JID
 
 	uc.logger.Debug(ctx, "Contact checked successfully",
 		"sessionID", query.SessionID,
@@ -281,7 +284,7 @@ func (uc *GetUserInfoUseCase) Handle(ctx context.Context, query GetUserInfoQuery
 		)
 	}
 
-	userInfo, err := uc.whatsappService.GetUserInfo(ctx, query.SessionID, query.UserJID)
+	userInfoMap, err := uc.whatsappService.GetUserInfo(ctx, query.SessionID, []string{query.UserJID})
 	if err != nil {
 		uc.logger.Error(ctx, "Failed to get user info",
 			"sessionID", query.SessionID,
@@ -290,19 +293,30 @@ func (uc *GetUserInfoUseCase) Handle(ctx context.Context, query GetUserInfoQuery
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 
+	userInfo, exists := userInfoMap[query.UserJID]
+	if !exists {
+		return nil, fmt.Errorf("user info not found for JID: %s", query.UserJID)
+	}
+
+	// Extrair telefone do JID (formato: phone@server)
+	phone := ""
+	if jidParts := strings.Split(userInfo.JID, "@"); len(jidParts) > 0 {
+		phone = jidParts[0]
+	}
+
 	userInfoView := &UserInfoView{
 		JID:          userInfo.JID,
 		Name:         userInfo.Name,
 		Notify:       userInfo.Notify,
 		PushName:     userInfo.PushName,
 		BusinessName: userInfo.BusinessName,
-		Phone:        userInfo.Phone,
-		Status:       userInfo.Status,
-		Avatar:       userInfo.Avatar,
+		Phone:        phone,
+		Status:       "", // UserInfoResult não tem Status
+		Avatar:       "", // UserInfoResult não tem Avatar
 		IsBlocked:    userInfo.IsBlocked,
 		IsMuted:      userInfo.IsMuted,
-		IsContact:    userInfo.IsContact,
-		LastSeen:     userInfo.LastSeen,
+		IsContact:    false, // UserInfoResult não tem IsContact
+		LastSeen:     "",    // UserInfoResult não tem LastSeen
 	}
 
 	uc.logger.Debug(ctx, "User info retrieved successfully",

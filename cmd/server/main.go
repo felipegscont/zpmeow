@@ -40,8 +40,8 @@ import (
 	"zpmeow/internal/infra/middleware"
 	"zpmeow/internal/infra/webhooks"
 	"zpmeow/internal/infra/wmeow"
-	"zpmeow/internal/interfaces/handlers"
-	"zpmeow/internal/interfaces/routes"
+	"zpmeow/internal/interfaces/http/handlers"
+	"zpmeow/internal/interfaces/http/routes"
 
 	"github.com/gin-gonic/gin"
 	"go.mau.fi/whatsmeow/store/sqlstore"

@@ -3,7 +3,7 @@ package routes
 import (
 	"zpmeow/docs"
 	"zpmeow/internal/infra/middleware"
-	"zpmeow/internal/interfaces/handlers"
+	"zpmeow/internal/interfaces/http/handlers"
 
 	"github.com/gin-gonic/gin"
 	swaggerfiles "github.com/swaggo/files"

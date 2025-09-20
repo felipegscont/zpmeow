@@ -459,6 +459,19 @@ definitions:
         example: "2023-01-01T00:00:00Z"
         type: string
     type: object
+  dto.ContactsMessagePayload:
+    properties:
+      contacts:
+        example:
+        - '["BEGIN:VCARD..."'
+        - ' "BEGIN:VCARD..."]'
+        items:
+          type: string
+        type: array
+      displayName:
+        example: Multiple Contacts
+        type: string
+    type: object
   dto.ContactsResponse:
     properties:
       code:
@@ -1125,6 +1138,20 @@ definitions:
       success:
         type: boolean
     type: object
+  dto.MessageContactData:
+    properties:
+      name:
+        example: John Doe
+        maxLength: 100
+        minLength: 1
+        type: string
+      phone:
+        example: "5511888888888"
+        type: string
+    required:
+    - name
+    - phone
+    type: object
   dto.MessageErrorResponse:
     properties:
       code:
@@ -1152,6 +1179,8 @@ definitions:
         $ref: '#/definitions/dto.AudioMessagePayload'
       contact:
         $ref: '#/definitions/dto.ContactMessagePayload'
+      contacts:
+        $ref: '#/definitions/dto.ContactsMessagePayload'
       document:
         $ref: '#/definitions/dto.DocumentMessagePayload'
       image:
@@ -1426,22 +1455,6 @@ definitions:
     - phone
     type: object
   dto.SendContactRequest:
-    properties:
-      contact_name:
-        example: John Doe
-        maxLength: 100
-        minLength: 1
-        type: string
-      contact_phone:
-        example: "5511888888888"
-        type: string
-      phone:
-        example: "5511999999999"
-        type: string
-    required:
-    - contact_name
-    - contact_phone
-    - phone
     type: object
   dto.SendDocumentRequest:
     properties:
@@ -4551,14 +4564,15 @@ paths:
     post:
       consumes:
       - application/json
-      description: Send a contact message to a meow contact
+      description: Send a single contact or multiple contacts to a meow contact. Supports
+        both legacy single contact format and new multiple contacts format.
       parameters:
       - description: Session ID
         in: path
         name: sessionId
         required: true
         type: string
-      - description: Contact message request
+      - description: Contact message request (supports single or multiple contacts)
         in: body
         name: request
         required: true
@@ -4581,7 +4595,7 @@ paths:
             $ref: '#/definitions/dto.MessageResponse'
       security:
       - ApiKeyAuth: []
-      summary: Send contact message
+      summary: Send contact message(s)
       tags:
       - Messages
   /session/{sessionId}/message/send/document:

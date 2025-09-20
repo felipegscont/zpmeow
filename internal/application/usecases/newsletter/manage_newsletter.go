@@ -152,14 +152,14 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 		return nil, fmt.Errorf("failed to create newsletter: %w", err)
 	}
 
-	newsletterInfo, err := uc.whatsappService.GetNewsletterInfo(ctx, cmd.SessionID, newsletterJID)
+	newsletterInfo, err := uc.whatsappService.GetNewsletterInfo(ctx, cmd.SessionID, newsletterJID.JID)
 	if err != nil {
 		uc.logger.Warn(ctx, "Failed to get newsletter info after creation",
 			"sessionID", cmd.SessionID,
 			"newsletterJID", newsletterJID,
 			"error", err)
 		newsletterInfo = &ports.NewsletterInfo{
-			JID:         newsletterJID,
+			JID:         newsletterJID.JID,
 			Name:        cmd.Name,
 			Description: cmd.Description,
 		}
@@ -171,8 +171,8 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 		Description:     newsletterInfo.Description,
 		SubscriberCount: newsletterInfo.SubscriberCount,
 		IsSubscribed:    newsletterInfo.IsSubscribed,
-		CreatedAt:       newsletterInfo.CreatedAt,
-		UpdatedAt:       newsletterInfo.UpdatedAt,
+		CreatedAt:       fmt.Sprintf("%d", newsletterInfo.CreatedAt),
+		UpdatedAt:       fmt.Sprintf("%d", newsletterInfo.Timestamp), // Using Timestamp as UpdatedAt
 	}
 
 	uc.logger.Info(ctx, "Newsletter created successfully",
@@ -182,7 +182,7 @@ func (uc *CreateNewsletterUseCase) Handle(ctx context.Context, cmd CreateNewslet
 
 	return &NewsletterResult{
 		SessionID:     cmd.SessionID,
-		NewsletterJID: newsletterJID,
+		NewsletterJID: newsletterJID.JID,
 		Action:        "create",
 		Success:       true,
 		Message:       "Newsletter created successfully",
@@ -227,12 +227,12 @@ func (uc *SubscribeNewsletterUseCase) Handle(ctx context.Context, cmd SubscribeN
 		)
 	}
 
-	if err := uc.whatsappService.SubscribeNewsletter(ctx, cmd.SessionID, cmd.NewsletterJID); err != nil {
-		uc.logger.Error(ctx, "Failed to subscribe to newsletter",
+	if err := uc.whatsappService.FollowNewsletter(ctx, cmd.SessionID, cmd.NewsletterJID); err != nil {
+		uc.logger.Error(ctx, "Failed to follow newsletter",
 			"sessionID", cmd.SessionID,
 			"newsletterJID", cmd.NewsletterJID,
 			"error", err)
-		return nil, fmt.Errorf("failed to subscribe to newsletter: %w", err)
+		return nil, fmt.Errorf("failed to follow newsletter: %w", err)
 	}
 
 	uc.logger.Info(ctx, "Successfully subscribed to newsletter",

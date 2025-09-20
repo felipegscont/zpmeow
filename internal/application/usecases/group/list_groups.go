@@ -109,7 +109,7 @@ func (uc *ListGroupsUseCase) Handle(ctx context.Context, query ListGroupsQuery) 
 			Participants: group.Participants,
 			Admins:       group.Admins,
 			Owner:        group.Owner,
-			CreatedAt:    group.CreatedAt,
+			CreatedAt:    fmt.Sprintf("%d", group.CreatedAt),
 			IsAnnounce:   group.IsAnnounce,
 			IsLocked:     group.IsLocked,
 		}
@@ -199,7 +199,7 @@ func (uc *GetGroupInfoUseCase) Handle(ctx context.Context, query GetGroupInfoQue
 		Participants: groupInfo.Participants,
 		Admins:       groupInfo.Admins,
 		Owner:        groupInfo.Owner,
-		CreatedAt:    groupInfo.CreatedAt,
+		CreatedAt:    fmt.Sprintf("%d", groupInfo.CreatedAt),
 		IsAnnounce:   groupInfo.IsAnnounce,
 		IsLocked:     groupInfo.IsLocked,
 	}

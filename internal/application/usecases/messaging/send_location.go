@@ -100,7 +100,8 @@ func (uc *SendLocationMessageUseCase) Handle(ctx context.Context, cmd SendLocati
 		)
 	}
 
-	if err := uc.whatsappService.SendLocationMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Latitude, cmd.Longitude, cmd.Name, cmd.Address); err != nil {
+	sendResp, err := uc.whatsappService.SendLocationMessage(ctx, cmd.SessionID, cmd.ChatJID, cmd.Latitude, cmd.Longitude, cmd.Name, cmd.Address)
+	if err != nil {
 		uc.logger.Error(ctx, "Failed to send location message",
 			"sessionID", cmd.SessionID,
 			"chatJID", cmd.ChatJID,
@@ -121,7 +122,7 @@ func (uc *SendLocationMessageUseCase) Handle(ctx context.Context, cmd SendLocati
 		ChatJID:   cmd.ChatJID,
 		Latitude:  cmd.Latitude,
 		Longitude: cmd.Longitude,
-		MessageID: "", // Would be provided by WhatsApp service
+		MessageID: string(sendResp.ID),
 		Sent:      true,
 	}, nil
 }

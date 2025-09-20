@@ -45,7 +45,6 @@ type ChatView struct {
 	IsGroup       bool
 	IsMuted       bool
 	IsArchived    bool
-	IsBlocked     bool
 }
 
 type GetChatsResult struct {
@@ -112,7 +111,6 @@ func (uc *GetChatsUseCase) Handle(ctx context.Context, query GetChatsQuery) (*Ge
 			IsGroup:       chat.IsGroup,
 			IsMuted:       chat.IsMuted,
 			IsArchived:    chat.IsArchived,
-			IsBlocked:     chat.IsBlocked,
 		}
 	}
 

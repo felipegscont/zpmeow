@@ -480,8 +480,11 @@ func (h *SessionHandler) GetSessionStatus(c *gin.Context) {
 		return
 	}
 
-	clientStatus := h.wmeowService.GetClientStatus(session.SessionID().Value())
 	isConnected := h.wmeowService.IsClientConnected(session.SessionID().Value())
+	clientStatus := "disconnected"
+	if isConnected {
+		clientStatus = "connected"
+	}
 
 	response := &dto.SessionStatusResponse{
 		Success: true,

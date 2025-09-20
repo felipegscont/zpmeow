@@ -111,7 +111,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "groupAdd")
-		currentSettings.GroupsAdd = *req.GroupAdd
+		currentSettings.GroupsAddMe = *req.GroupAdd
 	}
 
 	if req.LastSeen != nil {
@@ -200,7 +200,7 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 			return
 		}
 		updatedSettings = append(updatedSettings, "callAdd")
-		currentSettings.CallsAdd = *req.CallAdd
+		currentSettings.CallsAddMe = *req.CallAdd
 	}
 
 	if req.Online != nil {
@@ -220,12 +220,12 @@ func (h *PrivacyHandler) SetAllPrivacySettings(c *gin.Context) {
 	}
 
 	data := &dto.PrivacySettingsData{
-		GroupAdd:     currentSettings.GroupsAdd,
+		GroupAdd:     currentSettings.GroupsAddMe,
 		LastSeen:     currentSettings.LastSeen,
 		Status:       currentSettings.Status,
 		Profile:      currentSettings.ProfilePhoto,
 		ReadReceipts: fmt.Sprintf("%t", currentSettings.ReadReceipts),
-		CallAdd:      currentSettings.CallsAdd,
+		CallAdd:      currentSettings.CallsAddMe,
 		Online:       "contacts", // Default value since not supported
 	}
 
@@ -478,12 +478,12 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 
 	if len(req.Settings) == 0 {
 		data := &dto.PrivacySettingsData{
-			GroupAdd:     allSettings.GroupsAdd,
+			GroupAdd:     allSettings.GroupsAddMe,
 			LastSeen:     allSettings.LastSeen,
 			Status:       allSettings.Status,
 			Profile:      allSettings.ProfilePhoto,
 			ReadReceipts: fmt.Sprintf("%t", allSettings.ReadReceipts),
-			CallAdd:      allSettings.CallsAdd,
+			CallAdd:      allSettings.CallsAddMe,
 			Online:       "contacts", // Default value since not supported
 		}
 
@@ -501,7 +501,7 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 	for _, setting := range req.Settings {
 		switch setting {
 		case "groupAdd":
-			filteredData.GroupAdd = allSettings.GroupsAdd
+			filteredData.GroupAdd = allSettings.GroupsAddMe
 			requestedSettings = append(requestedSettings, "groupAdd")
 		case "lastSeen":
 			filteredData.LastSeen = allSettings.LastSeen
@@ -516,7 +516,7 @@ func (h *PrivacyHandler) FindPrivacySettings(c *gin.Context) {
 			filteredData.ReadReceipts = fmt.Sprintf("%t", allSettings.ReadReceipts)
 			requestedSettings = append(requestedSettings, "readReceipts")
 		case "callAdd":
-			filteredData.CallAdd = allSettings.CallsAdd
+			filteredData.CallAdd = allSettings.CallsAddMe
 			requestedSettings = append(requestedSettings, "callAdd")
 		case "online":
 			filteredData.Online = "contacts" // Default value since not supported

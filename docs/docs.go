@@ -3562,7 +3562,7 @@ const docTemplate = `{
                         "ApiKeyAuth": []
                     }
                 ],
-                "description": "Send a contact message to a meow contact",
+                "description": "Send a single contact or multiple contacts to a meow contact. Supports both legacy single contact format and new multiple contacts format.",
                 "consumes": [
                     "application/json"
                 ],
@@ -3572,7 +3572,7 @@ const docTemplate = `{
                 "tags": [
                     "Messages"
                 ],
-                "summary": "Send contact message",
+                "summary": "Send contact message(s)",
                 "parameters": [
                     {
                         "type": "string",
@@ -3582,7 +3582,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Contact message request",
+                        "description": "Contact message request (supports single or multiple contacts)",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -6029,6 +6029,25 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.ContactsMessagePayload": {
+            "type": "object",
+            "properties": {
+                "contacts": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": [
+                        "[\"BEGIN:VCARD...\"",
+                        " \"BEGIN:VCARD...\"]"
+                    ]
+                },
+                "displayName": {
+                    "type": "string",
+                    "example": "Multiple Contacts"
+                }
+            }
+        },
         "dto.ContactsResponse": {
             "type": "object",
             "properties": {
@@ -6994,6 +7013,25 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.MessageContactData": {
+            "type": "object",
+            "required": [
+                "name",
+                "phone"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "example": "John Doe"
+                },
+                "phone": {
+                    "type": "string",
+                    "example": "5511888888888"
+                }
+            }
+        },
         "dto.MessageErrorResponse": {
             "type": "object",
             "properties": {
@@ -7033,6 +7071,9 @@ const docTemplate = `{
                 },
                 "contact": {
                     "$ref": "#/definitions/dto.ContactMessagePayload"
+                },
+                "contacts": {
+                    "$ref": "#/definitions/dto.ContactsMessagePayload"
                 },
                 "document": {
                     "$ref": "#/definitions/dto.DocumentMessagePayload"
@@ -7428,28 +7469,7 @@ const docTemplate = `{
             }
         },
         "dto.SendContactRequest": {
-            "type": "object",
-            "required": [
-                "contact_name",
-                "contact_phone",
-                "phone"
-            ],
-            "properties": {
-                "contact_name": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 1,
-                    "example": "John Doe"
-                },
-                "contact_phone": {
-                    "type": "string",
-                    "example": "5511888888888"
-                },
-                "phone": {
-                    "type": "string",
-                    "example": "5511999999999"
-                }
-            }
+            "type": "object"
         },
         "dto.SendDocumentRequest": {
             "type": "object",

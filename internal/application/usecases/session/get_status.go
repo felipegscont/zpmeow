@@ -63,15 +63,18 @@ func (uc *GetSessionStatusUseCase) Handle(ctx context.Context, query GetSessionS
 		return nil, fmt.Errorf("failed to get session: %w", err)
 	}
 
-	whatsappStatus, err := uc.whatsappService.GetSessionStatus(ctx, query.SessionID)
-	if err != nil {
-		uc.logger.Warn(ctx, "Failed to get WhatsApp status", "sessionID", query.SessionID, "error", err)
-		whatsappStatus = sessionEntity.Status().String()
+	// Use IsClientConnected to determine real-time status
+	isConnected := uc.whatsappService.IsClientConnected(query.SessionID)
+	var whatsappStatus string
+	if isConnected {
+		whatsappStatus = "connected"
+	} else {
+		whatsappStatus = "disconnected"
 	}
 
 	qrCode := ""
 	if !sessionEntity.IsAuthenticated() && (sessionEntity.IsConnecting() || sessionEntity.IsDisconnected()) {
-		qrCode, err = uc.whatsappService.GetQRCode(ctx, query.SessionID)
+		qrCode, err = uc.whatsappService.GetQRCode(query.SessionID)
 		if err != nil {
 			uc.logger.Warn(ctx, "Failed to get QR code", "sessionID", query.SessionID, "error", err)
 		}

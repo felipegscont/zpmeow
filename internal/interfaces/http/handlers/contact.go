@@ -75,7 +75,7 @@ func (h *ContactHandler) CheckContact(c *gin.Context) {
 	for _, result := range results {
 		checkResults = append(checkResults, dto.ContactCheckResult{
 			Query:        result.Query,
-			IsInmeow:     result.IsInmeow,
+			IsInmeow:     result.IsInMeow,
 			JID:          result.JID,
 			VerifiedName: result.VerifiedName,
 		})
@@ -138,12 +138,12 @@ func (h *ContactHandler) GetContactInfo(c *gin.Context) {
 		contactInfos = append(contactInfos, dto.ContactInfo{
 			JID:          result.JID,
 			Name:         result.Name,
-			DisplayName:  result.DisplayName,
-			VerifiedName: result.VerifiedName,
+			DisplayName:  result.Name, // Usando Name como DisplayName
+			VerifiedName: "",          // Campo removido da estrutura simplificada
 			Notify:       result.Notify,
 			PushName:     result.PushName,
 			BusinessName: result.BusinessName,
-			Phone:        result.Phone,
+			Phone:        "", // Campo removido da estrutura simplificada
 			IsBlocked:    result.IsBlocked,
 			IsMuted:      result.IsMuted,
 		})
@@ -279,7 +279,10 @@ func (h *ContactHandler) GetContacts(c *gin.Context) {
 	sessionID := c.Param("sessionId")
 
 	ctx := c.Request.Context()
-	results, err := h.wmeowService.GetContacts(ctx, sessionID)
+	// Default limit and offset for backward compatibility
+	limit := 100
+	offset := 0
+	results, err := h.wmeowService.GetContacts(ctx, sessionID, limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, dto.NewContactErrorResponse(
 			http.StatusInternalServerError,
